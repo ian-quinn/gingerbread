@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<RevitAddIns>
+  <AddIn Type="Command">
+    <Text>Command Gingerbread</Text>
+    <Description>Some description for Gingerbread</Description>
+    <Assembly>Gingerbread.dll</Assembly>
+    <FullClassName>Gingerbread.Command</FullClassName>
+    <ClientId>1eef3e35-4867-4926-b776-b75920ce9d93</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+  <AddIn Type="Application">
+    <Name>Application Gingerbread</Name>
+    <Assembly>Gingerbread.dll</Assembly>
+    <FullClassName>Gingerbread.App</FullClassName>
+    <ClientId>67df487b-cfa2-4b45-9f7f-2c2b4d68a143</ClientId>
+    <VendorId>com.typepad.thebuildingcoder</VendorId>
+    <VendorDescription>The Building Coder, http://thebuildingcoder.typepad.com</VendorDescription>
+  </AddIn>
+</RevitAddIns>

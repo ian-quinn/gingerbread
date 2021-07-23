@@ -30,3 +30,8 @@
 *.exe
 *.out
 *.app
+
+/Gingerbread/obj/
+/Gingerbread/bin/
+/Gingerbread/.vs/
+/Gingerbread/Gingerbread.csproj.user
