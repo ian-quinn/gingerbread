@@ -440,11 +440,11 @@ namespace Gingerbread
             //Debug.Print("Cluster of strays[1]: " + strayClusters[1].Count.ToString());
             // The RegionCluster method should be applied to each cluster of the strays
             // It only works on a bunch of intersected line segments
-            List<CurveArray> loops = RegionDetect.RegionCluster(strays);
+            List<CurveArray> loops = Core.RegionDetect.RegionCluster(strays);
             // The boolean union method of the loops needs to fix
-            var perimeter = RegionDetect.GetBoundary(loops);
+            var perimeter = Core.RegionDetect.GetBoundary(loops);
             var recPerimeter = CloseGapAtBreakpoint(perimeter);
-            var arrayPerimeter = RegionDetect.AlignCrv(recPerimeter);
+            var arrayPerimeter = Core.RegionDetect.AlignCrv(recPerimeter);
             for (int i = 0; i < arrayPerimeter.Size; i++)
             {
                 Debug.Print("Line-{0} {1} {2}", i, Util.PrintXYZ(arrayPerimeter.get_Item(i).GetEndPoint(0)),

@@ -160,7 +160,7 @@ namespace Gingerbread
             // ask the user to pick one element with Wall type
             else
             {
-                Element e = null;
+                Element e;
                 try
                 {
                     Reference r = uidoc.Selection.PickObject(ObjectType.Element, new UtilElementsOfClassSelectionFilter<Element>());

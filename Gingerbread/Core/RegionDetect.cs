@@ -11,7 +11,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 #endregion
 
-namespace Gingerbread
+namespace Gingerbread.Core
 {
     [Transaction(TransactionMode.Manual)]
     public class RegionDetect : IExternalCommand
@@ -657,47 +657,6 @@ namespace Gingerbread
                         gs.GraphicsStyleCategory.SetLineWeight(7, gs.GraphicsStyleType);
                     }
                 }
-
-
-                /*
-                 * Region detect and boolean union all have bugs to fix
-                 * DO NOT TEST THIS ONE
-                 * 
-                 * 
-                 * 
-                // Wall generation
-                foreach (Curve wallAxis in mesh)
-                {
-                    Wall.Create(doc, wallAxis, firstLevel.Id, true);
-                }
-
-                // Create.NewRoom will automatically detect the topology according to the wall system
-                // Don't bother sketching boundary lines unless you're handling a virtual room
-                //docCreation.NewSpaceBoundaryLines(doc.ActiveView.SketchPlane, mesh, doc.ActiveView);
-                doc.Regenerate();
-
-                PlanTopology planTopology = doc.get_PlanTopology(firstLevel);
-                if (doc.ActiveView.ViewType == ViewType.FloorPlan)
-                {
-                    foreach (PlanCircuit circuit in planTopology.Circuits)
-                    {
-                        if (null != circuit && !circuit.IsRoomLocated)
-                        {
-                            var room = doc.Create.NewRoom(null, circuit);
-                            //Debug.Print("New room created!");
-                        }
-                    }
-                }
-                /* // add error handling here
-                else
-                {
-                    System.Windows.Forms.MessageBox.Show("You can not create spaces in this plan view");
-                }
-                */
-                /*
-                Floor newFloor = doc.Create.NewFloor(AlignCrv(perimeter), floorType, firstLevel, false, XYZ.BasisZ);
-                newFloor.get_Parameter(BuiltInParameter.FLOOR_HEIGHTABOVELEVEL_PARAM).Set(0);
-                */
 
                 tx.Commit();
             }

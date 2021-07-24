@@ -58,10 +58,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App.cs" />
+    <Compile Include="CmdCoreAlignPoint.cs" />
+    <Compile Include="CmdCoreSimplifyCurve.cs" />
+    <Compile Include="CmdCoreSplitHole.cs" />
     <Compile Include="CmdPatchBoundary.cs" />
     <Compile Include="CmdSketchBoundingbox.cs" />
     <Compile Include="CmdSketchFootprint.cs" />
     <Compile Include="CmdSketchLocation.cs" />
+    <Compile Include="CmdZippo.cs" />
     <Compile Include="Core\Algorithm.cs" />
     <Compile Include="Core\Basic.cs" />
     <Compile Include="UtilElementOfClassSelectionFilter.cs" />
@@ -71,13 +75,23 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="RegionDetect.cs" />
+    <Compile Include="Core\RegionDetect.cs" />
     <Compile Include="Util.cs" />
     <Compile Include="UtilButtonSwitch.cs" />
+    <Compile Include="Views\BaseWindow.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Gingerbread.addin" />
+    <Resource Include="Resources\ico\Authentication.ico" />
+    <Resource Include="Resources\ico\RunExport.ico" />
+    <Resource Include="Resources\ico\RunReport.ico" />
+    <Resource Include="Resources\ico\RunSimulation.ico" />
+    <Resource Include="Resources\ico\RunViewer.ico" />
+    <Resource Include="Resources\ico\AlignPoint.ico" />
+    <Resource Include="Resources\ico\Prefix.ico" />
     <Resource Include="Resources\ico\RegionDetect.ico" />
+    <Resource Include="Resources\ico\SplitHole.ico" />
+    <Resource Include="Resources\ico\SimplifyCurve.ico" />
     <Resource Include="Resources\ico\SketchBoundingbox.ico" />
     <Resource Include="Resources\ico\SketchLocation.ico" />
     <Resource Include="Resources\ico\SketchFootprint.ico" />
@@ -92,6 +106,12 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Views\BaseWindowStyle.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>

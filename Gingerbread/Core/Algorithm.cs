@@ -399,7 +399,7 @@ namespace Gingerbread
             // Curves are basically not joined. It is better to round the coordinates to get a better intersection recognition
             //Curve crv0 = Line.CreateBound(RoundXYZ(crv.GetEndPoint(0)), RoundXYZ(crv.GetEndPoint(1))) as Curve;
             Curve crv0 = crv.Clone();
-            crv0 = RegionDetect.ExtendCrv(crv0, 0.01);
+            crv0 = Core.RegionDetect.ExtendCrv(crv0, 0.01);
             Curve crv1 = crv0.CreateTransformed(up);
             Curve crv2 = crv0.CreateTransformed(down);
             Curve crv3 = crv0.CreateTransformed(left);
@@ -672,7 +672,7 @@ namespace Gingerbread
             {
                 if (GetPtsOfCrvs(lines).Count() == lines.Count())
                 {
-                    CurveArray edges = RegionDetect.AlignCrv(lines);
+                    CurveArray edges = Core.RegionDetect.AlignCrv(lines);
                     if (IsPerpendicular(edges.get_Item(0), edges.get_Item(1)) &&
                         IsPerpendicular(edges.get_Item(1), edges.get_Item(2)))
                     { return true; }
@@ -873,44 +873,5 @@ namespace Gingerbread
         }
         #endregion
 
-
-
-        // Here collects obsolete methods
-        #region Trashbin
-        /// <summary>
-        /// Bubble sort algorithm. BUG FIXATION NEEDED!
-        /// </summary>
-        /// <param name="pts"></param>
-        /// <returns></returns>
-        public static List<XYZ> BubbleSort(List<XYZ> pts)
-        {
-            double threshold = 0.01;
-            for (int i = 0; i < pts.Count(); i++)
-            {
-                for (int j = 0; j < pts.Count() - 1; j++)
-                {
-                    if (pts[j].X > pts[j + 1].X + threshold)
-                    {
-                        var ptTemp = pts[j];
-                        pts[j] = pts[j + 1];
-                        pts[j + 1] = ptTemp;
-                    }
-                }
-            }
-            for (int i = 0; i < pts.Count(); i++)
-            {
-                for (int j = 0; j < pts.Count() - 1; j++)
-                {
-                    if (pts[j].Y > pts[j + 1].Y + threshold)
-                    {
-                        var ptTemp = pts[j];
-                        pts[j] = pts[j + 1];
-                        pts[j + 1] = ptTemp;
-                    }
-                }
-            }
-            return pts;
-        }
-        #endregion
     }
 }
