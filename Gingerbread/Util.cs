@@ -410,7 +410,6 @@ namespace Gingerbread
 
         #endregion
 
-
         #region DEBUG
         /// <summary>
         /// Return the coorinate of XYZ as a string
