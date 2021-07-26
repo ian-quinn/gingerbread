@@ -14,38 +14,9 @@ using Autodesk.Revit.UI.Selection;
 namespace Gingerbread.Core
 {
     [Transaction(TransactionMode.Manual)]
-    public class RegionDetect : IExternalCommand
+    public class DetectRegion : IExternalCommand
     {
-        // Print list for debug
-        public static string printo(List<int> list)
-        {
-            string fusion = "";
-            for (int index = 0; index < list.Count(); index++)
-            {
-                fusion = fusion + list[index].ToString() + " ";
-            }
-            return fusion;
-        }
 
-        public static string printb(List<bool> list)
-        {
-            string fusion = "";
-            for (int index = 0; index < list.Count(); index++)
-            {
-                fusion = fusion + list[index].ToString() + " ";
-            }
-            return fusion;
-        }
-
-        public static string printd(Dictionary<int, List<Curve>> dictionary)
-        {
-            string fusion = "";
-            foreach (KeyValuePair<int, List<Curve>> kvp in dictionary)
-            {
-                fusion = fusion + kvp.Key.ToString() + "-" + kvp.Value.Count().ToString() + " ";
-            }
-            return fusion;
-        }
 
         // Perform curve splitting according to raw intersection parameters
         public static List<Curve> SplitCrv(Curve parent, List<double> parameters)
@@ -471,7 +442,7 @@ namespace Gingerbread.Core
             Debug.Print("Elements inside HC are " + HC.Count.ToString());
             Debug.Print("Elements inside VOut are " + VOut.Count.ToString());
             Debug.Print("Elements inside HCK are " + HCK.Count.ToString());
-            //Debug.Print(printb(HCK));
+            //Debug.Print(Util.JoinListString(HCK));
 
 
             // Find the "next" half-curve for each starting half curve by identifying the outgoing half-curve from the end vertex
@@ -499,7 +470,7 @@ namespace Gingerbread.Core
 
             Debug.Print("Elements inside HCI are " + HCI.Count.ToString());
             Debug.Print("Elements inside HCN are " + HCN.Count.ToString());
-            Debug.Print("Elements in HCN: " + printo(HCN));
+            Debug.Print("Elements in HCN: " + Util.JoinListString(HCN));
 
             // Sequence half-curves into faces by running along "next" half-curves in order until the starting half-curve is returned to
             List<int> FaceEdges = new List<int>();
@@ -540,8 +511,8 @@ namespace Gingerbread.Core
                     FaceEdges.Add(EdgeCounter);
                 }
             }
-            //Debug.Print("Elements in FaceEdges: " + printo(FaceEdges));
-            //Debug.Print("Elements in DeleteEdges: " + printo(DeleteEdges));
+            //Debug.Print("Elements in FaceEdges: " + Util.JoinListString(FaceEdges));
+            //Debug.Print("Elements in DeleteEdges: " + Util.JoinListString(DeleteEdges));
             //Debug.Print("Elements in F dict: " + printd(F));
 
             // Find the perimeter by counting edges of a region

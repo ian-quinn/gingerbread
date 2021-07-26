@@ -40,7 +40,7 @@ namespace Gingerbread
             meshButtonData.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
             PushButton mesh = modelFix.AddItem(meshButtonData) as PushButton;
             mesh.ToolTip = "WIP. A fuzzy enclosure detection by selected walls & columns.";
-            BitmapImage meshImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RegionDetect.ico", UriKind.Absolute));
+            BitmapImage meshImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreDetectRegion.ico", UriKind.Absolute));
             mesh.LargeImage = meshImg;
 
 
@@ -48,25 +48,24 @@ namespace Gingerbread
                 thisAssemblyPath, "Gingerbread.CmdCoreSimplifyCurve");
             simplifyCurve.ToolTip = "Simplify a curve or polyline by Douglas-Peucker Algorithm";
             simplifyCurve.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
-            BitmapImage simplifyCurveImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/SimplifyCurve.ico", UriKind.Absolute));
+            BitmapImage simplifyCurveImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreSimplifyCurve.ico", UriKind.Absolute));
             simplifyCurve.Image = simplifyCurveImg;
 
             PushButtonData splitHole = new PushButtonData("splitHole", "Split hole",
                 thisAssemblyPath, "Gingerbread.CmdCoreSplitHole");
             splitHole.ToolTip = "Split a multi-connect region";
             splitHole.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
-            BitmapImage splitHoleImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/SplitHole.ico", UriKind.Absolute));
+            BitmapImage splitHoleImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreSplitHole.ico", UriKind.Absolute));
             splitHole.Image = splitHoleImg;
 
-            PushButtonData alignPoint = new PushButtonData("alignPoint", "Align anchors",
+            PushButtonData formation = new PushButtonData("alignPoint", "Align anchors",
                 thisAssemblyPath, "Gingerbread.CmdCoreAlignPoint");
-            alignPoint.ToolTip = "Align and merge adjacent points";
-            alignPoint.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
-            BitmapImage alignPointImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/AlignPoint.ico", UriKind.Absolute));
-            alignPoint.Image = alignPointImg;
+            formation.ToolTip = "Align and merge adjacent points";
+            formation.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
+            BitmapImage alignPointImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreFormation.ico", UriKind.Absolute));
+            formation.Image = alignPointImg;
 
-            IList<RibbonItem> stackedCore = modelFix.AddStackedItems(simplifyCurve, splitHole, alignPoint);
-            stackedCore[0].Enabled = false;
+            IList<RibbonItem> stackedCore = modelFix.AddStackedItems(simplifyCurve, splitHole, formation);
             stackedCore[1].Enabled = false;
             stackedCore[2].Enabled = false;
 

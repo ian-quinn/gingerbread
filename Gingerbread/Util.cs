@@ -189,51 +189,9 @@ namespace Gingerbread
 
         #endregion
 
-        #region Sketch Modelline
+        #region Sketch
+        // USE WITHIN TRANSACTIONS
 
-        /// <summary>
-        /// Create a plane perpendicular to the given factor.
-        /// </summary>
-        public static SketchPlane PlaneNormal(Document doc, XYZ normal, XYZ origin)
-        {
-            return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(normal, origin));
-        }
-
-        public static SketchPlane PlaneWorld(Document doc)
-        {
-            return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
-        }
-
-
-        // Marker methods
-
-        /// <summary>
-        /// Draw an X at the given position.
-        /// </summary>
-        public static void DrawMarkerX(XYZ p, double size, SketchPlane sketchPlane)
-        {
-            size *= 0.5;
-            XYZ v = new XYZ(size, size, 0);
-            Document doc = sketchPlane.Document;
-            doc.Create.NewModelCurve(Line.CreateBound(p - v, p + v), sketchPlane);
-            v = new XYZ(size, -size, 0);
-            doc.Create.NewModelCurve(Line.CreateBound(p - v, p + v), sketchPlane);
-        }
-
-        /// <summary>
-        /// Draw an O at the given position.
-        /// </summary>
-        public static void DrawMarkerO(XYZ p, double radius, SketchPlane sketchPlane)
-        {
-            Document doc = sketchPlane.Document;
-            XYZ xAxis = new XYZ(1, 0, 0);
-            XYZ yAxis = new XYZ(0, 1, 0);
-            doc.Create.NewModelCurve(Arc.Create(p, radius, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
-        }
-
-        #endregion
-
-        #region Doc geometry methods
         /// <summary>
         /// Return the curve from a Revit database Element 
         /// location curve, if it has one.
@@ -241,11 +199,8 @@ namespace Gingerbread
         public static Curve GetLocationCurve(this Element e)
         {
             Debug.Assert(null != e.Location, "expected an element with a valid Location");
-
             LocationCurve lc = e.Location as LocationCurve;
-
             Debug.Assert(null != lc, "expected an element with a valid LocationCurve");
-
             return lc.Curve;
         }
 
@@ -264,18 +219,61 @@ namespace Gingerbread
         public static void GetListOfLinestyles(Document doc)
         {
             Category c = doc.Settings.Categories.get_Item(BuiltInCategory.OST_Lines);
-
             CategoryNameMap subcats = c.SubCategories;
-
             foreach (Category lineStyle in subcats)
             {
                 Debug.Print("Line style", string.Format("Linestyle {0} id {1}", lineStyle.Name, lineStyle.Id.ToString()));
             }
         }
 
-        #endregion
+        /// <summary>
+        /// Create a plane perpendicular to the given factor.
+        /// </summary>
+        public static SketchPlane PlaneNormal(Document doc, XYZ normal, XYZ origin)
+        {
+            return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(normal, origin));
+        }
 
-        #region Sketch DetailLines
+        public static SketchPlane PlaneWorld(Document doc)
+        {
+            return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
+        }
+
+
+        // ----------------------MODELLINE-------------------------
+
+        public static void SketchCurves(Document doc, List<Curve> crvs)
+        {
+            foreach(Curve crv in crvs)
+            {
+                doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+            }
+        }
+
+        public static void SketchMarkers(Document doc, List<XYZ> pts, double size = 1, string style = "O")
+        {
+            SketchPlane sketchPlane = PlaneWorld(doc);
+            foreach(XYZ pt in pts)
+            {
+                if (style == "O")
+                {
+                    XYZ xAxis = new XYZ(1, 0, 0);
+                    XYZ yAxis = new XYZ(0, 1, 0);
+                    doc.Create.NewModelCurve(Arc.Create(pt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
+                }
+                if (style == "X")
+                {
+                    XYZ v = new XYZ(size, size, 0);
+                    doc.Create.NewModelCurve(Line.CreateBound(pt - v, pt + v), sketchPlane);
+                    v = new XYZ(size, -size, 0);
+                    doc.Create.NewModelCurve(Line.CreateBound(pt - v, pt + v), sketchPlane);
+                }
+            }
+        }
+        
+
+        // ----------------------DETAILLINE-------------------------
+
         /// <summary>
         /// Draw detail curves based on List<Curve>
         /// </summary>
@@ -388,54 +386,309 @@ namespace Gingerbread
             }
         }
 
-        #endregion
-
-        #region Geometry
-        public const double _eps = 1.0e-9;
-
-        public static bool IsZero(double a, double tolerance = _eps)
-        {
-            return tolerance > Math.Abs(a);
-        }
-
-        public static bool IsVertical(XYZ v)
-        {
-            return IsZero(v.X) && IsZero(v.Y);
-        }
-        public static bool IsVertical(XYZ v, double tolerance)
-        {
-            return IsZero(v.X, tolerance)
-              && IsZero(v.Y, tolerance);
-        }
-
-        #endregion
-
-        #region DEBUG
         /// <summary>
-        /// Return the coorinate of XYZ as a string
+        /// Draw a polyline for testing
         /// </summary>
-        /// <param name="pt"></param>
-        /// <returns></returns>
-        public static string PrintXYZ(XYZ pt)
+        /// <param name="doc"></param>
+        /// <param name="ply"></param>
+        /// <param name="ptVisible"></param>
+        public static void DrawPolyLine(Document doc, PolyLine ply, Boolean ptVisible = true)
         {
-            return string.Format(" ({0}, {1}, {2}) ", pt.X, pt.Y, pt.Z);
-        }
-
-        /// <summary>
-        /// Return the content of List(int) as a string
-        /// </summary>
-        /// <param name="seq"></param>
-        /// <returns></returns>
-        public static string PrintSeq(List<int> seq)
-        {
-            string result = "";
-            foreach (int e in seq)
+            if (null != ply)
             {
-                result = result + e.ToString() + " ";
+                View active_view = doc.ActiveView;
+
+                // we'll come back to the alignment of IList and List
+                List<XYZ> vertices = new List<XYZ>(ply.GetCoordinates());
+                List<Curve> edges = new List<Curve>();
+
+                for (int i = 0; i < vertices.Count - 1; i++)
+                {
+                    Curve stroke = Line.CreateBound(vertices[i], vertices[i + 1]) as Curve;
+
+                    DetailCurve detailCrv = doc.Create.NewDetailCurve(active_view, stroke);
+                }
+                if (ptVisible)
+                {
+                    SketchMarkers(doc, vertices, 0.2, "O");
+                }
+                
+                TextNoteType tnt = new FilteredElementCollector(doc)
+                        .OfClass(typeof(TextNoteType)).First() as TextNoteType;
+                TextNote startFlag = TextNote.Create(doc, active_view.Id, vertices[0], "START", tnt.Id);
+                TextNote endFlag = TextNote.Create(doc, active_view.Id, vertices.Last(), "END", tnt.Id);
             }
-            return result;
         }
+
         #endregion
+
+
+        // Borrowed from BuildingCoder by JeremyTammick
+        #region Formatting
+        /// <summary>
+        /// Return an English plural suffix for the given
+        /// number of items, i.e. 's' for zero or more
+        /// than one, and nothing for exactly one.
+        /// </summary>
+        public static string PluralSuffix(int n)
+        {
+            return 1 == n ? "" : "s";
+        }
+
+        /// <summary>
+        /// Return an English plural suffix 'ies' or
+        /// 'y' for the given number of items.
+        /// </summary>
+        public static string PluralSuffixY(int n)
+        {
+            return 1 == n ? "y" : "ies";
+        }
+
+        /// <summary>
+        /// Return a dot (full stop) for zero
+        /// or a colon for more than zero.
+        /// </summary>
+        public static string DotOrColon(int n)
+        {
+            return 0 < n ? ":" : ".";
+        }
+
+        /// <summary>
+        /// Return a string for a real number
+        /// formatted to two decimal places.
+        /// </summary>
+        public static string RealString(double a)
+        {
+            return a.ToString("0.##");
+        }
+
+        /// <summary>
+        /// Return a hash string for a real number
+        /// formatted to nine decimal places.
+        /// </summary>
+        public static string HashString(double a)
+        {
+            return a.ToString("0.#########");
+        }
+
+        /// <summary>
+        /// Return a string representation in degrees
+        /// for an angle given in radians.
+        /// </summary>
+        public static string AngleString(double angle)
+        {
+            return RealString(angle * 180 / Math.PI) + " degrees";
+        }
+
+        /// <summary>
+        /// Return a string for a length in millimetres
+        /// formatted as an integer value.
+        /// </summary>
+        public static string MmString(double length)
+        {
+            //return RealString( FootToMm( length ) ) + " mm";
+            return Math.Round(FootToMm(length)).ToString() + " mm";
+        }
+
+        /// <summary>
+        /// Return a string for a UV point
+        /// or vector with its coordinates
+        /// formatted to two decimal places.
+        /// </summary>
+        public static string PointString(UV p, bool onlySpaceSeparator = false)
+        {
+            string format_string = onlySpaceSeparator ? "{0} {1}" : "({0},{1})";
+            return string.Format(format_string, RealString(p.U), RealString(p.V));
+        }
+
+        /// <summary>
+        /// Return a string for an XYZ point
+        /// or vector with its coordinates
+        /// formatted to two decimal places.
+        /// </summary>
+        public static string PointString(XYZ p, bool onlySpaceSeparator = false)
+        {
+            string format_string = onlySpaceSeparator ? "{0} {1} {2}" : "({0},{1},{2})";
+            return string.Format(format_string, RealString(p.X), RealString(p.Y), RealString(p.Z));
+        }
+
+        /// <summary>
+        /// Return a hash string for an XYZ point
+        /// or vector with its coordinates
+        /// formatted to nine decimal places.
+        /// </summary>
+        public static string HashString(XYZ p)
+        {
+            return string.Format("({0},{1},{2})", HashString(p.X), HashString(p.Y), HashString(p.Z));
+        }
+
+        /// <summary>
+        /// Return a string for this bounding box
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string BoundingBoxString( BoundingBoxUV bb, bool onlySpaceSeparator = false)
+        {
+            string format_string = onlySpaceSeparator ? "{0} {1}" : "({0},{1})";
+
+            return string.Format(format_string, PointString(bb.Min, onlySpaceSeparator), PointString(bb.Max, onlySpaceSeparator));
+        }
+
+        /// <summary>
+        /// Return a string for this bounding box
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string BoundingBoxString( BoundingBoxXYZ bb, bool onlySpaceSeparator = false)
+        {
+            string format_string = onlySpaceSeparator ? "{0} {1}" : "({0},{1})";
+
+            return string.Format(format_string, PointString(bb.Min, onlySpaceSeparator), PointString(bb.Max, onlySpaceSeparator));
+        }
+
+        /// <summary>
+        /// Return a string for this plane
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string PlaneString(Plane p)
+        {
+            return string.Format("plane origin {0}, plane normal {1}", PointString(p.Origin), PointString(p.Normal));
+        }
+
+        /// <summary>
+        /// Return a string for this transformation
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string TransformString(Transform t)
+        {
+            return string.Format("({0},{1},{2},{3})", PointString(t.Origin),
+              PointString(t.BasisX), PointString(t.BasisY), PointString(t.BasisZ));
+        }
+
+        /// <summary>
+        /// Return a string for a list of doubles 
+        /// formatted to two decimal places.
+        /// </summary>
+        public static string DoubleArrayString( IEnumerable<double> a, bool onlySpaceSeparator = false)
+        {
+            string separator = onlySpaceSeparator ? " " : ", ";
+
+            return string.Join(separator, a.Select<double, string>(x => RealString(x)));
+        }
+
+        /// <summary>
+        /// Return a string for this point array
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string PointArrayString( IEnumerable<UV> pts, bool onlySpaceSeparator = false)
+        {
+            string separator = onlySpaceSeparator ? " " : ", ";
+
+            return string.Join(separator, pts.Select<UV, string>(p => PointString(p, onlySpaceSeparator)));
+        }
+
+        /// <summary>
+        /// Return a string for this point array
+        /// with its coordinates formatted to two
+        /// decimal places.
+        /// </summary>
+        public static string PointArrayString( IEnumerable<XYZ> pts, bool onlySpaceSeparator = false)
+        {
+            string separator = onlySpaceSeparator ? " " : ", ";
+
+            return string.Join(separator, pts.Select<XYZ, string>(p => PointString(p, onlySpaceSeparator)));
+        }
+
+        /// <summary>
+        /// Return a string representing the data of a
+        /// curve. Currently includes detailed data of
+        /// line and arc elements only.
+        /// </summary>
+        public static string CurveString(Curve c)
+        {
+            string s = c.GetType().Name.ToLower();
+
+            XYZ p = c.GetEndPoint(0);
+            XYZ q = c.GetEndPoint(1);
+
+            s += string.Format(" {0} --> {1}", PointString(p), PointString(q));
+
+            // To list intermediate points or draw an
+            // approximation using straight line segments,
+            // we can access the curve tesselation, cf.
+            // CurveTessellateString:
+
+            //foreach( XYZ r in lc.Curve.Tessellate() )
+            //{
+            //}
+
+            // List arc data:
+
+            Arc arc = c as Arc;
+
+            if (null != arc)
+            {
+                s += string.Format(" center {0} radius {1}", PointString(arc.Center), arc.Radius);
+            }
+
+            // Todo: add support for other curve types
+            // besides line and arc.
+
+            return s;
+        }
+
+        /// <summary>
+        /// Return a string for this curve with its
+        /// tessellated point coordinates formatted
+        /// to two decimal places.
+        /// </summary>
+        public static string CurveTessellateString(Curve curve)
+        {
+            return "curve tessellation " + PointArrayString(curve.Tessellate());
+        }
+
+        /// <summary>
+        /// Convert a UnitSymbolType enumeration value
+        /// to a brief human readable abbreviation string.
+        /// </summary>
+        public static string UnitSymbolTypeString( UnitSymbolType u)
+        {
+            string s = u.ToString();
+
+            Debug.Assert(s.StartsWith("UST_"),
+              "expected UnitSymbolType enumeration value to begin with 'UST_'");
+
+            s = s.Substring(4).Replace("_SUP_", "^").ToLower();
+
+            return s;
+        }
+
+
+        public static string JoinListString(List<bool> list)
+        {
+            string fusion = "";
+            for (int index = 0; index < list.Count(); index++)
+            {
+                fusion = fusion + list[index].ToString() + " ";
+            }
+            return fusion;
+        }
+
+        public static string JoinListString(List<int> list)
+        {
+            string fusion = "";
+            for (int index = 0; index < list.Count(); index++)
+            {
+                fusion = fusion + list[index].ToString() + " ";
+            }
+            return fusion;
+        }
+
+
+        #endregion // Formatting
 
     }
 }

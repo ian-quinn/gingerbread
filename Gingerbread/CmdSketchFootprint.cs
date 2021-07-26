@@ -32,7 +32,7 @@ namespace Gingerbread
                     pf = face as PlanarFace;
                     if (null != pf)
                     {
-                        if (Util.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolerance)
+                        if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolerance)
                             && pf.FaceNormal.Z < 0)
                         {
                             break;
@@ -153,7 +153,13 @@ namespace Gingerbread
                         shatteredCrvs.Add(crv);
                     }
                 }
-                Util.DrawDetailLines(doc, shatteredCrvs);
+
+                using (Transaction tx = new Transaction(doc, "Sketch curves"))
+                {
+                    tx.Start();
+                    Util.DrawDetailLines(doc, shatteredCrvs);
+                    tx.Commit();
+                }
             }
 
             // If there is no pre-selection,
@@ -181,7 +187,12 @@ namespace Gingerbread
                         shatteredCrvs.Add(crv);
                     }
                 }
-                Util.DrawDetailLines(doc, shatteredCrvs);
+                using (Transaction tx = new Transaction(doc, "Sketch curves"))
+                {
+                    tx.Start();
+                    Util.DrawDetailLines(doc, shatteredCrvs);
+                    tx.Commit();
+                }
             }
 
             return Result.Succeeded;

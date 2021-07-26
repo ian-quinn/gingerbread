@@ -33,7 +33,7 @@ namespace Gingerbread
             {
                 XYZ sectPt = results.get_Item(0).XYZPoint;
                 XYZ extensionVec = (sectPt - line.GetEndPoint(0)).Normalize();
-                if (Algorithm.IsPtOnLine(sectPt, line as Line))
+                if (Core.Basic.IsPtOnLine(sectPt, line as Line))
                 {
                     double distance1 = sectPt.DistanceTo(line.GetEndPoint(0));
                     double distance2 = sectPt.DistanceTo(line.GetEndPoint(1));
@@ -102,7 +102,7 @@ namespace Gingerbread
                     foreach (List<Curve> sublist in mergeGroups)
                     {
                         iterCounter += 1;
-                        if (Algorithm.IsLineAlmostSubsetLines(element, sublist))
+                        if (Core.Basic.IsLineAlmostSubsetLines(element, sublist))
                         {
                             sublist.Add(element);
                             lines.Remove(element);
@@ -131,7 +131,7 @@ namespace Gingerbread
                         Debug.Print("Line{0} ({1}, {2}) -> ({3}, {4})", mergeGroup.IndexOf(line), line.GetEndPoint(0).X,
                             line.GetEndPoint(0).Y, line.GetEndPoint(1).X, line.GetEndPoint(1).Y);
                     }
-                    var merged = Algorithm.FuseLines(mergeGroup);
+                    var merged = Core.Algorithm.FuseLines(mergeGroup);
                     mergeLines.Add(merged);
                 }
                 else
@@ -157,8 +157,8 @@ namespace Gingerbread
                 for (int j = i + 1; j < lines.Count; j++)
                 {
 
-                    if (!Algorithm.IsIntersected(lines[i], lines[j]) &&
-                        Algorithm.IsAlmostJoined(lines[i], lines[j]))
+                    if (!Core.Basic.IsIntersected(lines[i], lines[j]) &&
+                        Core.Basic.IsAlmostJoined(lines[i], lines[j]))
                     {
                         removeIds.Add(i);
                         removeIds.Add(j);
@@ -201,7 +201,7 @@ namespace Gingerbread
                     pf = face as PlanarFace;
                     if (null != pf)
                     {
-                        if (Util.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolerance)
+                        if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolerance)
                             && pf.FaceNormal.Z < 0)
                         {
                             break;
@@ -345,14 +345,14 @@ namespace Gingerbread
             List<Curve> axesExtended = new List<Curve>();
             foreach (Curve axis in wallCrvs)
             {
-                axesExtended.Add(Algorithm.ExtendLine(axis, 200));
+                axesExtended.Add(Core.Algorithm.ExtendLine(axis, 200));
             }
             // Axis merge 
-            List<List<Curve>> axisGroups = Algorithm.ClusterByOverlap(axesExtended);
+            List<List<Curve>> axisGroups = Core.Algorithm.ClusterByOverlap(axesExtended);
             List<Curve> centerLines = new List<Curve>();
             foreach (List<Curve> axisGroup in axisGroups)
             {
-                var merged = Algorithm.FuseLines(axisGroup);
+                var merged = Core.Algorithm.FuseLines(axisGroup);
                 centerLines.Add(merged);
             }
 
@@ -403,15 +403,15 @@ namespace Gingerbread
                     int count = 0;
                     for (int i = 1; i < nestLines.Count; i++)
                     {
-                        if (!Algorithm.IsParallel(nestLines[0], nestLines[i]))
+                        if (!Core.Basic.IsParallel(nestLines[0], nestLines[i]))
                         { count += 1; }
                     }
                     if (count == 0)
                     {
-                        var patches = Algorithm.CenterLinesOfBox(columnEdges);
+                        var patches = Core.Algorithm.CenterLinesOfBox(columnEdges);
                         foreach (Line patch in patches)
                         {
-                            if (Algorithm.IsLineIntersectLines(patch, nestLines)) { centerLines.Add(patch); }
+                            if (Core.Basic.IsLineIntersectLines(patch, nestLines)) { centerLines.Add(patch); }
                         }
                     }
                 }
@@ -426,11 +426,11 @@ namespace Gingerbread
             //#The region detect function has fatal bug during boolean union operation
             #region Call region detection
             // Axis merge 
-            List<List<Curve>> tempStrays = Algorithm.ClusterByOverlap(centerLines);
+            List<List<Curve>> tempStrays = Core.Algorithm.ClusterByOverlap(centerLines);
             List<Curve> strays = new List<Curve>();
             foreach (List<Curve> tempStray in tempStrays)
             {
-                Curve merged = Algorithm.FuseLines(tempStray);
+                Curve merged = Core.Algorithm.FuseLines(tempStray);
                 strays.Add(merged);
             }
 
@@ -440,15 +440,15 @@ namespace Gingerbread
             //Debug.Print("Cluster of strays[1]: " + strayClusters[1].Count.ToString());
             // The RegionCluster method should be applied to each cluster of the strays
             // It only works on a bunch of intersected line segments
-            List<CurveArray> loops = Core.RegionDetect.RegionCluster(strays);
+            List<CurveArray> loops = Core.DetectRegion.RegionCluster(strays);
             // The boolean union method of the loops needs to fix
-            var perimeter = Core.RegionDetect.GetBoundary(loops);
+            var perimeter = Core.DetectRegion.GetBoundary(loops);
             var recPerimeter = CloseGapAtBreakpoint(perimeter);
-            var arrayPerimeter = Core.RegionDetect.AlignCrv(recPerimeter);
+            var arrayPerimeter = Core.DetectRegion.AlignCrv(recPerimeter);
             for (int i = 0; i < arrayPerimeter.Size; i++)
             {
-                Debug.Print("Line-{0} {1} {2}", i, Util.PrintXYZ(arrayPerimeter.get_Item(i).GetEndPoint(0)),
-                    Util.PrintXYZ(arrayPerimeter.get_Item(i).GetEndPoint(1)));
+                Debug.Print("Line-{0} {1} {2}", i, Util.PointString(arrayPerimeter.get_Item(i).GetEndPoint(0)),
+                    Util.PointString(arrayPerimeter.get_Item(i).GetEndPoint(1)));
             }
             #endregion
             // OUTPUT List<CurveArray> loops

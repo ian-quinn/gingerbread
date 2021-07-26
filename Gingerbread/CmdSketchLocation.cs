@@ -46,8 +46,14 @@ namespace Gingerbread
                         }
                     }
                 }
-                Util.DrawDetailLines(doc, axes);
-                Util.DrawDetailMarkers(doc, pts);
+
+                using (Transaction tx = new Transaction(doc, "Sketch locations"))
+                {
+                    tx.Start();
+                    Util.SketchCurves(doc, axes);
+                    Util.SketchMarkers(doc, pts);
+                    tx.Commit();
+                }
             }
             // If there is no pre-selection,
             // ask the user to pick one element with Wall type
@@ -63,16 +69,22 @@ namespace Gingerbread
                 {
                     return Result.Cancelled;
                 }
-                if (e is Wall)
+
+                using (Transaction tx = new Transaction(doc, "Sketch locations"))
                 {
-                    LocationCurve lc = e.Location as LocationCurve;
-                    Curve crv = lc.Curve;
-                    Util.DrawDetailLines(doc, new List<Curve> { crv });
-                }
-                else if (e is FamilyInstance)
-                {
-                    XYZ lp = Util.GetFamilyInstanceLocation(e as FamilyInstance);
-                    Util.DrawDetailMarkers(doc, new List<XYZ> { lp });
+                    tx.Start();
+                    if (e is Wall)
+                    {
+                        LocationCurve lc = e.Location as LocationCurve;
+                        Curve crv = lc.Curve;
+                        Util.SketchCurves(doc, new List<Curve> { crv });
+                    }
+                    else if (e is FamilyInstance)
+                    {
+                        XYZ lp = Util.GetFamilyInstanceLocation(e as FamilyInstance);
+                        Util.SketchMarkers(doc, new List<XYZ> { lp });
+                    }
+                    tx.Commit();
                 }
             }
 
