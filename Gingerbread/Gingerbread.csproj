@@ -83,6 +83,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="Gingerbread.addin" />
+    <Resource Include="Resources\ico\RunExtrusion.ico" />
+    <Resource Include="Resources\ico\Alpha.ico" />
+    <Resource Include="Resources\ico\RunShading.ico" />
     <Resource Include="Resources\ico\CoreFormation.ico" />
     <Resource Include="Resources\ico\Authentication.ico" />
     <Resource Include="Resources\ico\RunExport.ico" />

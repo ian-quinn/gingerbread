@@ -46,5 +46,17 @@ namespace Gingerbread.Properties {
                 this["tolerance"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.0025602645573")]
+        public double ShortCurveTolerance {
+            get {
+                return ((double)(this["ShortCurveTolerance"]));
+            }
+            set {
+                this["ShortCurveTolerance"] = value;
+            }
+        }
     }
 }

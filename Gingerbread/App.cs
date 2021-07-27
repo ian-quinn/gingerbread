@@ -22,12 +22,27 @@ namespace Gingerbread
 
             ////////////
             // 0 Panel
-            RibbonPanel modelReduction = ribbonPanel(a, "Gingerbread", "Prefix");
-            PushButton prefix = modelReduction.AddItem(new PushButtonData("mesh", "Simplify\nthis Document",
+            RibbonPanel modelReduction = ribbonPanel(a, "Gingerbread", "Pretreatment");
+            PushButton prefix = modelReduction.AddItem(new PushButtonData("mesh", "Simplify\nthe Model",
                 thisAssemblyPath, "Gingerbread.CmdZippo")) as PushButton;
             prefix.ToolTip = "Make a lightweight Revit model";
             BitmapImage prefixImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/Prefix.ico", UriKind.Absolute));
             prefix.LargeImage = prefixImg;
+
+            PushButtonData disjoinComponent = new PushButtonData("disjoinComponent", "Disjoin Thingy",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            BitmapImage dummyImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/Alpha.ico", UriKind.Absolute));
+            disjoinComponent.Image = dummyImg;
+
+            PushButtonData dummyReduction1 = new PushButtonData("dummyReduction1", "-",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            dummyReduction1.Image = dummyImg;
+
+            PushButtonData dummyReduction2 = new PushButtonData("dummyReduction2", "-",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            dummyReduction2.Image = dummyImg;
+
+            IList<RibbonItem> stackedReduction = modelReduction.AddStackedItems(disjoinComponent, dummyReduction1, dummyReduction2);
 
             modelReduction.Enabled = false;
 
@@ -35,30 +50,30 @@ namespace Gingerbread
             ////////////
             // 1st Panel
             RibbonPanel modelFix = ribbonPanel(a, "Gingerbread", "Algorithm");
-            PushButtonData meshButtonData = new PushButtonData("mesh", "Detect Region\nby Selections",
+            PushButtonData meshButtonData = new PushButtonData("mesh", "Detect\nRegions",
                 thisAssemblyPath, "Gingerbread.CmdPatchBoundary");
             meshButtonData.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
             PushButton mesh = modelFix.AddItem(meshButtonData) as PushButton;
-            mesh.ToolTip = "WIP. A fuzzy enclosure detection by selected walls & columns.";
+            mesh.ToolTip = "WIP. A fuzzy enclosure detection by selected walls & columns. Please pre-select some boundary components like walls/columns";
             BitmapImage meshImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreDetectRegion.ico", UriKind.Absolute));
             mesh.LargeImage = meshImg;
 
 
-            PushButtonData simplifyCurve = new PushButtonData("simplifyCurve", "Simplify curve",
+            PushButtonData simplifyCurve = new PushButtonData("simplifyCurve", "Simplify Curve",
                 thisAssemblyPath, "Gingerbread.CmdCoreSimplifyCurve");
-            simplifyCurve.ToolTip = "Simplify a curve or polyline by Douglas-Peucker Algorithm";
+            simplifyCurve.ToolTip = "Simplify curve/polylines by Douglas-Peucker Algorithm. Please pre-select some Modellines/Detaillines";
             simplifyCurve.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
             BitmapImage simplifyCurveImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreSimplifyCurve.ico", UriKind.Absolute));
             simplifyCurve.Image = simplifyCurveImg;
 
-            PushButtonData splitHole = new PushButtonData("splitHole", "Split hole",
+            PushButtonData splitHole = new PushButtonData("splitHole", "Split Hole",
                 thisAssemblyPath, "Gingerbread.CmdCoreSplitHole");
             splitHole.ToolTip = "Split a multi-connect region";
             splitHole.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
             BitmapImage splitHoleImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/CoreSplitHole.ico", UriKind.Absolute));
             splitHole.Image = splitHoleImg;
 
-            PushButtonData formation = new PushButtonData("alignPoint", "Align anchors",
+            PushButtonData formation = new PushButtonData("alignPoint", "Align Points",
                 thisAssemblyPath, "Gingerbread.CmdCoreAlignPoint");
             formation.ToolTip = "Align and merge adjacent points";
             formation.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
@@ -103,7 +118,25 @@ namespace Gingerbread
             // 3rd Panel
             RibbonPanel modelRun = ribbonPanel(a, "Gingerbread", "Energy Analysis");
 
-            PushButton runExport = modelRun.AddItem(new PushButtonData("runExport", "Export\ngbXML Model",
+            PushButtonData runShading = new PushButtonData("runShading", "Select Shading",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            runShading.ToolTip = "Export XML snippet for selected shading surfaces";
+            BitmapImage runShadingImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunShading.ico", UriKind.Absolute));
+            runShading.Image = runShadingImg;
+
+            PushButtonData runExtrusion = new PushButtonData("runExtrusion", "Extrude",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            runExtrusion.ToolTip = "Export XML snippet for selected space boudaries";
+            BitmapImage runExtrusionImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunExtrusion.ico", UriKind.Absolute));
+            runExtrusion.Image = runExtrusionImg;
+
+            PushButtonData dummyRun2 = new PushButtonData("dummyRun2", "-",
+                thisAssemblyPath, "Gingerbread.CmdZippo");
+            dummyRun2.Image = dummyImg;
+
+            IList<RibbonItem> stackedPreRun = modelRun.AddStackedItems(runShading, runExtrusion, dummyRun2);
+
+            PushButton runExport = modelRun.AddItem(new PushButtonData("runExport", "Export\nto gbXML",
                 thisAssemblyPath, "Gingerbread.CmdZippo")) as PushButton;
             runExport.ToolTip = "Export a lightweight gbXML model for energy analysis";
             BitmapImage runExportImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunExport.ico", UriKind.Absolute));

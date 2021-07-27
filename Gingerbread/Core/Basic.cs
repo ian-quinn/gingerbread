@@ -318,6 +318,27 @@ namespace Gingerbread.Core
 
 
         #region Curve
+
+
+        /// <summary>
+        /// Convert curve to shattered lines.
+        /// Based on RevitAPI Curve.Tessellate()
+        /// </summary>
+        /// <param name="crv"></param>
+        /// <returns></returns>
+        public static List<Line> TessellateCurve(Curve crv)
+        {
+            List<Line> edges = new List<Line>();
+            IList<XYZ> pts = crv.Tessellate();
+            for (int i = 0; i < pts.Count - 1; i++)
+            {
+                edges.Add(Line.CreateBound(pts[i], pts[i + 1]));
+            }
+            return edges;
+        }
+
+
+
         /// <summary>
         /// Remove duplicate points of a CurveLoop
         /// </summary>
@@ -396,6 +417,76 @@ namespace Gingerbread.Core
             }
 
             return PolyLine.Create(vertices);
+        }
+
+
+        /// <summary>
+        /// Cannot solve situations where lines form a tree-like structure
+        /// Only generate a random polyline from an intersected cluster
+        /// </summary>
+        /// <param name="lines"></param>
+        /// <returns></returns>
+        public static List<PolyLine> JoinLineByCluster(List<Line> lines)
+        {
+            List<PolyLine> plys = new List<PolyLine>();
+            
+            List<Line> remains = lines.ToList();
+            List<Line> _lines;
+
+            while (remains.Count > 0)
+            {
+                List<XYZ> cluster = new List<XYZ>();
+                bool flag = true;
+                while (flag)
+                {
+                    flag = false;
+                    _lines = remains.ToList();
+                    foreach (Line line in _lines)
+                    {
+                        XYZ startPt = line.GetEndPoint(0);
+                        XYZ endPt = line.GetEndPoint(1);
+                        if (cluster.Count == 0)
+                        {
+                            cluster.Add(startPt);
+                            cluster.Add(endPt);
+                            remains.Remove(line);
+                            flag = true;
+                        }
+                        else
+                        {
+                            if (startPt.IsAlmostEqualTo(cluster[0]))
+                            {
+                                cluster.Insert(0, endPt);
+                                remains.Remove(line);
+                                flag = true;
+                            }
+                            else if (startPt.IsAlmostEqualTo(cluster.Last()))
+                            {
+                                cluster.Add(endPt);
+                                remains.Remove(line);
+                                flag = true;
+                            }
+                            else if (endPt.IsAlmostEqualTo(cluster.Last()))
+                            {
+                                cluster.Add(startPt);
+                                remains.Remove(line);
+                                flag = true;
+                            }
+                            else if (endPt.IsAlmostEqualTo(cluster[0]))
+                            {
+                                cluster.Insert(0, startPt);
+                                remains.Remove(line);
+                                flag = true;
+                            }
+                        }
+                    }
+                }
+                plys.Add(PolyLine.Create(cluster));
+                cluster.Clear();
+                //Debug.Print("remaining elements are: " + remains.Count.ToString());
+            }
+
+            return plys;
         }
 
         #endregion

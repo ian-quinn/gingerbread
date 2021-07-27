@@ -19,6 +19,6 @@ gingerbread
   └ Gingerbread.addin  - Application manifest
 ```
 
-To get started, you may use [this sample file](https://od.lk/f/NjVfNTY0NTM2NDlf) to test the developing algorithms.
+To get started, you may need [this sample file](https://od.lk/d/NjVfNTY0NjU2MTRf/F23.rvt) to test the developing functions.
 
 <img src="/Demo/Screenshot.png?raw=true">

@@ -400,11 +400,16 @@ namespace Gingerbread
 
                 // we'll come back to the alignment of IList and List
                 List<XYZ> vertices = new List<XYZ>(ply.GetCoordinates());
-                List<Curve> edges = new List<Curve>();
 
                 for (int i = 0; i < vertices.Count - 1; i++)
                 {
-                    Curve stroke = Line.CreateBound(vertices[i], vertices[i + 1]) as Curve;
+                    // It seems that the PolyLine can store point array where each point is very closed to another
+                    // but when you create a curve it is forbidden. right?
+                    if (vertices[i].DistanceTo(vertices[i + 1]) < Properties.Settings.Default.ShortCurveTolerance)
+                    {
+                        continue;
+                    }
+                    Curve stroke = Line.CreateBound(vertices[i], vertices[i + 1]);
 
                     DetailCurve detailCrv = doc.Create.NewDetailCurve(active_view, stroke);
                 }

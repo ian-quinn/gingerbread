@@ -28,6 +28,7 @@ namespace Gingerbread
             if (ids.Count != 0)
             {
                 List<Line> segments = new List<Line>();
+                //List<Curve> crvs = new List<Curve>();
 
                 foreach (ElementId id in ids)
                 {
@@ -37,32 +38,52 @@ namespace Gingerbread
                         ModelLine ml = e as ModelLine;
                         segments.Add(ml.GeometryCurve as Line);
                     }
-                    if (e is DetailLine)
+                    else if (e is DetailLine)
                     {
-                        DetailLine ml = e as DetailLine;
-                        segments.Add(ml.GeometryCurve as Line);
+                        DetailLine dl = e as DetailLine;
+                        segments.Add(dl.GeometryCurve as Line);
                     }
-
-                }
-                Debug.Print("Got model lines: " + segments.Count.ToString());
-                
-                PolyLine mergedPly = Core.Basic.JoinLine(segments);
-                List<XYZ> vertices = new List<XYZ>(mergedPly.GetCoordinates());
-                PolyLine simplifiedPly = PolyLine.Create(Core.SimplifyCurve.DouglasPeuckerReduction(vertices, Util.MmToFoot(2000)));
-
-
-                if (null != simplifiedPly)
-                {
-                    using (Transaction tx = new Transaction(doc, "Draw simplified polyline"))
+                    else if (e is ModelCurve)
                     {
-                        tx.Start();
-                        Util.DrawPolyLine(doc, simplifiedPly, false);
-                        tx.Commit();
+                        ModelCurve mc = e as ModelCurve;
+                        segments.AddRange(Core.Basic.TessellateCurve(mc.GeometryCurve));
+                        //crvs.Add(mc.GeometryCurve);
+                    }
+                    else if (e is DetailCurve)
+                    {
+                        DetailCurve dc = e as DetailCurve;
+                        segments.AddRange(Core.Basic.TessellateCurve(dc.GeometryCurve));
+                        //crvs.Add(dc.GeometryCurve);
                     }
                 }
-                else
+                // Here merging shattered lines to polylines is time-consuming
+                // This is for the simplification of polyline boudnaries while controlingn the number of vertices
+                List<PolyLine> plys = Core.Basic.JoinLineByCluster(segments);
+                Debug.Print("There are {0} polylines", plys.Count.ToString());
+
+
+                List<PolyLine> simplePlys = new List<PolyLine>();
+
+                // For now we test polyline and bezier separately for different algorithm choices
+                foreach (PolyLine ply in plys)
                 {
-                    Debug.Print("no polyline generated.");
+                    simplePlys.Add(Core.SimplifyCurve.DouglasPeuckerReduction(ply, Util.MmToFoot(1000)));
+                }
+                //foreach (Curve crv in crvs)
+                //{
+                //    simplePlys.Add(Core.SimplifyCurve.DouglasPeuckerReduction(crv, Util.MmToFoot(500)));
+                //}
+                Debug.Print("There are {0} simplified polylines", simplePlys.Count.ToString());
+
+
+                using (Transaction tx = new Transaction(doc, "Draw simplified polyline"))
+                {
+                    tx.Start();
+                    foreach (PolyLine polyline in simplePlys)
+                    {
+                        Util.DrawPolyLine(doc, polyline, false);
+                    }
+                    tx.Commit();
                 }
                 
             }

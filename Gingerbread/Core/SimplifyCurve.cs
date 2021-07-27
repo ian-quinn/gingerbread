@@ -39,15 +39,35 @@ namespace Gingerbread.Core
 
             DouglasPeuckerReduction(pts, firstPoint, lastPoint, tolerance, ref pointIndexsToKeep);
 
-            List<XYZ> returnpts = new List<XYZ>();
+            List<XYZ> returnPts = new List<XYZ>();
             pointIndexsToKeep.Sort();
             foreach (int index in pointIndexsToKeep)
             {
-                returnpts.Add(pts[index]);
+                returnPts.Add(pts[index]);
             }
 
-            return returnpts;
+            return returnPts;
         }
+
+        public static PolyLine DouglasPeuckerReduction(Curve crv, double tolerance)
+        {
+            List<XYZ> pts = new List<XYZ>(crv.Tessellate());
+            if (pts == null)
+            {
+                return null;
+            }
+            return PolyLine.Create(DouglasPeuckerReduction(pts, tolerance));
+        }
+        public static PolyLine DouglasPeuckerReduction(PolyLine ply, double tolerance)
+        {
+            List<XYZ> pts = new List<XYZ>(ply.GetCoordinates());
+            if (pts == null)
+            {
+                return null;
+            }
+            return PolyLine.Create(DouglasPeuckerReduction(pts, tolerance));
+        }
+
 
         /// <summary>
         /// Douglases the peucker reduction.
@@ -84,6 +104,85 @@ namespace Gingerbread.Core
                 DouglasPeuckerReduction(pts, indexFarthest,
                 lastPoint, tolerance, ref pointIndexsToKeep);
             }
+        }
+
+
+        // -------------------- alternatives -------------------------------
+
+        /// <summary>
+        /// Reduce a curve to polyline adaptively. Not an ideal method.
+        /// </summary>
+        /// <param name="crv"></param>
+        /// <param name="divisions"></param>
+        /// <returns></returns>
+        public static PolyLine AdaptiveReduction(Curve crv, double divisions)
+        {
+            XYZ startPt = crv.GetEndPoint(0);
+            XYZ endPt = crv.GetEndPoint(1);
+            XYZ mPt;
+            double tolerance = crv.Length / divisions;
+            bool keepOn = true;
+            int c = 0;
+            List<XYZ> ptList = new List<XYZ>();
+            ptList.Add(startPt);
+            if (startPt.IsAlmostEqualTo(endPt))
+            {
+                XYZ p1 = crv.Evaluate(0.25, true);
+                XYZ p2 = crv.Evaluate(0.5, true);
+                XYZ p3 = crv.Evaluate(0.75, true);
+                ptList.Add(p1);
+                ptList.Add(p2);
+                ptList.Add(p3);
+            }
+            ptList.Add(endPt);
+
+            double distance = 0;
+            double edgeLength = 0;
+            
+            while ((keepOn) && (c < 100))
+            {
+                keepOn = false;
+                for (int i = 0; i < ptList.Count - 1; i++)
+                {
+                    mPt = (ptList[i] + ptList[i + 1]) / 2;
+                    XYZ pPt = null;
+                    // Here can be dangerous situations
+                    try
+                    {
+                        pPt = crv.Project(mPt).XYZPoint;
+                    }
+                    catch { }
+
+                    if (null != pPt)
+                    {
+                        distance = pPt.DistanceTo(mPt);
+                        edgeLength = pPt.DistanceTo(ptList[i]);
+                        if (distance > tolerance &&
+                            edgeLength > Properties.Settings.Default.ShortCurveTolerance)
+                        {
+                            ptList.Insert(i + 1, pPt);
+                            keepOn = true;
+                            i++;
+                        }
+                    }
+                }
+
+                c++;
+            }
+            //Debug.Print("solution reached in {0} steps.", c + 1);
+            
+            return PolyLine.Create(ptList);
+        }
+
+        /// <summary>
+        /// Coonvert curve to polyline by curvature
+        /// </summary>
+        /// <param name="crv"></param>
+        /// <returns></returns>
+        public static PolyLine TessellateCurve(Curve crv)
+        {
+            List<XYZ> pts = new List<XYZ>(crv.Tessellate());
+            return PolyLine.Create(pts);
         }
     }
 }

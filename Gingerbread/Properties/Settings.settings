@@ -8,5 +8,8 @@
     <Setting Name="tolerance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.001</Value>
     </Setting>
+    <Setting Name="ShortCurveTolerance" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0.0025602645573</Value>
+    </Setting>
   </Settings>
 </SettingsFile>
