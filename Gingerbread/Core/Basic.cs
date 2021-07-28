@@ -319,6 +319,18 @@ namespace Gingerbread.Core
 
         #region Curve
 
+        public static double PolyLineLength(PolyLine ply)
+        {
+            if (ply == null) return 0;
+            double length = 0;
+            List<XYZ> pts = new List<XYZ>(ply.GetCoordinates());
+            for (int i = 0; i < pts.Count - 2; i++)
+            {
+                length += pts[i].DistanceTo(pts[i + 1]);
+            }
+            return length;
+        }
+
 
         /// <summary>
         /// Convert curve to shattered lines.

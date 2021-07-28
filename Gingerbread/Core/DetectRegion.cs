@@ -470,7 +470,7 @@ namespace Gingerbread.Core
 
             Debug.Print("Elements inside HCI are " + HCI.Count.ToString());
             Debug.Print("Elements inside HCN are " + HCN.Count.ToString());
-            Debug.Print("Elements in HCN: " + Util.JoinListString(HCN));
+            Debug.Print("Elements in HCN: " + Util.ListString(HCN));
 
             // Sequence half-curves into faces by running along "next" half-curves in order until the starting half-curve is returned to
             List<int> FaceEdges = new List<int>();

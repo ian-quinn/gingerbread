@@ -672,7 +672,7 @@ namespace Gingerbread
         }
 
 
-        public static string JoinListString(List<bool> list)
+        public static string ListString(List<bool> list)
         {
             string fusion = "";
             for (int index = 0; index < list.Count(); index++)
@@ -682,12 +682,32 @@ namespace Gingerbread
             return fusion;
         }
 
-        public static string JoinListString(List<int> list)
+        public static string ListString(List<int> list)
         {
             string fusion = "";
             for (int index = 0; index < list.Count(); index++)
             {
                 fusion = fusion + list[index].ToString() + " ";
+            }
+            return fusion;
+        }
+
+        public static string ListString(List<double> list)
+        {
+            string fusion = "";
+            for (int index = 0; index < list.Count(); index++)
+            {
+                fusion = fusion + list[index].ToString() + " ";
+            }
+            return fusion;
+        }
+
+        public static string ListString(List<XYZ> list)
+        {
+            string fusion = "";
+            for (int index = 0; index < list.Count(); index++)
+            {
+                fusion = fusion + PointString(list[index]) + " ";
             }
             return fusion;
         }
