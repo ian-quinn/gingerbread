@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Collections;
 using System.Linq;
+using System.IO;
 using System.Reflection;
 using WinForms = System.Windows.Forms;
 
@@ -12,6 +13,8 @@ using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
+
+using Gingerbread.Core;
 #endregion
 
 namespace Gingerbread
@@ -29,7 +32,7 @@ namespace Gingerbread
             }
             try
             {
-                Reference r = uidoc.Selection.PickObject(ObjectType.Element, "Please select " + description); 
+                Autodesk.Revit.DB.Reference r = uidoc.Selection.PickObject(ObjectType.Element, "Please select " + description); 
 
                 return uidoc.Document.GetElement(r);
             }
@@ -142,26 +145,31 @@ namespace Gingerbread
         #endregion
 
         #region Conversion
+
+        // Unit conversion
+
         /// <summary>
         /// Convert a given length in feet to milimeters.
         /// </summary>
         public static double FootToMm(double length) { return length * 304.8; }
-
+        public static double FootToM(double length) { return length * 0.3048; }
         /// <summary>
         /// Convert a given length in milimeters to feet.
         /// </summary>
         public static double MmToFoot(double length) { return length / 304.8; }
+        public static double MToFoot(double length) { return length / 0.3048; }
 
         /// <summary>
         /// Convert a given point or vector from milimeters to feet.
         /// </summary>
         public static XYZ MmToFoot(XYZ v) { return v.Divide(304.8); }
 
+
+        // Geometry types conversion
+
         /// <summary>
         /// Convert List of lines to List of curves
         /// </summary>
-        /// <param name="lines"></param>
-        /// <returns></returns>
         public static List<Curve> LinesToCrvs(List<Line> lines)
         {
             List<Curve> crvs = new List<Curve>();
@@ -171,12 +179,9 @@ namespace Gingerbread
             }
             return crvs;
         }
-
         /// <summary>
         /// Convert List of curves to List of lines
         /// </summary>
-        /// <param name="crvs"></param>
-        /// <returns></returns>
         public static List<Line> CrvsToLines(List<Curve> crvs)
         {
             List<Line> lines = new List<Line>();
@@ -185,6 +190,44 @@ namespace Gingerbread
                 lines.Add(crv as Line);
             }
             return lines;
+        }
+
+        public static gbXYZ gbXYZConvert(XYZ pt)
+        { return new gbXYZ(FootToM(pt.X), FootToM(pt.Y), FootToM(pt.Z)); }
+        public static XYZ gbXYZConvert(gbXYZ pt)
+        { return new XYZ(MToFoot(pt.X), MToFoot(pt.Y), MToFoot(pt.Z)); }
+        public static List<gbXYZ> gbXYZsConvert(List<XYZ> pts)
+        {
+            List<gbXYZ> gbPts = new List<gbXYZ>();
+            foreach (XYZ pt in pts)
+                gbPts.Add(gbXYZConvert(pt));
+            return gbPts;
+        }
+        public static List<XYZ> gbXYZsConvert(List<gbXYZ> gbPts)
+        {
+            List<XYZ> pts = new List<XYZ>();
+            foreach (gbXYZ gbPt in gbPts)
+                pts.Add(gbXYZConvert(gbPt));
+            return pts;
+        }
+        public static gbSeg gbSegConvert(Line line)
+        {
+            return new gbSeg(
+            gbXYZConvert(line.GetEndPoint(0)),
+            gbXYZConvert(line.GetEndPoint(1)) ); 
+        }
+        public static Line gbSegConvert(gbSeg seg)
+        {
+            return Line.CreateBound(
+            gbXYZConvert(seg.PointAt(0)),
+            gbXYZConvert(seg.PointAt(1)));
+        }
+        public static List<Curve> gbSegsConvert(List<gbSeg> segs)
+        {
+            List<Curve> crvs = new List<Curve>();
+            foreach (gbSeg seg in segs)
+                crvs.Add(gbSegConvert(seg) as Curve);
+            return crvs;
         }
 
         #endregion
@@ -245,32 +288,64 @@ namespace Gingerbread
         public static void SketchCurves(Document doc, List<Curve> crvs)
         {
             foreach(Curve crv in crvs)
+                doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+        }
+        public static void SketchSegs(Document doc, List<gbSeg> segs)
+        {
+            foreach (gbSeg seg in segs)
             {
+                Curve crv = gbSegConvert(seg) as Curve;
                 doc.Create.NewModelCurve(crv, PlaneWorld(doc));
             }
         }
-
+        public static void SketchMarker(Document doc, XYZ pt, double size = 1, string style = "O")
+        {
+            SketchPlane sketchPlane = PlaneWorld(doc);
+            XYZ flatPt = new XYZ(MToFoot(pt.X), MToFoot(pt.Y), 0);
+            if (style == "O")
+            {
+                XYZ xAxis = new XYZ(1, 0, 0);
+                XYZ yAxis = new XYZ(0, 1, 0);
+                doc.Create.NewModelCurve(Arc.Create(flatPt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
+            }
+            if (style == "X")
+            {
+                XYZ v = new XYZ(size, size, 0);
+                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
+                v = new XYZ(size, -size, 0);
+                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
+            }
+        }
+        public static void SketchMarkers(Document doc, gbXYZ gbPt, double size = 1, string style = "O")
+        {
+            SketchMarker(doc, gbXYZConvert(gbPt), size, style);
+        }
         public static void SketchMarkers(Document doc, List<XYZ> pts, double size = 1, string style = "O")
         {
             SketchPlane sketchPlane = PlaneWorld(doc);
             foreach(XYZ pt in pts)
             {
+                XYZ flatPt = new XYZ(MToFoot(pt.X), MToFoot(pt.Y), 0);
                 if (style == "O")
                 {
                     XYZ xAxis = new XYZ(1, 0, 0);
                     XYZ yAxis = new XYZ(0, 1, 0);
-                    doc.Create.NewModelCurve(Arc.Create(pt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
+                    doc.Create.NewModelCurve(Arc.Create(flatPt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
                 }
                 if (style == "X")
                 {
                     XYZ v = new XYZ(size, size, 0);
-                    doc.Create.NewModelCurve(Line.CreateBound(pt - v, pt + v), sketchPlane);
+                    doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
                     v = new XYZ(size, -size, 0);
-                    doc.Create.NewModelCurve(Line.CreateBound(pt - v, pt + v), sketchPlane);
+                    doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
                 }
             }
         }
-        
+        public static void SketchMarkers(Document doc, List<gbXYZ> pts, double size = 1, string style = "O")
+        {
+            SketchMarkers(doc, gbXYZsConvert(pts), size, style);
+        }
+
 
         // ----------------------DETAILLINE-------------------------
 
@@ -415,7 +490,7 @@ namespace Gingerbread
                 }
                 if (ptVisible)
                 {
-                    SketchMarkers(doc, vertices, 0.2, "O");
+                    //SketchMarkers(doc, vertices, 0.2, "O");
                 }
                 
                 TextNoteType tnt = new FilteredElementCollector(doc)
@@ -426,7 +501,6 @@ namespace Gingerbread
         }
 
         #endregion
-
 
         // Borrowed from BuildingCoder by JeremyTammick
         #region Formatting
@@ -715,5 +789,33 @@ namespace Gingerbread
 
         #endregion // Formatting
 
+        #region aux
+        /// <summary>
+        /// Log the debug information
+        /// </summary>
+        public static void LogPrint(string msg)
+        {
+            using (var sw = File.AppendText(@"E:\project\gingerbread\log.txt"))
+            {
+                sw.WriteLine(msg);
+            }
+        }
+
+        public static void Swap<T>(ref T left, ref T right)
+        {
+            T temp;
+            temp = left;
+            left = right;
+            right = temp;
+        }
+
+        public static List<T> FlattenList<T>(List<List<T>> nestedList)
+        {
+            List<T> flatList = new List<T>();
+            foreach (List<T> list in nestedList)
+                flatList.AddRange(list);
+            return flatList;
+        }
+        #endregion
     }
 }

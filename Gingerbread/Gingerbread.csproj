@@ -1,11 +1,17 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.props" Condition="Exists('packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.props')" />
+  <Import Project="packages\CefSharp.Common.65.0.1\build\CefSharp.Common.props" Condition="Exists('packages\CefSharp.Common.65.0.1\build\CefSharp.Common.props')" />
+  <Import Project="packages\cef.redist.x86.3.3325.1758\build\cef.redist.x86.props" Condition="Exists('packages\cef.redist.x86.3.3325.1758\build\cef.redist.x86.props')" />
+  <Import Project="packages\cef.redist.x64.3.3325.1758\build\cef.redist.x64.props" Condition="Exists('packages\cef.redist.x64.3.3325.1758\build\cef.redist.x64.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
       None
     </ResolveAssemblyWarnOrErrorOnTargetArchitectureMismatch>
     <TargetFrameworkProfile />
+    <NuGetPackageImportStamp>
+    </NuGetPackageImportStamp>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -28,6 +34,7 @@
     <WarningLevel>4</WarningLevel>
     <StartAction>Program</StartAction>
     <StartProgram>$(ProgramW6432)\Autodesk\Revit 2020\Revit.exe</StartProgram>
+    <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -39,6 +46,126 @@
     <StartAction>Program</StartAction>
     <StartProgram>$(ProgramW6432)\Autodesk\Revit 2020\Revit.exe</StartProgram>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
+    <DebugSymbols>true</DebugSymbols>
+    <OutputPath>bin\x64\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DebugType>full</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
+    <OutputPath>bin\x64\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <Optimize>true</Optimize>
+    <DebugType>pdbonly</DebugType>
+    <PlatformTarget>x64</PlatformTarget>
+    <LangVersion>7.3</LangVersion>
+    <ErrorReport>prompt</ErrorReport>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="App.cs" />
+    <Compile Include="BatchGeometry.cs" />
+    <Compile Include="CmdEmendo.cs" />
+    <Compile Include="CmdSimplifyCurve.cs" />
+    <Compile Include="CmdSketchBoundingbox.cs" />
+    <Compile Include="CmdSketchFootprint.cs" />
+    <Compile Include="CmdSketchLocation.cs" />
+    <Compile Include="CmdZippo.cs" />
+    <Compile Include="Core\Algorithm.cs" />
+    <Compile Include="Core\Basic.cs" />
+    <Compile Include="Core\BatchXML.cs" />
+    <Compile Include="Core\GBClass.cs" />
+    <Compile Include="Core\GBMethod.cs" />
+    <Compile Include="Core\OrthoHull.cs" />
+    <Compile Include="Core\PointAlign.cs" />
+    <Compile Include="Core\CurveSimplify.cs" />
+    <Compile Include="Core\SpaceDetect.cs" />
+    <Compile Include="Core\XMLGeometry.cs" />
+    <Compile Include="Core\XMLSchema.cs" />
+    <Compile Include="Core\XMLSerialization.cs" />
+    <Compile Include="ExtExportXML.cs" />
+    <Compile Include="Resources\lib\Clipper.cs" />
+    <Compile Include="UtilElementOfClassSelectionFilter.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
+    <Compile Include="Util.cs" />
+    <Compile Include="UtilButtonSwitch.cs" />
+    <Compile Include="Views\BaseWindow.cs" />
+    <Compile Include="CmdExportXML.cs" />
+    <Compile Include="Views\ExportXML.xaml.cs">
+      <DependentUpon>ExportXML.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Gingerbread.addin" />
+    <Resource Include="Resources\ico\Flask.ico" />
+    <Content Include="Resources\spider\fil-open-file-gbxml.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\gbx-gbxml-loader.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\OrbitControls.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\pop-up-gbxml.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\main.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\thr-threejs.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\three.min.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\spider\thru-threejs-utilities.js">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Resource Include="Resources\ico\Gingerbread.ico" />
+    <Resource Include="Resources\ico\RunShading.ico" />
+    <Resource Include="Resources\ico\RunMaterial.ico" />
+    <Resource Include="Resources\ico\Authentication.ico" />
+    <Resource Include="Resources\ico\Alpha.ico" />
+    <Resource Include="Resources\ico\CoreFormation.ico" />
+    <Resource Include="Resources\ico\RunExport.ico" />
+    <Resource Include="Resources\ico\RunReport.ico" />
+    <Resource Include="Resources\ico\RunSimulation.ico" />
+    <Resource Include="Resources\ico\RunViewer.ico" />
+    <Resource Include="Resources\ico\Prefix.ico" />
+    <Resource Include="Resources\ico\CoreDetectRegion.ico" />
+    <Resource Include="Resources\ico\CoreSplitHole.ico" />
+    <Resource Include="Resources\ico\CoreSimplifyCurve.ico" />
+    <Resource Include="Resources\ico\SketchBoundingbox.ico" />
+    <Resource Include="Resources\ico\SketchLocation.ico" />
+    <Resource Include="Resources\ico\SketchFootprint.ico" />
+    <Resource Include="Resources\ico\Anchor.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Page Include="Views\BaseWindowStyle.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ExportXML.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
@@ -54,73 +181,15 @@
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
     <Reference Include="WindowsBase" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="App.cs" />
-    <Compile Include="CmdCoreFormation.cs" />
-    <Compile Include="CmdCoreSimplifyCurve.cs" />
-    <Compile Include="CmdCoreSplitHole.cs" />
-    <Compile Include="CmdPatchBoundary.cs" />
-    <Compile Include="CmdSketchBoundingbox.cs" />
-    <Compile Include="CmdSketchFootprint.cs" />
-    <Compile Include="CmdSketchLocation.cs" />
-    <Compile Include="CmdZippo.cs" />
-    <Compile Include="Core\Algorithm.cs" />
-    <Compile Include="Core\Basic.cs" />
-    <Compile Include="Core\SimplifyCurve.cs" />
-    <Compile Include="UtilElementOfClassSelectionFilter.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="Properties\Settings.Designer.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTimeSharedInput>True</DesignTimeSharedInput>
-      <DependentUpon>Settings.settings</DependentUpon>
-    </Compile>
-    <Compile Include="Core\DetectRegion.cs" />
-    <Compile Include="Util.cs" />
-    <Compile Include="UtilButtonSwitch.cs" />
-    <Compile Include="Views\BaseWindow.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="Gingerbread.addin" />
-    <Resource Include="Resources\ico\RunExtrusion.ico" />
-    <Resource Include="Resources\ico\Alpha.ico" />
-    <Resource Include="Resources\ico\RunShading.ico" />
-    <Resource Include="Resources\ico\CoreFormation.ico" />
-    <Resource Include="Resources\ico\Authentication.ico" />
-    <Resource Include="Resources\ico\RunExport.ico" />
-    <Resource Include="Resources\ico\RunReport.ico" />
-    <Resource Include="Resources\ico\RunSimulation.ico" />
-    <Resource Include="Resources\ico\RunViewer.ico" />
-    <Resource Include="Resources\ico\Prefix.ico" />
-    <Resource Include="Resources\ico\CoreDetectRegion.ico" />
-    <Resource Include="Resources\ico\CoreSplitHole.ico" />
-    <Resource Include="Resources\ico\CoreSimplifyCurve.ico" />
-    <Resource Include="Resources\ico\SketchBoundingbox.ico" />
-    <Resource Include="Resources\ico\SketchLocation.ico" />
-    <Resource Include="Resources\ico\SketchFootprint.ico" />
-    <Resource Include="Resources\ico\Anchor.ico" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Resources\lib\" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="app.config" />
-    <None Include="Properties\Settings.settings">
-      <Generator>SettingsSingleFileGenerator</Generator>
-      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Page Include="Views\BaseWindowStyle.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if exist "$(AppData)\Autodesk\REVIT\Addins\2020" copy "$(ProjectDir)*.addin" "$(AppData)\Autodesk\REVIT\Addins\2020"
-if exist "$(AppData)\Autodesk\REVIT\Addins\2020" copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\2020"</PostBuildEvent>
+if exist "$(AppData)\Autodesk\REVIT\Addins\2020" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
+copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
+copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread\Spider"</PostBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
@@ -133,4 +202,17 @@ if exist "$(AppData)\Autodesk\REVIT\Addins\2020" copy "$(ProjectDir)$(OutputPath
     <Delete Files="$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread.addin" />
     <Delete Files="$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread.dll" />
   </Target>
+  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
+    <PropertyGroup>
+      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
+    </PropertyGroup>
+    <Error Condition="!Exists('packages\cef.redist.x64.3.3325.1758\build\cef.redist.x64.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\cef.redist.x64.3.3325.1758\build\cef.redist.x64.props'))" />
+    <Error Condition="!Exists('packages\cef.redist.x86.3.3325.1758\build\cef.redist.x86.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\cef.redist.x86.3.3325.1758\build\cef.redist.x86.props'))" />
+    <Error Condition="!Exists('packages\CefSharp.Common.65.0.1\build\CefSharp.Common.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CefSharp.Common.65.0.1\build\CefSharp.Common.props'))" />
+    <Error Condition="!Exists('packages\CefSharp.Common.65.0.1\build\CefSharp.Common.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CefSharp.Common.65.0.1\build\CefSharp.Common.targets'))" />
+    <Error Condition="!Exists('packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.props')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.props'))" />
+    <Error Condition="!Exists('packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.targets')" Text="$([System.String]::Format('$(ErrorText)', 'packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.targets'))" />
+  </Target>
+  <Import Project="packages\CefSharp.Common.65.0.1\build\CefSharp.Common.targets" Condition="Exists('packages\CefSharp.Common.65.0.1\build\CefSharp.Common.targets')" />
+  <Import Project="packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.targets" Condition="Exists('packages\CefSharp.Wpf.65.0.1\build\CefSharp.Wpf.targets')" />
 </Project>

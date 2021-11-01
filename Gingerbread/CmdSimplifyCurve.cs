@@ -12,7 +12,7 @@ using Autodesk.Revit.UI.Selection;
 namespace Gingerbread
 {
     [Transaction(TransactionMode.Manual)]
-    class CmdCoreSimplifyCurve : IExternalCommand
+    class CmdSimplifyCurve : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
@@ -67,7 +67,7 @@ namespace Gingerbread
                 // For now we test polyline and bezier separately for different algorithm choices
                 foreach (PolyLine ply in plys)
                 {
-                    simplePlys.Add(Core.SimplifyCurve.DouglasPeuckerReduction(ply, Util.MmToFoot(1000)));
+                    simplePlys.Add(Core.CurveSimplify.DouglasPeuckerReduction(ply, Util.MmToFoot(1000)));
                 }
                 //foreach (Curve crv in crvs)
                 //{
@@ -102,7 +102,7 @@ namespace Gingerbread
                     return Result.Cancelled;
                 }
                 ModelCurve mc = e as ModelCurve;
-                PolyLine simplePly = Core.SimplifyCurve.MaxLengthReduction(mc.GeometryCurve, 10);
+                PolyLine simplePly = Core.CurveSimplify.MaxLengthReduction(mc.GeometryCurve, 10);
                 using (Transaction tx = new Transaction(doc, "Draw simplified polyline"))
                 {
                     tx.Start();

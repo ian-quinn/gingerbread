@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en" style="overflow:hidden;">
+	<head>
+		<meta charset="utf-8" >
+		<meta name="viewport" content = "width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0" >
+		<meta name=description content="Open, view and examine gbXML files in 3D in your browser with free, open source entry-level Three.js JavaScript" >
+		<meta name=keywords content="gbXML,Spider,Ladybug.tools,Three.js,WebGL,JavaScript,GitHub,FOSS,3D,STEM" >
+		<meta name = "date" content = "2018-11-15" >
+		<title>Spider gbXML Viewer R7.8 Basic</title>
+		<link rel="stylesheet" href="../../lib/r7/style.css">
+		<!-- Global site tag (gtag.js) - Google Analytics -->
+		<script async src="https://www.googletagmanager.com/gtag/js?id=UA-129035557-4"></script>
+		<script>
+		  window.dataLayer = window.dataLayer || [];
+		  function gtag(){dataLayer.push(arguments);}
+		  gtag('js', new Date());
+
+		  gtag('config', 'UA-129035557-4');
+		</script>
+	</head>
+
+<body>
+	<script src = "three.min.js" ></script>
+	<script src = "OrbitControls.js" ></script>
+	<script src = "thr-threejs.js" ></script>
+	<script src = "thru-threejs-utilities.js"></script>
+	<script src = "gbx-gbxml-loader.js" ></script>
+	<script src = "fil-open-file-gbxml.js" ></script>
+
+	<main id="container" ></main>
+	<div id="divFileOpen" class="dragDropArea" style="position:absolute; top:0px; left:10px"></div>
+	<script>
+		//MNU.urlSourceCode = "https://github.com/ladybug-tools/spider-gbxml-tools/tree/master/gbxml-viewer-basic/";
+		//FIL.urlDefaultFile = 'https://www.ladybug.tools/spider/gbxml-sample-files/bristol-clifton-downs-fixed.xml';
+		init();
+		THR.animate();
+		function init() {
+			divFileOpen.innerHTML = FIL.getFileOpen(); // if needed: set file info target
+			THR.getThreejs();
+			THRU.setHelpers();
+			THRU.addSomeLights();
+			// loads a default file / great for testing same file many times
+			const thrFilePath = localStorage.getItem('thrFilePath') || '';
+			FILinpFilePath.value = thrFilePath;
+			FIL.urlDefaultFile = thrFilePath || FIL.urlDefaultFile;
+			if (!location.hash) { location.hash = FIL.urlDefaultFile; } else { FIL.onHashChange(); }
+			//location.hash = urlDefaultFile;
+		}
+
+	</script>
+</body>
+</html>

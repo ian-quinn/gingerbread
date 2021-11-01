@@ -10,7 +10,7 @@ using Autodesk.Revit.DB;
 
 namespace Gingerbread.Core
 {
-    class SimplifyCurve
+    class CurveSimplify
     {
         /// <summary>
         /// Coonvert curve to polyline by curvature

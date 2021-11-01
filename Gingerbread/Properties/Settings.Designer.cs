@@ -58,5 +58,77 @@ namespace Gingerbread.Properties {
                 this["ShortCurveTolerance"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
+        public double groupTolerance {
+            get {
+                return ((double)(this["groupTolerance"]));
+            }
+            set {
+                this["groupTolerance"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
+        public double expandTolerance {
+            get {
+                return ((double)(this["expandTolerance"]));
+            }
+            set {
+                this["expandTolerance"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double latticeTheta {
+            get {
+                return ((double)(this["latticeTheta"]));
+            }
+            set {
+                this["latticeTheta"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
+        public double latticeDelta {
+            get {
+                return ((double)(this["latticeDelta"]));
+            }
+            set {
+                this["latticeDelta"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1E-06")]
+        public double doubleTolerance {
+            get {
+                return ((double)(this["doubleTolerance"]));
+            }
+            set {
+                this["doubleTolerance"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string SpiderPath {
+            get {
+                return ((string)(this["SpiderPath"]));
+            }
+            set {
+                this["SpiderPath"] = value;
+            }
+        }
     }
 }

@@ -441,7 +441,7 @@ namespace Gingerbread.Core
         public static List<PolyLine> JoinLineByCluster(List<Line> lines)
         {
             List<PolyLine> plys = new List<PolyLine>();
-            
+
             List<Line> remains = lines.ToList();
             List<Line> _lines;
 

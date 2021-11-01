@@ -24,15 +24,15 @@ namespace Gingerbread.Views
         {
             var resourceDict = new ResourceDictionary
             {
-                Source = new Uri("pack://application:,,,/Manicotti;component/Views/BaseWindowStyle.xaml", UriKind.Absolute)
+                Source = new Uri("pack://application:,,,/Gingerbread;component/Views/BaseWindowStyle.xaml", UriKind.Absolute)
             };
             ControlTemplate baseTemplate = resourceDict["BaseWindowControlTemplate"] as ControlTemplate;
 
-            Button minBtn = this.Template.FindName("MinimizeButton", this) as Button;
-            minBtn.Click += delegate
-            {
-                this.WindowState = WindowState.Minimized;
-            };
+            //Button minBtn = this.Template.FindName("MinimizeButton", this) as Button;
+            //minBtn.Click += delegate
+            //{
+            //    this.WindowState = WindowState.Minimized;
+            //};
 
             Button closeBtn = this.Template.FindName("CloseButton", this) as Button;
             closeBtn.Click += delegate
@@ -63,14 +63,14 @@ namespace Gingerbread.Views
             //};
 
             TextBlock titleBar = this.Template.FindName("txtTitle", this) as TextBlock;
-            titleBar.Text = "Manicotti";
+            titleBar.Text = "Gingerbread";
         }
 
         private void InitializeStyle()
         {
             var resourceDict = new ResourceDictionary
             {
-                Source = new Uri("pack://application:,,,/Manicotti;component/Views/BaseWindowStyle.xaml", UriKind.Absolute)
+                Source = new Uri("pack://application:,,,/Gingerbread;component/Views/BaseWindowStyle.xaml", UriKind.Absolute)
             };
             this.Style = resourceDict["BaseWindowStyle"] as Style;
         }
