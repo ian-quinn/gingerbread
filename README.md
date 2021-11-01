@@ -22,13 +22,12 @@ gingerbread
   └ Gingerbread.addin  - App manifest
 ```
 
-**Dependencies** in use
-[Clipper](http://www.angusj.com/delphi/clipper.php) 6.1.3  
-[CefSharp](https://github.com/cefsharp/CefSharp) 65.0.1  
-[spider-gbXML-tools](https://github.com/ladybug-tools/spider-gbxml-tools) basic V7  
-Currently the spider is under test thus not fully embedded  
+**Dependencies**  
+- [Clipper](http://www.angusj.com/delphi/clipper.php) 6.1.3  
+- [CefSharp](https://github.com/cefsharp/CefSharp) 65.0.1  
+- [spider-gbXML-tools](https://github.com/ladybug-tools/spider-gbxml-tools) basic V7  
 
-**Compile** the code
+**Compile**  
 - Revit 2020 - ChefSharp 65.0.1 - Visual Studio 2019
 - Make sure the Build/Debug platform is switched to either x64 or x86
 - Post-build event settings
@@ -41,4 +40,4 @@ copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVI
 
 **Demo**
 Still buggy right now but it works with the Revit sample file `Technical_school-current_m.rvt`  
-[![Snapshot](https://i.postimg.cc/505qQ1n5/Artboard-1.jpg)](https://postimg.cc/0MQJLggr)
+![Snapshot](https://i.postimg.cc/505qQ1n5/Artboard-1.jpg)
