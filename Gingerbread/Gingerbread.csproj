@@ -85,6 +85,7 @@
     <Compile Include="Core\XMLGeometry.cs" />
     <Compile Include="Core\XMLSchema.cs" />
     <Compile Include="Core\XMLSerialization.cs" />
+    <Compile Include="ExtEmendo.cs" />
     <Compile Include="ExtExportXML.cs" />
     <Compile Include="Resources\lib\Clipper.cs" />
     <Compile Include="UtilElementOfClassSelectionFilter.cs" />
@@ -98,6 +99,9 @@
     <Compile Include="UtilButtonSwitch.cs" />
     <Compile Include="Views\BaseWindow.cs" />
     <Compile Include="CmdExportXML.cs" />
+    <Compile Include="Views\Emendo.xaml.cs">
+      <DependentUpon>Emendo.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ExportXML.xaml.cs">
       <DependentUpon>ExportXML.xaml</DependentUpon>
     </Compile>
@@ -161,6 +165,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\Emendo.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\ExportXML.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -187,7 +195,7 @@
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>if exist "$(AppData)\Autodesk\REVIT\Addins\2020" copy "$(ProjectDir)*.addin" "$(AppData)\Autodesk\REVIT\Addins\2020"
-if exist "$(AppData)\Autodesk\REVIT\Addins\2020" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
+if exist "$(AppData)\Autodesk\REVIT\Addins\2020" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread\Spider"
 copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
 copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread\Spider"</PostBuildEvent>
   </PropertyGroup>

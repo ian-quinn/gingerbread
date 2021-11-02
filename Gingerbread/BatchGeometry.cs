@@ -86,6 +86,7 @@ namespace Gingerbread
                 if (levels[i].height == 0)
                     levels.RemoveAt(i);
 
+            
 
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
@@ -199,8 +200,19 @@ namespace Gingerbread
                 }
             }
 
+            // DEBUG
+            string outputInfo = "";
+            for (int i = 0; i < levels.Count; i++)
+            {
+                outputInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} \n";
+                outputInfo += $"    numCol-{dictColumn[i].Count} numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count} \n";
+                outputInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count} \n";
+            }
+            outputInfo += "Done model check.";
+            Properties.Settings.Default.checkInfo = outputInfo;
+
             // feedback
-            System.Windows.MessageBox.Show("Information pre-processed.", "Info");
+            //System.Windows.MessageBox.Show("Information pre-processed.", "Info");
             return;
         }
     }

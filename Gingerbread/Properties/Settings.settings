@@ -2,12 +2,6 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="Gingerbread.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="jointRadius" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">50</Value>
-    </Setting>
-    <Setting Name="tolerance" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.001</Value>
-    </Setting>
     <Setting Name="ShortCurveTolerance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.0025602645573</Value>
     </Setting>
@@ -27,6 +21,9 @@
       <Value Profile="(Default)">1E-06</Value>
     </Setting>
     <Setting Name="SpiderPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="checkInfo" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
   </Settings>

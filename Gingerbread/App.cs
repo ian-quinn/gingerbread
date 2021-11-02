@@ -66,7 +66,7 @@ namespace Gingerbread
             BitmapImage runShadingImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunShading.ico", UriKind.Absolute));
             runShading.Image = runShadingImg;
 
-            PushButtonData runViewer = new PushButtonData("runViewer", "Viewer    ",
+            PushButtonData runViewer = new PushButtonData("runViewer", "Preview  ",
                 thisAssemblyPath, "Gingerbread.CmdZippo");
             runViewer.ToolTip = "Call up the Spider to check the gbXML";
             BitmapImage runViewerImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunViewer.ico", UriKind.Absolute));
@@ -113,6 +113,8 @@ namespace Gingerbread
             runReport.Image = runReportImg;
 
             IList<RibbonItem> stackedServer = modelServer.AddStackedItems(runServer, runSimulation, runReport);
+            stackedServer[1].Enabled = false;
+            stackedServer[2].Enabled = false;
 
             modelServer.Enabled = true;
 

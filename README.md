@@ -10,7 +10,7 @@ gingerbread
 └ /Gingerbread
   ├ /Properties   - Assembly info
   ├ /Resources
-  │ ├ /Icon       - Icons
+  │ ├ /ico        - Icons
   │ ├ /lib        - Clipper.cs
   │ └ /spider     - spider gbXML viewer
   ├ /Views        - WPF
@@ -29,15 +29,15 @@ gingerbread
 
 **Compile**  
 - Revit 2020 - ChefSharp 65.0.1 - Visual Studio 2019
-- Make sure the Build/Debug platform is switched to either x64 or x86
-- Post-build event settings
+- Make sure the Build/Debug platform is switched to x64
+- Post-build event settings:
 ```bash
 if exist "$(AppData)\Autodesk\REVIT\Addins\2020" copy "$(ProjectDir)*.addin" "$(AppData)\Autodesk\REVIT\Addins\2020"
-if exist "$(AppData)\Autodesk\REVIT\Addins\2020" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
+if exist "$(AppData)\Autodesk\REVIT\Addins\2020" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread" mkdir "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread\Spider"
 copy "$(ProjectDir)$(OutputPath)*.dll" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread"
 copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVIT\Addins\2020\Gingerbread\Spider"
 ```
 
-**Demo**
+**Demo**  
 Still buggy right now but it works with the Revit sample file `Technical_school-current_m.rvt`  
 ![Snapshot](https://i.postimg.cc/505qQ1n5/Artboard-1.jpg)

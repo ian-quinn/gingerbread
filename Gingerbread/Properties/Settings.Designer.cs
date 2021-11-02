@@ -25,30 +25,6 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("50")]
-        public double jointRadius {
-            get {
-                return ((double)(this["jointRadius"]));
-            }
-            set {
-                this["jointRadius"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.001")]
-        public double tolerance {
-            get {
-                return ((double)(this["tolerance"]));
-            }
-            set {
-                this["tolerance"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.0025602645573")]
         public double ShortCurveTolerance {
             get {
@@ -128,6 +104,18 @@ namespace Gingerbread.Properties {
             }
             set {
                 this["SpiderPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string checkInfo {
+            get {
+                return ((string)(this["checkInfo"]));
+            }
+            set {
+                this["checkInfo"] = value;
             }
         }
     }
