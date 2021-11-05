@@ -12,12 +12,12 @@ gingerbread
   ├ /Resources
   │ ├ /ico        - Icons
   │ ├ /lib        - Clipper.cs
-  │ └ /spider     - spider gbXML viewer
+  │ └ /spider     - Spider gbXML viewer
   ├ /Views        - WPF
-  ├ /Core         - reserved mehtod
+  ├ /Core         - Reserved mehtod
   ├ App.cs        - App entry
   ├ Cmd*.cs       - Button entry
-  ├ Ext*.cs       - External command for WPF
+  ├ Ext*.cs       - External event
   ├ Util*.cs      - Utility method
   └ Gingerbread.addin  - App manifest
 ```
@@ -41,3 +41,12 @@ copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVI
 **Demo**  
 Still buggy right now but it works with the Revit sample file `Technical_school-current_m.rvt`  
 ![Snapshot](https://i.postimg.cc/505qQ1n5/Artboard-1.jpg)
+
+**Note**  
+There is something I though might be useful for beginners with the Revit addin development. I'll leave the notes here.
+- All WPF windows interit from one basewindow class where the border and title bar are customized. You may refer to `BaseWindow.cs` and `BaseWindowStyle.xaml` and see how that works.
+- We use `Properties.Settings.Default` to cache some user settings and bind them in XAML textbox.
+- External events are called by clicking the button on WPF window. Likely, with `Delegate` and `Dispatcher`, a progressbar is added to the main window monitoring the processing of an external event. `DoEvent` is not optimal. Here's a greate sample of this kind of progressbar: [engthiago/WPFMonitorRevitAPI](https://github.com/engthiago/WPFMonitorRevitAPI)
+- Several ways to implement the embedded Web browser. 1. Using CefSharp in line with Revit and call local website dynamically (in .cs), but I don't know how to pass variable to JavaScript because there seems a conflict between addin and Revit when initializing a browser. 2. Still with CefSharp but initializing local website within XAML. This is the current solution. Without the data communication users have to load XML manually which is dumb. 3. Try other C# dependencies like DotNetBrowser that has no conflicts with Revit (Not free). 4. Open up another process for addin's CefSharp. Refer to [Kim Sivonen](https://forums.autodesk.com/t5/revit-api-forum/revit-2019-1-add-in-and-cefsharp-library/td-p/8205740)
+
+If you got better solution please let me know Many thanks.  

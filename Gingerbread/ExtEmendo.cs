@@ -10,6 +10,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 
 using Gingerbread.Core;
+using Gingerbread.Views;
 #endregion
 
 namespace Gingerbread
@@ -17,11 +18,10 @@ namespace Gingerbread
     [Transaction(TransactionMode.Manual)]
     public class ExtEmendo : IExternalEventHandler
     {
-        public string targetValue { get; set; }
+        public ViewEmendo CurrentUI { get; set; }
+        public ProgressBarControl CurrentControl { get; set; }
 
-        public ExtEmendo(UIApplication uiapp)
-        {
-        }
+        public ExtEmendo() { }
 
         public void Execute(UIApplication uiapp)
         {
@@ -35,11 +35,16 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
-                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor);
+                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
+                out string checkInfo);
+
+            CurrentControl.CurrentContext = checkInfo;
+            CurrentUI.DataContext = CurrentControl;
+            CurrentUI.Show();
 
             // ----------------------------------- Part C ends here ----------------------------------------//
 
-
+            
             List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[0]);
 
             for (int i = 0; i < flatLines.Count; i++)
@@ -71,13 +76,17 @@ namespace Gingerbread
                 //System.Windows.MessageBox.Show("Shattered lines: " + lineShatters.Count + " at F-", "Warning");
                 break;
             }
+            
 
-            using (Transaction tx = new Transaction(doc, "Sketch locations"))
-            {
-                tx.Start();
-                Util.SketchSegs(doc, lineShatters);
-                tx.Commit();
-            }
+            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //{
+            //    tx.Start();
+            //    foreach (List<gbSeg> floor in nestedFloor[0])
+            //    {
+            //        Util.SketchSegs(doc, floor);
+            //    }
+            //    tx.Commit();
+            //}
         }
 
         public string GetName()

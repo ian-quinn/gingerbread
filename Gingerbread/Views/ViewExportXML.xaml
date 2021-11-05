@@ -1,0 +1,138 @@
+﻿<src:BaseWindow x:Class="Gingerbread.Views.ViewExportXML"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:wpf="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:src="clr-namespace:Gingerbread.Views"
+             xmlns:p="clr-namespace:Gingerbread.Properties"
+             mc:Ignorable="d"
+             WindowStartupLocation="Manual"
+             Background="White"
+             Height="500" Width="930"
+             SizeToContent="WidthAndHeight"
+             WindowStyle="None" AllowsTransparency="True">
+
+    <Window.Resources>
+        <ResourceDictionary>
+        </ResourceDictionary>
+    </Window.Resources>
+
+    <Grid Background="#fff">
+        <Grid.RowDefinitions>
+            <RowDefinition Height ="*"/>
+            <RowDefinition Height ="35"/>
+            <RowDefinition Height ="5"/>
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
+            <StackPanel Orientation="Vertical">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="250">
+                    <GroupBox.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
+                        </DataTemplate>
+                    </GroupBox.HeaderTemplate>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0 0 5 0">
+                            <TextBlock Text="Address" Margin="0 4 0 5"/>
+                            <TextBlock Text="Latitude" Margin="0 4 0 5"/>
+                            <TextBlock Text="Elevation" Margin="0 5 0 5"/>
+                            <TextBlock Text="Longitude" Margin="0 5 0 5"/>
+                            <TextBlock Text="Building Name" Margin="0 5 0 5"/>
+                            <TextBlock Text="Project No." Margin="0 5 0 5"/>
+                            <TextBlock Text="Author" Margin="0 5 0 5"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="5 0 0 0">
+                            <TextBox Name="locationName" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="latitude" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="longitude" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="elevation" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="nameBuilding" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="numProject" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="author" Padding="2" Text="" Margin="0 2 0 2"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox Header="Tolerance" Margin="0 5 0 0" Padding="5" Width="200" Height="150">
+                    <GroupBox.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
+                        </DataTemplate>
+                    </GroupBox.HeaderTemplate>
+
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="1*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <StackPanel Grid.Column="0" Margin="0 0 5 0">
+                            <TextBlock Text="Cluster" Margin="0 4 0 5"/>
+                            <TextBlock Text="Expansion" Margin="0 4 0 5"/>
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="1" Margin="5 0 0 0">
+                            <TextBox Name="cluster" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
+            Path=groupTolerance, Mode=TwoWay}" Margin="0 2 0 2"/>
+                            <TextBox Name="expansion" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
+            Path=expandTolerance, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        </StackPanel>
+                    </Grid>
+                </GroupBox>
+
+                <Grid Margin="0 10 0 0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1*"/>
+                        <ColumnDefinition Width="10"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0">
+                        <Button Content="Apply" IsEnabled="False"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="2">
+                        <Button Content="Reset" IsEnabled="False"/>
+                    </StackPanel>
+                </Grid>
+
+            </StackPanel>
+
+
+            <GroupBox Header="Preview" Margin="5 0 0 0" Padding="3" Width="700">
+                    <GroupBox.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
+                        </DataTemplate>
+                    </GroupBox.HeaderTemplate>
+                    <Grid Name="ViewPort">
+                        <wpf:ChromiumWebBrowser Address="{Binding Source={x:Static p:Settings.Default}, Path=SpiderPath, Mode=OneWay}"/>
+                    </Grid>
+                </GroupBox>
+            </StackPanel>
+
+        <Grid Grid.Row="1" Margin="5">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="10"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Grid.Column="0" x:Name="txtStatus" Text="{Binding CurrentContext}" VerticalAlignment="Center" Margin="5 0 5 0"/>
+            <Button Grid.Column="1" x:Name="btnGenerate" Content="Generate" Click="BtnGenerate" Margin="0 0 5 5"/>
+            <Button Grid.Column="1" x:Name="btnCancel" Content="Cancel" Click="BtnCancel" Visibility="Collapsed" IsCancel="True" Margin="0 0 5 5"/>
+            <Button Grid.Column="2" Content="Save as" Click="BtnSaveAs" Margin="5 0 0 5"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <ProgressBar x:Name="progressBar" Value="{Binding CurrentValue}" Maximum="{Binding MaxValue}" Foreground="#b6572a"/>
+        </Grid>
+    </Grid>
+</src:BaseWindow>

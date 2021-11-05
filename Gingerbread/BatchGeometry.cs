@@ -32,7 +32,8 @@ namespace Gingerbread
             out Dictionary<int, List<gbSeg>> dictCurtain, 
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
-            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor)
+            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
+            out string checkInfo)
         {
             // initiate variables for output
             dictElevation = new Dictionary<int, Tuple<string, double>>();
@@ -201,15 +202,14 @@ namespace Gingerbread
             }
 
             // DEBUG
-            string outputInfo = "";
+            checkInfo = "";
             for (int i = 0; i < levels.Count; i++)
             {
-                outputInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} \n";
-                outputInfo += $"    numCol-{dictColumn[i].Count} numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count} \n";
-                outputInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count} \n";
+                checkInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} \n";
+                checkInfo += $"    numCol-{dictColumn[i].Count} numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count} \n";
+                checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count} \n";
             }
-            outputInfo += "Done model check.";
-            Properties.Settings.Default.checkInfo = outputInfo;
+            checkInfo += "Done model check.";
 
             // feedback
             //System.Windows.MessageBox.Show("Information pre-processed.", "Info");

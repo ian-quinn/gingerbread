@@ -99,12 +99,13 @@
     <Compile Include="UtilButtonSwitch.cs" />
     <Compile Include="Views\BaseWindow.cs" />
     <Compile Include="CmdExportXML.cs" />
-    <Compile Include="Views\Emendo.xaml.cs">
-      <DependentUpon>Emendo.xaml</DependentUpon>
+    <Compile Include="Views\ViewEmendo.xaml.cs">
+      <DependentUpon>ViewEmendo.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Views\ExportXML.xaml.cs">
-      <DependentUpon>ExportXML.xaml</DependentUpon>
+    <Compile Include="Views\ViewExportXML.xaml.cs">
+      <DependentUpon>ViewExportXML.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Views\ProgressBarControl.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Gingerbread.addin" />
@@ -165,11 +166,11 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\Emendo.xaml">
+    <Page Include="Views\ViewEmendo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Views\ExportXML.xaml">
+    <Page Include="Views\ViewExportXML.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

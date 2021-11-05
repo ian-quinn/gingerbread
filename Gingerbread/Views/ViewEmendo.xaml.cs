@@ -16,32 +16,33 @@ namespace Gingerbread.Views
     /// <summary>
     /// Interaction logic for ExportSetting.xaml
     /// </summary>
-    public partial class Emendo : BaseWindow
+    public partial class ViewEmendo : BaseWindow
     {
         // field
         public ExternalEvent ExEvent;
         public ExtEmendo extEmendo;
 
         // constructor
-        public Emendo(UIApplication uiapp)
+        public ViewEmendo()
         {
             InitializeComponent();
 
-            extEmendo = new ExtEmendo(uiapp);
+            extEmendo = new ExtEmendo();
+            extEmendo.CurrentUI = this;
+            extEmendo.CurrentControl = new ProgressBarControl();
+            extEmendo.CurrentControl.CurrentContext = "Ready";
             ExEvent = ExternalEvent.Create(extEmendo);
+
         }
 
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {
-            Properties.Settings.Default.checkInfo = "";
-            Properties.Settings.Default.Save();
             this.Close();
         }
 
         private void BtnCheck(object sender, RoutedEventArgs e)
         {
-            //extEmendo.targetValue = "layerFrame";
             ExEvent.Raise();
         }
     }

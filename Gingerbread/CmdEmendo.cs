@@ -21,7 +21,7 @@ namespace Gingerbread
             //Properties.Settings.Default.url_install = UtilGetInstallPath.Execute(app);
             Properties.Settings.Default.checkInfo = "";
 
-            Views.Emendo fixer = new Views.Emendo(uiapp);
+            Views.ViewEmendo fixer = new Views.ViewEmendo();
 
             System.Windows.Interop.WindowInteropHelper mainUI = new System.Windows.Interop.WindowInteropHelper(fixer);
             mainUI.Owner = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;

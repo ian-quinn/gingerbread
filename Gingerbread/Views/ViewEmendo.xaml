@@ -1,4 +1,4 @@
-﻿<src:BaseWindow x:Class="Gingerbread.Views.Emendo"
+﻿<src:BaseWindow x:Class="Gingerbread.Views.ViewEmendo"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -35,7 +35,7 @@
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <Button Grid.Column="0" Content="Fix" Margin="0 5 5 0"/>
+                    <Button Grid.Column="0" Content="Fix" Margin="0 5 5 0" IsEnabled="False"/>
                     <Button Grid.Column="1" Content="Check" Margin="5 5 0 0" Click="BtnCheck"/>
                 </Grid>
 
@@ -58,7 +58,7 @@
                     </GroupBox.HeaderTemplate>
                     <StackPanel>
                         <TextBox Name="InfoBox" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=checkInfo, Mode=OneWay}" 
+                                 Text="{Binding CurrentContext}" 
                                  Margin="0 2 0 2" Height="128" BorderThickness="0"/>
                     </StackPanel>
                 </GroupBox>
