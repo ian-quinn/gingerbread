@@ -36,6 +36,7 @@ namespace Gingerbread
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
+                out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
                 out string checkInfo);
 
             CurrentControl.CurrentContext = checkInfo;
@@ -45,48 +46,47 @@ namespace Gingerbread
             // ----------------------------------- Part C ends here ----------------------------------------//
 
             
-            List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[0]);
+            //List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[0]);
 
-            for (int i = 0; i < flatLines.Count; i++)
-                for (int j = 0; j < flatLines.Count; j++)
-                    if (i != j)
-                        flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
-                            Properties.Settings.Default.expandTolerance);
-            //Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+            //for (int i = 0; i < flatLines.Count; i++)
+            //    for (int j = 0; j < flatLines.Count; j++)
+            //        if (i != j)
+            //            flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
+            //                Properties.Settings.Default.expandTolerance);
+            ////Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
-            List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
-                Properties.Settings.Default.groupTolerance);
-            List<gbSeg> orphans = new List<gbSeg>();
-            // dump some orphan segments that will be processed later
-            for (int i = lineGroups.Count - 1; i >= 0; i--)
-            {
-                if (lineGroups[i].Count <= 3)
-                {
-                    orphans.AddRange(lineGroups[i]);
-                    lineGroups.RemoveAt(i);
-                }
-            }
-
-            List<gbSeg> lineShatters = new List<gbSeg>();
-
-            // enter point alignment and space detection of each segment group
-            foreach (List<gbSeg> lineGroup in lineGroups)
-            {
-                lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroup), 0.0001);
-                //System.Windows.MessageBox.Show("Shattered lines: " + lineShatters.Count + " at F-", "Warning");
-                break;
-            }
-            
-
-            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
+            //    Properties.Settings.Default.groupTolerance);
+            //List<gbSeg> orphans = new List<gbSeg>();
+            //// dump some orphan segments that will be processed later
+            //for (int i = lineGroups.Count - 1; i >= 0; i--)
             //{
-            //    tx.Start();
-            //    foreach (List<gbSeg> floor in nestedFloor[0])
+            //    if (lineGroups[i].Count <= 3)
             //    {
-            //        Util.SketchSegs(doc, floor);
+            //        orphans.AddRange(lineGroups[i]);
+            //        lineGroups.RemoveAt(i);
             //    }
-            //    tx.Commit();
             //}
+
+            //List<gbSeg> lineShatters = new List<gbSeg>();
+
+            //// enter point alignment and space detection of each segment group
+            //foreach (List<gbSeg> lineGroup in lineGroups)
+            //{
+            //    lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroup), 0.0001);
+            //    //System.Windows.MessageBox.Show("Shattered lines: " + lineShatters.Count + " at F-", "Warning");
+            //    break;
+            //}
+
+
+            using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            {
+                tx.Start();
+                foreach (List<List<gbXYZ>> floorSlab in dictFloor[0])
+                    foreach (List<gbXYZ> loop in floorSlab)
+                        Util.SketchPtLoop(doc, Util.gbXYZsConvert(loop));
+                tx.Commit();
+            }
         }
 
         public string GetName()

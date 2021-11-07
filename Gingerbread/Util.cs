@@ -196,6 +196,8 @@ namespace Gingerbread
         { return new gbXYZ(FootToM(pt.X), FootToM(pt.Y), FootToM(pt.Z)); }
         public static XYZ gbXYZConvert(gbXYZ pt)
         { return new XYZ(MToFoot(pt.X), MToFoot(pt.Y), MToFoot(pt.Z)); }
+        public static XYZ gbXYZFlatten(gbXYZ pt)
+        { return new XYZ(MToFoot(pt.X), MToFoot(pt.Y), 0); }
         public static List<gbXYZ> gbXYZsConvert(List<XYZ> pts)
         {
             List<gbXYZ> gbPts = new List<gbXYZ>();
@@ -219,8 +221,8 @@ namespace Gingerbread
         public static Line gbSegConvert(gbSeg seg)
         {
             return Line.CreateBound(
-            gbXYZConvert(seg.PointAt(0)),
-            gbXYZConvert(seg.PointAt(1)));
+            gbXYZFlatten(seg.PointAt(0)),
+            gbXYZFlatten(seg.PointAt(1)));
         }
         public static List<Curve> gbSegsConvert(List<gbSeg> segs)
         {
@@ -228,6 +230,14 @@ namespace Gingerbread
             foreach (gbSeg seg in segs)
                 crvs.Add(gbSegConvert(seg) as Curve);
             return crvs;
+        }
+
+        public static List<XYZ> PtsFlatten(List<XYZ> pts)
+        {
+            List<XYZ> ptsFlatten = new List<XYZ>();
+            foreach (XYZ pt in pts)
+                ptsFlatten.Add(new XYZ(pt.X, pt.Y, 0));
+            return ptsFlatten;
         }
 
         #endregion
@@ -289,6 +299,15 @@ namespace Gingerbread
         {
             foreach(Curve crv in crvs)
                 doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+        }
+        public static void SketchPtLoop(Document doc, List<XYZ> pts)
+        {
+            List<XYZ> ptsOnWorldPlane = PtsFlatten(pts);
+            for (int i = 0; i < ptsOnWorldPlane.Count - 1; i++)
+            {
+                Curve edge = Line.CreateBound(ptsOnWorldPlane[i], ptsOnWorldPlane[i + 1]);
+                doc.Create.NewModelCurve(edge, PlaneWorld(doc));
+            }
         }
         public static void SketchSegs(Document doc, List<gbSeg> segs)
         {

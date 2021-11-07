@@ -32,7 +32,8 @@ namespace Gingerbread
             out Dictionary<int, List<gbSeg>> dictCurtain, 
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
-            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
+            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
+            out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
             out string checkInfo)
         {
             // initiate variables for output
@@ -42,7 +43,7 @@ namespace Gingerbread
             dictColumn = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
-
+            dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
 
             // batch levels for iteration
             List<gbLevel> levels = new List<gbLevel>();
@@ -87,7 +88,6 @@ namespace Gingerbread
                 if (levels[i].height == 0)
                     levels.RemoveAt(i);
 
-            
 
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
@@ -153,6 +153,57 @@ namespace Gingerbread
                     windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), w.Name));
                 }
                 dictWindow.Add(z, windowLocs);
+
+
+                // append to dictFloor
+                IList<Element> efloors = new FilteredElementCollector(doc)
+                     .OfCategory(BuiltInCategory.OST_Floors)
+                     .WherePasses(levelFilter)
+                     .WhereElementIsNotElementType()
+                     .ToElements();
+                List<List<List<gbXYZ>>> floorSlabs = new List<List<List<gbXYZ>>>();
+                foreach (Element e in efloors)
+                {
+                    List<List<gbXYZ>> floorSlab = new List<List<gbXYZ>>();
+                    Options op = e.Document.Application.Create.NewGeometryOptions();
+                    GeometryElement ge = e.get_Geometry(op);
+                    foreach (GeometryObject geomObj in ge)
+                    {
+                        Solid geomSolid = geomObj as Solid;
+                        if (geomObj != null)
+                        {
+                            foreach (Face geomFace in geomSolid.Faces)
+                            {
+                                PlanarFace planarFace = geomFace as PlanarFace;
+                                if (planarFace != null)
+                                {
+                                    // assuming that the floor slab clings to the level plane, 
+                                    // which is a mandatory rule in BIM
+                                    // other slabs violate this rule will be moved to a list of shading srfs
+                                    if (planarFace.Origin.Z == levels[z].elevation && 
+                                        (planarFace.FaceNormal.Z == 1 || planarFace.FaceNormal.Z == -1))
+                                    //if (planar.FaceNormal.Z == 1)
+                                    {
+                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
+                                        {
+                                            List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                                            foreach (Edge edge in edgeArray)
+                                            {
+                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                                boundaryLoop.Add(Util.gbXYZConvert(ptStart));
+                                            }
+                                            boundaryLoop.Add(boundaryLoop[0]);
+                                            floorSlab.Add(boundaryLoop);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    floorSlabs.Add(floorSlab);
+                }
+                dictFloor.Add(z, floorSlabs);
+                Debug.Print(floorSlabs.Count + " floor slabs added on level " + z);
             }
 
 
@@ -208,11 +259,10 @@ namespace Gingerbread
                 checkInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} \n";
                 checkInfo += $"    numCol-{dictColumn[i].Count} numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count} \n";
                 checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count} \n";
+                checkInfo += $"    numFloorSlab-{dictFloor[i].Count} \n";
             }
             checkInfo += "Done model check.";
 
-            // feedback
-            //System.Windows.MessageBox.Show("Information pre-processed.", "Info");
             return;
         }
     }
