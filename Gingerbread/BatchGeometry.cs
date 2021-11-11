@@ -80,14 +80,15 @@ namespace Gingerbread
             for (int i = 0; i < levels.Count - 1; i++)
             {
                 double deltaZ = levels[i + 1].elevation - levels[i].elevation;
-                //if (deltaZ > Util.MmToFoot(2500))
-                levels[i].height = deltaZ;
+                if (deltaZ > Util.MmToFoot(2000))
+                    levels[i].height = deltaZ;
             }
             // skim out levels with 0 height
             for (int i = levels.Count - 1; i >= 0; i--)
                 if (levels[i].height == 0)
                     levels.RemoveAt(i);
 
+            
 
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
@@ -135,9 +136,11 @@ namespace Gingerbread
                     {
                         XYZ lp = Util.GetFamilyInstanceLocation(d);
                         doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), d.Name));
+                        Debug.Print($"F{z}: " + lp.ToString());
                     }
                 }
                 dictDoor.Add(z, doorLocs);
+                
 
                 // append to dictWindow
                 List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
@@ -251,6 +254,9 @@ namespace Gingerbread
                     }
                 }
             }
+
+            dictElevation.Add(dictElevation.Count, new Tuple<string, double>("Roof",
+                Util.FootToM(levels.Last().elevation + levels.Last().height) ));
 
             // DEBUG
             checkInfo = "";

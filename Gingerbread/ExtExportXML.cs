@@ -50,14 +50,14 @@ namespace Gingerbread
                 out string checkInfo);
 
 
-            int levelNum = dictElevation.Count;
+            int levelNum = dictElevation.Count - 1;
 
             // info check
-            if (dictWall.Count != levelNum ||
-                dictWindow.Count != levelNum ||
-                dictDoor.Count != levelNum ||
-                dictCurtain.Count != levelNum)
-                return;
+            //if (dictWall.Count != levelNum ||
+            //    dictWindow.Count != levelNum ||
+            //    dictDoor.Count != levelNum ||
+            //    dictCurtain.Count != levelNum)
+            //    return;
 
             // process wall lines at each level
             // process space boundary and matching relation at each level
@@ -172,7 +172,7 @@ namespace Gingerbread
 
             Report(95, "Serilaize gbXML file ...");
 
-            string fileName = "Sample.xml";
+            string fileName = "GingerbreadXML.xml";
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             XMLSerialization.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces);
 

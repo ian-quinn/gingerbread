@@ -79,14 +79,13 @@ namespace Gingerbread
             //}
 
 
-            using (Transaction tx = new Transaction(doc, "Sketch locations"))
-            {
-                tx.Start();
-                foreach (List<List<gbXYZ>> floorSlab in dictFloor[0])
-                    foreach (List<gbXYZ> loop in floorSlab)
-                        Util.SketchPtLoop(doc, Util.gbXYZsConvert(loop));
-                tx.Commit();
-            }
+            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //{
+            //    tx.Start();
+            //    foreach (Tuple<gbXYZ, string> door in dictDoor[1])
+            //        Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
+            //    tx.Commit();
+            //}
         }
 
         public string GetName()

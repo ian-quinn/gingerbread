@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using ClipperLib;
 using System.Text.RegularExpressions;
-
+using System.Diagnostics;
 
 namespace Gingerbread.Core
 {
@@ -26,6 +26,11 @@ namespace Gingerbread.Core
                 levels.Add(new gbLevel(kvp.Key, kvp.Value.Item1, kvp.Value.Item2, numLevels));
             for (int i = 0; i < levels.Count - 1; i++)
                 levels[i].height = levels[i + 1].elevation - levels[i].elevation;
+            
+            foreach (gbLevel level in levels)
+            {
+                Debug.Print($"On level {level.id} elevation {level.elevation} height {level.height}");
+            }
 
             // cached intermediate data
             zones = new List<gbZone>();
@@ -40,7 +45,7 @@ namespace Gingerbread.Core
 
             // global opening size regex pattern
             // 0000 x 0000 is the default naming for all opening family types, for now
-            string sizeMockup = @"\d{4}";
+            string sizeMockup = @"\d+";
 
             // first loop to add spaces, walls, adjacencies and adhering openings
             foreach (gbLevel level in levels)
@@ -81,7 +86,19 @@ namespace Gingerbread.Core
                 // collision with windows, cancel its generation. 
                 foreach (Tuple<gbXYZ, string> opening in dictWindow[level.id])
                 {
+                    // get the planar size of this component
+                    // cancel generation if not valid
+                    List<double> sizes = new List<double>();
+                    foreach (Match match in Regex.Matches(opening.Item2, sizeMockup))
+                    {
+                        double size = Convert.ToInt32(match.Value) / 1000.0;
+                        sizes.Add(size);
+                    }
+                    if (sizes.Count != 2)
+                        continue;
+
                     double minDistance = Double.PositiveInfinity;
+                    double minParam = 0;
                     gbXYZ minPlummet = opening.Item1;
                     int hostId = 0;
 
@@ -93,38 +110,78 @@ namespace Gingerbread.Core
                         {
                             minDistance = distance;
                             minPlummet = plummet;
+                            minParam = sectParam;
                             hostId = k;
                         }
                     }
-                    List<double> sizes = new List<double>();
-                    List<gbXYZ> openingLoop = new List<gbXYZ>();
-                    gbXYZ vec = -thisSurface[hostId].locationLine.Direction;
-                    vec.Unitize();
+                    // if the projection distance surpass the lattice alignment threshold
+                    // skip this component (its host wall may not spawn)
+                    if (minDistance > Properties.Settings.Default.latticeDelta)
+                        continue;
 
-                    foreach (Match match in Regex.Matches(opening.Item2, sizeMockup))
-                    {
-                        double size = Convert.ToInt32(match.Value) / 1000.0;
-                        sizes.Add(size);
-                    }
-                    //Rhino.RhinoApp.WriteLine("Size: " + sizes[0].ToString() + " / " + sizes[1].ToString());
-                    double elevation = opening.Item1.Z;
-                    openingLoop.Add(minPlummet - sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation));
-                    openingLoop.Add(minPlummet + sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation));
-                    openingLoop.Add(minPlummet + sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation + sizes[1]));
-                    openingLoop.Add(minPlummet - sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation + sizes[1]));
-                    gbOpening newOpening = new gbOpening(thisSurface[hostId].id + "::Opening_" +
-                       thisSurface[hostId].openings.Count, openingLoop);
-                    newOpening.width = sizes[0];
-                    newOpening.height = sizes[1];
-                    newOpening.type = openingTypeEnum.FixedWindow;
-                    if (!IsOpeningOverlap(thisSurface[hostId].openings, newOpening))
-                        thisSurface[hostId].openings.Add(newOpening);
+                    gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);
+                    gbXYZ vecMove = opening.Item1 - origin; // prepare for opening adhering to srf
+
+                    // these lines all within the relative plane of the host surface
+                    List<gbXYZ> openingLoop2d = new List<gbXYZ>();
+                    gbXYZ insertPt2d = new gbXYZ(
+                        thisSurface[hostId].locationLine.Length * minParam, 
+                        opening.Item1.Z - level.elevation, 0);
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(- sizes[0] / 2, 0, 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, 0, 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, sizes[1], 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(-sizes[0] / 2, sizes[1], 0));
+
+                    thisSurface[hostId].subLoops.Add(openingLoop2d);
                 }
+                // convert 2D openings hosted by a surface to 3D coords
+                foreach (gbSurface srf in thisSurface)
+                {
+                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops);
+                    foreach (List<List<gbXYZ>> loopCluster in loopClusters)
+                    {
+                        List<gbXYZ> scatterPts = Util.FlattenList(loopCluster);
+                        List<gbXYZ> boundingBox = OrthoHull.GetRectHull(scatterPts);
+                        boundingBox.RemoveAt(boundingBox.Count - 1); // transfer to open polyloop
+
+                        //Debug.Print("Srf location: " + srf.locationLine.ToString());
+                        gbXYZ srfVec = srf.locationLine.Direction;
+                        gbXYZ srfOrigin = srf.locationLine.PointAt(0);
+                        List<gbXYZ> openingLoop = new List<gbXYZ>();
+                        foreach (gbXYZ pt in boundingBox)
+                        {
+                            //Debug.Print("Pt before transformation: " + pt.ToString());
+                            gbXYZ _pt = pt.SwapPlaneZY().RotateOnPlaneZ(srfVec).Move(srfOrigin);
+                            openingLoop.Add(_pt);
+                            //Debug.Print("Pt after transformation: " + _pt.ToString());
+                        }
+                        gbOpening newOpening = new gbOpening(srf.id + "::Opening_" +
+                            srf.openings.Count, openingLoop);
+                        newOpening.type = openingTypeEnum.FixedWindow;
+                        srf.openings.Add(newOpening);
+                        srf.subLoops = new List<List<gbXYZ>>();
+                    }
+                }
+
 
                 // as to doors
+                // such process is the same as the one creating windows
+                // they will be merged if there is no difference detected in future
                 foreach (Tuple<gbXYZ, string> opening in dictDoor[level.id])
                 {
+                    // get the planar size of this component 
+                    // cancel generation if not valid
+                    List<double> sizes = new List<double>();
+                    foreach (Match match in Regex.Matches(opening.Item2, sizeMockup))
+                    {
+                        double size = Convert.ToInt32(match.Value) / 1000.0;
+                        sizes.Add(size);
+                    }
+                    if (sizes.Count != 2)
+                        continue;
+
                     double minDistance = Double.PositiveInfinity;
+                    double minParam = 0;
                     gbXYZ minPlummet = opening.Item1;
                     int hostId = 0;
 
@@ -136,33 +193,59 @@ namespace Gingerbread.Core
                         {
                             minDistance = distance;
                             minPlummet = plummet;
+                            minParam = sectParam;
                             hostId = k;
                         }
                     }
-                    List<double> sizes = new List<double>();
-                    List<gbXYZ> openingLoop = new List<gbXYZ>();
-                    gbXYZ vec = thisSurface[hostId].locationLine.Direction;
-                    vec.Unitize();
+                    // if the projection distance surpass the lattice alignment threshold
+                    // skip this component (its host wall may not spawn)
+                    if (minDistance > Properties.Settings.Default.latticeDelta)
+                        continue;
 
-                    foreach (Match match in Regex.Matches(opening.Item2, sizeMockup))
-                    {
-                        double size = Convert.ToInt32(match.Value) / 1000.0;
-                        sizes.Add(size);
-                    }
+                    gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);
+                    gbXYZ vecMove = opening.Item1 - origin; // prepare for opening adhering to srf
 
-                    double elevation = opening.Item1.Z;
-                    openingLoop.Add(minPlummet - sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation));
-                    openingLoop.Add(minPlummet + sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation));
-                    openingLoop.Add(minPlummet + sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation + sizes[1]));
-                    openingLoop.Add(minPlummet - sizes[0] / 2 * vec + new gbXYZ(0, 0, elevation + sizes[1]));
-                    gbOpening newOpening = new gbOpening(thisSurface[hostId].id + "::Opening_" +
-                       thisSurface[hostId].openings.Count, openingLoop);
-                    newOpening.width = sizes[0];
-                    newOpening.height = sizes[1];
-                    newOpening.type = openingTypeEnum.NonSlidingDoor;
-                    if (!IsOpeningOverlap(thisSurface[hostId].openings, newOpening))
-                        thisSurface[hostId].openings.Add(newOpening);
+                    // these lines all within the relative plane of the host surface
+                    List<gbXYZ> openingLoop2d = new List<gbXYZ>();
+                    gbXYZ insertPt2d = new gbXYZ(
+                        thisSurface[hostId].locationLine.Length * minParam,
+                        opening.Item1.Z - level.elevation, 0);
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(-sizes[0] / 2, 0, 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, 0, 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, sizes[1], 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(-sizes[0] / 2, sizes[1], 0));
+
+                    thisSurface[hostId].subLoops.Add(openingLoop2d);
                 }
+                // convert 2D openings hosted by a surface to 3D coords
+                foreach (gbSurface srf in thisSurface)
+                {
+                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops);
+                    foreach (List<List<gbXYZ>> loopCluster in loopClusters)
+                    {
+                        List<gbXYZ> scatterPts = Util.FlattenList(loopCluster);
+                        List<gbXYZ> boundingBox = OrthoHull.GetRectHull(scatterPts);
+                        boundingBox.RemoveAt(boundingBox.Count - 1); // transfer to open polyloop
+
+                        //Debug.Print("Srf location: " + srf.locationLine.ToString());
+                        gbXYZ srfVec = srf.locationLine.Direction;
+                        gbXYZ srfOrigin = srf.locationLine.PointAt(0);
+                        List<gbXYZ> openingLoop = new List<gbXYZ>();
+                        foreach (gbXYZ pt in boundingBox)
+                        {
+                            //Debug.Print("Pt before transformation: " + pt.ToString());
+                            gbXYZ _pt = pt.SwapPlaneZY().RotateOnPlaneZ(srfVec).Move(srfOrigin);
+                            openingLoop.Add(_pt);
+                            //Debug.Print("Pt after transformation: " + _pt.ToString());
+                        }
+                        gbOpening newOpening = new gbOpening(srf.id + "::Opening_" +
+                            srf.openings.Count, openingLoop);
+                        newOpening.type = openingTypeEnum.NonSlidingDoor;
+                        srf.openings.Add(newOpening);
+                        srf.subLoops = new List<List<gbXYZ>>();
+                    }
+                }
+
 
                 // curtain wall is the most likely to go wild
                 foreach (gbSeg opening in dictCurtain[level.id])
@@ -316,7 +399,7 @@ namespace Gingerbread.Core
                 if (GBMethod.IsPolyOverlap(loop2d, opening2d))
                     return true;
             }
-            return false;
+            return false; 
         }
     }
 }

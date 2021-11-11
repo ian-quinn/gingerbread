@@ -608,6 +608,36 @@ namespace Gingerbread.Core
             else
                 return true;
         }
+        public static List<List<List<gbXYZ>>> PolyClusterByOverlap(List<List<gbXYZ>> loops)
+        {
+            List<List<gbXYZ>> loopPool = new List<List<gbXYZ>>();
+            foreach (List<gbXYZ> loop in loops)
+            {
+                loopPool.Add(loop);
+            }
+            List<List<List<gbXYZ>>> loopGroups = new List<List<List<gbXYZ>>>();
+            while (loopPool.Count > 0)
+            {
+                List<List<gbXYZ>> loopGroup = new List<List<gbXYZ>>() { loopPool[0] };
+                loopPool.RemoveAt(0);
+                for (int i = 0; i < loopGroup.Count; i++)
+                {
+                    for (int j = loopPool.Count - 1; j >= 0; j--)
+                    {
+                        if (loopGroup[i] != loopPool[j])
+                        {
+                            if (IsPolyOverlap(loopGroup[i], loopPool[j]))
+                            {
+                                loopGroup.Add(loopPool[j]);
+                                loopPool.RemoveAt(j);
+                            }
+                        }
+                    }
+                }
+                loopGroups.Add(loopGroup);
+            }
+            return loopGroups;
+        }
 
         /// <summary>
         /// Get the normal of a polygon by Left-hand order

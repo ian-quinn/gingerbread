@@ -67,6 +67,18 @@ namespace Gingerbread.Core
                 (b.Y - Y) * (b.Y - Y) +
                 (b.Z - Z) * (b.Z - Z));
         }
+        public gbXYZ SwapPlaneZY()
+        {
+            return new gbXYZ(X, 0, Y);
+        }
+        public gbXYZ RotateOnPlaneZ(gbXYZ vec)
+        {
+            return new gbXYZ(X * vec.X / vec.Norm(), X * vec.Y / vec.Norm(), Z);
+        }
+        public gbXYZ Move(gbXYZ vec)
+        {
+            return new gbXYZ(X + vec.X, Y + vec.Y, Z + vec.Z);
+        }
         // Define addition operation
         public static gbXYZ operator +(gbXYZ A, gbXYZ B)
         {
@@ -292,6 +304,7 @@ namespace Gingerbread.Core
         public List<gbXYZ> loop;
         public gbSeg locationLine; // when the tilt is 90
         public List<gbOpening> openings;
+        public List<List<gbXYZ>> subLoops;
 
         // modification attributes
         public string adjSrfId;
@@ -301,12 +314,14 @@ namespace Gingerbread.Core
         {
             this.id = id;
             this.loop = loop;
+            subLoops = new List<List<gbXYZ>>();
             this.parentId = parentId;
             this.tilt = tilt;
             // the azimuth is the angle (0-360) between the normal vector and the north axis (0, 1, 0)
             azimuth = GBMethod.VectorAngle(GBMethod.GetPolyNormal(loop), new gbXYZ(0, 1, 0));
             area = GBMethod.GetPolyArea3d(loop);
             openings = new List<gbOpening>();
+            
 
             if (tilt == 90)
             {
@@ -320,7 +335,7 @@ namespace Gingerbread.Core
             // the GetRectHull function only works for 2D points
             if (tilt == 0 || tilt == 180)
             {
-                List<gbXYZ> corners = OrthogonalHull.GetRectHull(loop);
+                List<gbXYZ> corners = OrthoHull.GetRectHull(loop);
                 width = corners[1].X - corners[0].X;
                 height = area / width;
             }

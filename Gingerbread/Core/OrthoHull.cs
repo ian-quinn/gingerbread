@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Gingerbread.Core
 {
-    class OrthogonalHull
+    class OrthoHull
     {
         enum SearchQuadrant
         {
@@ -184,10 +184,10 @@ namespace Gingerbread.Core
             gbXYZ downPt = GetStartPoint(pts, SearchQuadrant.DownLeft);
 
             List<gbXYZ> loop = new List<gbXYZ>();
-            loop.Add(new gbXYZ(leftPt.X, upPt.Y, 0));
-            loop.Add(new gbXYZ(rightPt.X, upPt.Y, 0));
-            loop.Add(new gbXYZ(rightPt.X, downPt.Y, 0));
             loop.Add(new gbXYZ(leftPt.X, downPt.Y, 0));
+            loop.Add(new gbXYZ(rightPt.X, downPt.Y, 0));
+            loop.Add(new gbXYZ(rightPt.X, upPt.Y, 0));
+            loop.Add(new gbXYZ(leftPt.X, upPt.Y, 0));
             loop.Add(loop[0]);
             return loop;
         }
