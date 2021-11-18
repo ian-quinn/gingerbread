@@ -116,7 +116,7 @@ namespace Gingerbread.Core
                     }
                     // if the projection distance surpass the lattice alignment threshold
                     // skip this component (its host wall may not spawn)
-                    if (minDistance > Properties.Settings.Default.latticeDelta)
+                    if (minDistance > Properties.Settings.Default.tolDelta)
                         continue;
 
                     gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);
@@ -199,7 +199,7 @@ namespace Gingerbread.Core
                     }
                     // if the projection distance surpass the lattice alignment threshold
                     // skip this component (its host wall may not spawn)
-                    if (minDistance > Properties.Settings.Default.latticeDelta)
+                    if (minDistance > Properties.Settings.Default.tolDelta)
                         continue;
 
                     gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);

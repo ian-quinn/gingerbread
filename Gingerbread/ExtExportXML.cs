@@ -74,11 +74,11 @@ namespace Gingerbread
                     for (int j = 0; j < flatLines.Count; j++)
                         if (i != j)
                             flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
-                                Properties.Settings.Default.expandTolerance);
+                                Properties.Settings.Default.tolExpand);
                 //Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
-                    Properties.Settings.Default.groupTolerance);
+                    Properties.Settings.Default.tolGroup);
                 List<gbSeg> orphans = new List<gbSeg>();
                 // dump some orphan segments that will be processed later
                 for (int i = lineGroups.Count - 1; i >= 0; i--)
@@ -97,7 +97,8 @@ namespace Gingerbread
                     List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroup), 0.00001);
 
 
-                    List<gbXYZ> joints = PointAlign.GetJoints(lineShatters, out List<List<gbXYZ>> hands);
+                    List<gbXYZ> joints = PointAlign.GetJoints(lineShatters, 
+                        Properties.Settings.Default.tolDouble, out List<List<gbXYZ>> hands);
 
 
                     // deepcopy hands for debugging
@@ -114,20 +115,20 @@ namespace Gingerbread
                     List<List<gbXYZ>> anchorInfo_temp;
                     List<List<gbXYZ>> anchorInfo;
                     List<gbXYZ> ptAlign_temp = PointAlign.AlignPts(joints, hands,
-                        Properties.Settings.Default.latticeTheta,
-                        Properties.Settings.Default.latticeDelta,
-                        Properties.Settings.Default.doubleTolerance,
+                        Properties.Settings.Default.tolTheta,
+                        Properties.Settings.Default.tolDelta,
+                        Properties.Settings.Default.tolDouble,
                         out anchorInfo_temp);
                     List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp,
-                        Properties.Settings.Default.latticeTheta - Math.PI / 2,
-                        Properties.Settings.Default.latticeDelta,
-                        Properties.Settings.Default.doubleTolerance,
+                        Properties.Settings.Default.tolTheta - Math.PI / 2,
+                        Properties.Settings.Default.tolDelta,
+                        Properties.Settings.Default.tolDouble,
                         out anchorInfo);
 
 
                     List<gbSeg> strays; // abandoned for now
                     List<List<gbSeg>> nestedLattice = PointAlign.GetLattice(ptAlign, anchorInfo,
-                        Properties.Settings.Default.doubleTolerance, out strays);
+                        Properties.Settings.Default.tolDouble, out strays);
                     List<gbSeg> lattice = Util.FlattenList(nestedLattice);
 
 

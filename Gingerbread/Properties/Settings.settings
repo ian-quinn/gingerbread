@@ -5,20 +5,20 @@
     <Setting Name="ShortCurveTolerance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.0025602645573</Value>
     </Setting>
-    <Setting Name="groupTolerance" Type="System.Double" Scope="User">
+    <Setting Name="tolGroup" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.1</Value>
     </Setting>
-    <Setting Name="expandTolerance" Type="System.Double" Scope="User">
+    <Setting Name="tolExpand" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.2</Value>
     </Setting>
-    <Setting Name="latticeTheta" Type="System.Double" Scope="User">
+    <Setting Name="tolTheta" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="latticeDelta" Type="System.Double" Scope="User">
+    <Setting Name="tolDelta" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.2</Value>
     </Setting>
-    <Setting Name="doubleTolerance" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">1E-06</Value>
+    <Setting Name="tolDouble" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">1E-05</Value>
     </Setting>
     <Setting Name="SpiderPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />

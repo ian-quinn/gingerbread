@@ -32,7 +32,7 @@ namespace Gingerbread
                     pf = face as PlanarFace;
                     if (null != pf)
                     {
-                        if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.doubleTolerance)
+                        if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolDouble)
                             && pf.FaceNormal.Z < 0)
                         {
                             break;

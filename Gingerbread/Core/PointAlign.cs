@@ -15,7 +15,7 @@ namespace Gingerbread.Core
         /// <param name="lines"></param>
         /// <param name="hands"></param>
         /// <returns></returns>
-        public static List<gbXYZ> GetJoints(List<gbSeg> lines, out List<List<gbXYZ>> hands)
+        public static List<gbXYZ> GetJoints(List<gbSeg> lines, double tolerance, out List<List<gbXYZ>> hands)
         {
             List<gbXYZ> Vtc = new List<gbXYZ>(); // all unique vertices
             List<gbSeg> HC = new List<gbSeg>(); // list of all shattered half-curves
@@ -39,19 +39,19 @@ namespace Gingerbread.Core
 
                     for (int VtxCheck = 0; VtxCheck <= Vtc.Count - 1; VtxCheck++)
                     {
-                        if (Vtc[VtxCheck].DistanceTo(testedPt) < 0.000001)
+                        if (Vtc[VtxCheck].DistanceTo(testedPt) < tolerance)
                         {
                             VtcSet = VtxCheck; // get the vertex index, if it already exists
                             break;
                         }
                     }
 
-                    gbXYZ paleVec = RoundVec(HC[HCI.Last()].Direction, 0.000001);
+                    gbXYZ paleVec = RoundVec(HC[HCI.Last()].Direction, tolerance);
                     if (VtcSet > -1)
                     {
                         HCV.Add(VtcSet); // If the vertex already exists, set the half-curve vertex
                         VOut[VtcSet].Add(HCI.Last());
-                        if (IsLoadable(VJoint[VtcSet], paleVec, 0.000001))
+                        if (!IsIncluded(VJoint[VtcSet], paleVec, tolerance))
                             VJoint[VtcSet].Add(paleVec);
                     }
                     else
@@ -246,7 +246,7 @@ namespace Gingerbread.Core
                         {
                             double split = (axisPts[i].X - axisPts[0].X) / (axisPts.Last().X - axisPts[0].X);
                             splits.Add(split);
-                            if (!IsLoadable(vecList[ptIdGroup[axisIdPts[i]]], scanRay, tolerance))
+                            if (IsIncluded(vecList[ptIdGroup[axisIdPts[i]]], scanRay, tolerance))
                             {
                                 isConnected.Add(true);
                             }
@@ -307,7 +307,7 @@ namespace Gingerbread.Core
                         if (t >= 0 && t <= 0)
                         {
                             //
-                            if (!IsLoadable(vecList[ptIdGroup[i]], moveDirection, tolerance))
+                            if (IsIncluded(vecList[ptIdGroup[i]], moveDirection, tolerance))
                             {
                                 //Rhino.RhinoApp.WriteLine("HERE WE DELETE AT: " + ptIdGroup[i].ToString());
                                 vecList[ptIdGroup[i]].Remove(moveDirection);
@@ -319,11 +319,11 @@ namespace Gingerbread.Core
                             //Rhino.RhinoApp.WriteLine("More vectors are added!");
                             if (isConnected[insertIdx])
                             {
-                                if (IsLoadable(vecList[ptIdGroup[i]], scanRay, tolerance))
+                                if (!IsIncluded(vecList[ptIdGroup[i]], scanRay, tolerance))
                                 {
                                     vecList[ptIdGroup[i]].Add(scanRay);
                                 }
-                                if (IsLoadable(vecList[ptIdGroup[i]], -scanRay, tolerance))
+                                if (!IsIncluded(vecList[ptIdGroup[i]], -scanRay, tolerance))
                                 {
                                     vecList[ptIdGroup[i]].Add(-scanRay);
                                 }
@@ -384,7 +384,7 @@ namespace Gingerbread.Core
                         // pile vectors of merged points if they are different
                         foreach (gbXYZ vec in vecList[i])
                         {
-                            if (IsLoadable(pileVec, vec, tolerance))
+                            if (!IsIncluded(pileVec, vec, tolerance))
                                 pileVec.Add(vec);
                         }
                         ptAfter.RemoveAt(i);
@@ -442,40 +442,38 @@ namespace Gingerbread.Core
         /// <summary>
         /// Alignment step 3: Recreate lattice from the aligned anchors
         /// </summary>
-        /// <param name="anchors"></param>
-        /// <param name="anchorInfo"></param>
-        /// <param name="tolerance"></param>
-        /// <param name="strays"></param>
-        /// <returns></returns>
         public static List<List<gbSeg>> GetLattice(List<gbXYZ> anchors, List<List<gbXYZ>> anchorInfo,
             double tolerance, out List<gbSeg> strays)
         {
+            // tolerance - apply when compare two values to avoid double precision failure
+            // delta - the farthest walk a point can make during alignment
+
             // loop to get all stray lines
-            List<int> anchorVecCount = new List<int>();
-            strays = new List<gbSeg>();
+            List<int> anchorVecCount = new List<int>(); // cache the out-reaching vector of each anchor
+            strays = new List<gbSeg>(); // cache all stray lines
             foreach (List<gbXYZ> vecs in anchorInfo)
             {
                 anchorVecCount.Add(vecs.Count);
             }
             int counter = 0;
 
-            // loop until the vector with only one outgoing vector cannot be found
-            // or ?
+            // iterate if there still exists an anchor with only one outgoing vector
             while (anchorVecCount.IndexOf(1) != -1)
             {
                 counter++;
                 //Rhino.RhinoApp.WriteLine(anchorVecCount.IndexOf(1).ToString());
+                // ramdomly pick an anchor with single vector
                 int pointer = anchorVecCount.IndexOf(1);
-                //Rhino.RhinoApp.WriteLine("Found orphan point at " + pointer.ToString());
+                //Rhino.RhinoApp.WriteLine($"This orphan point {anchors[pointer]} | {anchorInfo[pointer].Count} | {anchorInfo[pointer][0]}");
                 double max = double.PositiveInfinity;
                 int endId = -1;
                 for (int i = anchors.Count - 1; i >= 0; i--)
                 {
-                    if (pointer != i)
+                    // check if the receiving anchor has the opposite projection vector
+                    if (i != pointer && IsIncluded(anchorInfo[i], -anchorInfo[pointer][0], tolerance))
                     {
-                        double stretch;
                         double distance = DistanceToRay(anchors[i], anchors[pointer],
-                          anchorInfo[pointer][0], out stretch);
+                          anchorInfo[pointer][0], out double stretch);
                         if (distance < tolerance && stretch > 0)
                         {
                             if (stretch < max)
@@ -486,16 +484,29 @@ namespace Gingerbread.Core
                         }
                     }
                 }
+
+                // when deleting a stray line
+                // one end of the line that is type-I joint must be removed (projection point)
+                // the other end of the line must remove the corresponding vector in anchorInfo (receiving point)
+                // if it fails to locate the receiving point, we still remove the projection point anyway
                 if (endId >= 0)
                 {
                     strays.Add(new gbSeg(anchors[pointer], anchors[endId]));
-                    anchorInfo[endId].Remove(-anchorInfo[pointer][0]);
+                    for (int k = anchorInfo[endId].Count - 1; k >= 0; k--)
+                        if (VecAlmostTheSame(anchorInfo[endId][k], -anchorInfo[pointer][0], tolerance))
+                            anchorInfo[endId].RemoveAt(k);
+                    // there must be a tolerance to avoid the double precision
+                    // the following line will not work as you intend
+                    // anchorInfo[endId].Remove(-anchorInfo[pointer][0]);
                     anchorVecCount[endId] = anchorVecCount[endId] - 1;
-                    anchorVecCount.RemoveAt(pointer);
-                    anchors.RemoveAt(pointer);
-                    anchorInfo.RemoveAt(pointer);
                 }
+                anchorVecCount.RemoveAt(pointer);
+                anchors.RemoveAt(pointer);
+                anchorInfo.RemoveAt(pointer);
                 // a safe lock
+                // if there is always an anchor with single outgoing vector
+                // and ti cannot find a corresponding point to form a segment with 
+                // there will be infinite loops. working on how to solve this
                 if (counter > 200)
                     break;
             }
@@ -512,13 +523,11 @@ namespace Gingerbread.Core
                     int endId = -1;
                     for (int j = 0; j < anchors.Count; j++)
                     {
-                        if (i != j)
+                        if (i != j && IsIncluded(anchorInfo[j], -vec, tolerance))
                         {
                             //Rhino.RhinoApp.Write("Loop: {0} | ", j);
-                            double stretch;
-
                             double distance = DistanceToRay(anchors[j], anchors[i], vec,
-                              out stretch);
+                              out double stretch);
                             //Rhino.RhinoApp.Write(stretch.ToString() + "\n");
                             if (distance < tolerance && stretch > 0)
                             {
@@ -647,18 +656,26 @@ namespace Gingerbread.Core
                 return false;
         }
 
-        public static bool IsLoadable(List<gbXYZ> vecs, gbXYZ newVec, double tolerance)
+        //public static bool IsLoadable(List<gbXYZ> vecs, gbXYZ newVec, double tolerance)
+        //{
+        //    int counter = 0;
+        //    foreach (gbXYZ vec in vecs)
+        //    {
+        //        if (VecAlmostTheSame(vec, newVec, tolerance))
+        //            counter++;
+        //    }
+        //    if (counter > 0)
+        //        return false;
+        //    else
+        //        return true;
+        //}
+
+        public static bool IsIncluded(List<gbXYZ> vecs, gbXYZ newVec, double tolerance)
         {
-            int counter = 0;
             foreach (gbXYZ vec in vecs)
-            {
                 if (VecAlmostTheSame(vec, newVec, tolerance))
-                    counter++;
-            }
-            if (counter > 0)
-                return false;
-            else
-                return true;
+                    return true;
+            return false;
         }
 
         public static double DistanceToRay(

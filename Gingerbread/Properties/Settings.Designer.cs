@@ -38,60 +38,60 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
-        public double groupTolerance {
+        public double tolGroup {
             get {
-                return ((double)(this["groupTolerance"]));
+                return ((double)(this["tolGroup"]));
             }
             set {
-                this["groupTolerance"] = value;
+                this["tolGroup"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
-        public double expandTolerance {
+        public double tolExpand {
             get {
-                return ((double)(this["expandTolerance"]));
+                return ((double)(this["tolExpand"]));
             }
             set {
-                this["expandTolerance"] = value;
+                this["tolExpand"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public double latticeTheta {
+        public double tolTheta {
             get {
-                return ((double)(this["latticeTheta"]));
+                return ((double)(this["tolTheta"]));
             }
             set {
-                this["latticeTheta"] = value;
+                this["tolTheta"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
-        public double latticeDelta {
+        public double tolDelta {
             get {
-                return ((double)(this["latticeDelta"]));
+                return ((double)(this["tolDelta"]));
             }
             set {
-                this["latticeDelta"] = value;
+                this["tolDelta"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1E-06")]
-        public double doubleTolerance {
+        [global::System.Configuration.DefaultSettingValueAttribute("1E-05")]
+        public double tolDouble {
             get {
-                return ((double)(this["doubleTolerance"]));
+                return ((double)(this["tolDouble"]));
             }
             set {
-                this["doubleTolerance"] = value;
+                this["tolDouble"] = value;
             }
         }
         
