@@ -274,9 +274,11 @@ namespace Gingerbread.Core
             adjspace1.spaceIdRef = face.parentId;
             if (face.adjSrfId != "Outside")
             {
+                // the adjacent space is decoded from the label of adjacent surface
+                // it is crucial about how you code the name
                 AdjacentSpaceId adjspace2 = new AdjacentSpaceId();
-                string[] tags = Regex.Split(face.adjSrfId, "::");
-                adjspace2.spaceIdRef = tags[0] + "::" + tags[1];
+                Match match = Regex.Match(face.adjSrfId, "(.+)::(.+)");
+                adjspace2.spaceIdRef = match.Groups[1].Value;
                 AdjacentSpaceId[] adjspaces = { adjspace1, adjspace2 };
                 surface.AdjacentSpaceId = adjspaces;
             }

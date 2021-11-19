@@ -1,22 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Gingerbread.Core;
 
 namespace Gingerbread.Core
 {
-    public static class SpaceDetection
+    public static class SpaceDetect
     {
+        public static object Rhino { get; private set; }
+
         // this function is only for the sorted, grouped, fixed wall centerlines
         // which will be generalized to the entire floorplan. For floorplan, there will be
         // nested lists of points representing boundaries of each space
         // nested lists of points representing boundaries of each floor slab (there may be multiple isolated slabs)
         // nested lists of strings representing the surface matching relationships.
         // the surface matching across different levels will not be covered here
-        public static void GetBoundary(List<gbSeg> lines, int levelId, out List<List<gbXYZ>> loops,
-            out List<gbXYZ> shell, out List<List<string>> match, out List<List<gbSeg>> orphans)
+        public static void GetRegion(List<gbSeg> lines, int levelId, int groupId, out List<gbRegion> regions,
+            out List<gbXYZ> shell, out List<List<gbSeg>> orphans)
         {
 
             List<gbXYZ> Vtc = new List<gbXYZ>(); // all unique vertices
@@ -192,6 +196,7 @@ namespace Gingerbread.Core
             // but the direction of each is random.
             List<List<gbSeg>> edgeLoops = new List<List<gbSeg>>();  // for debugging
             List<List<gbXYZ>> ptLoops = new List<List<gbXYZ>>();
+            regions = new List<gbRegion>();
             // for debugging. considering to generate gbZone/gbSurface directly
             List<List<string>> infoLoops = new List<List<string>>();
 
@@ -207,6 +212,8 @@ namespace Gingerbread.Core
                     //renumberOffset++;
                     ptLoops.Add(new List<gbXYZ>());
                     infoLoops.Add(new List<string>());
+                    regions.Add(new gbRegion("F" + levelId + "::G" + groupId + "::Z" + kvp.Key.ToString(),
+                        new List<gbXYZ>(), new List<string>()));
                     continue;
                 }
                 List<gbSeg> edgeLoop = new List<gbSeg>();
@@ -223,7 +230,7 @@ namespace Gingerbread.Core
                     else
                         //boundaryCondition = "Level_" + levelId + "::Zone_" + (HCF[adjCrvIdx] - renumberOffset).ToString() +
                         //    "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
-                        boundaryCondition = "Level_" + levelId + "::Zone_" + (HCF[adjCrvIdx]).ToString() +
+                        boundaryCondition = "F" + levelId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
                             "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
 
                     edgeLoop.Add(kvp.Value[j]);
@@ -235,6 +242,9 @@ namespace Gingerbread.Core
                 ptLoops.Add(ptLoop);
 
                 infoLoops.Add(infoLoop);
+
+                // additional for region test
+                regions.Add(new gbRegion("F" + levelId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop));
             }
 
             // the first item in shellId will be the output
@@ -247,20 +257,195 @@ namespace Gingerbread.Core
                 orphanLoops.Add(F[id]);
 
             // outputs
-
-            loops = ptLoops;
+            //loops = ptLoops;
             orphans = orphanLoops;
             shell = ptShell;
-            match = infoLoops;
+            //match = infoLoops;
+
             //Util.LogPrint("Region detection result: " + loops.Count + " " + shell.Count + " " + match.Count);
+        }
+
+        public static void GetMCR(List<List<gbRegion>> nestedRegion, List<List<gbXYZ>> nestedShell,
+            out List<List<List<gbXYZ>>> mcrs)
+        {
+            mcrs = new List<List<List<gbXYZ>>>();
+
+            if (nestedRegion.Count != nestedShell.Count)
+            {
+                Debug.Print("The number of space groups and shells are not equal. This may due to the space detection failure");
+                return;
+            }
+
+            List<Tuple<int, int>> containRef = new List<Tuple<int, int>>(); // containment relations
+            List<int> roots = new List<int>(); // shell index as root node
+            List<int> branches = new List<int>(); // shell being included
+
+            // iterate to find all containment relations
+            for (int i = 0; i < nestedShell.Count; i++)
+            {
+                for (int j = i + 1; j < nestedShell.Count; j++)
+                {
+                    if (GBMethod.IsPtInPoly(nestedShell[i][0], nestedShell[j]) == true)
+                    {
+                        containRef.Add(Tuple.Create(j, i));
+                        if (!branches.Contains(i))
+                            branches.Add(i);
+                        continue;
+                    }
+                    if (GBMethod.IsPtInPoly(nestedShell[j][0], nestedShell[i]) == true)
+                    {
+                        containRef.Add(Tuple.Create(i, j));
+                        if (!branches.Contains(j))
+                            branches.Add(j);
+                        continue;
+                    }
+                }
+            }
+
+            // locate root nodes
+            for (int i = 0; i < nestedShell.Count; i++)
+            {
+                if (!branches.Contains(i))
+                    roots.Add(i);
+            }
+
+            // DEBUG
+            Debug.Write("Roots: ");
+            foreach (int num in roots)
+                Debug.Write(num.ToString() + ", ");
+            Debug.Write("\n");
+            Debug.Write("Branches: ");
+            foreach (int num in branches)
+                Debug.Write(num.ToString() + ", ");
+            Debug.Write("\n");
+            foreach (Tuple<int, int> idx in containRef)
+            {
+                Debug.Print("Containment: ({0}, {1})", idx.Item1, idx.Item2);
+            }
+
+            // create root nodes (creating containment tree)
+            List<List<int>> chains = new List<List<int>>();
+            for (int i = containRef.Count - 1; i >= 0; i--)
+            {
+                if (roots.Contains(containRef[i].Item1))
+                {
+                    List<int> chain = new List<int>() { containRef[i].Item1, containRef[i].Item2 };
+                    chains.Add(chain);
+                    containRef.RemoveAt(i);
+                }
+            }
+            // create branch nodes (creating containment tree)
+            int safeLock = 0;
+            while (containRef.Count > 0 && safeLock < 10)
+            {
+                Debug.Print("Iteration at: " + safeLock.ToString() +
+                  " with " + containRef.Count.ToString() + "chains.");
+                int delChainIdx = -1;
+                int delCoupleIdx = -1;
+                foreach (var couple in containRef)
+                {
+                    foreach (List<int> chain in chains)
+                    {
+                        if (couple.Item2 == chain[chain.Count - 1])
+                            delChainIdx = chains.IndexOf(chain);
+                    }
+                    foreach (List<int> chain in chains)
+                    {
+                        if (couple.Item1 == chain[chain.Count - 1])
+                        {
+                            delCoupleIdx = containRef.IndexOf(couple);
+                            chain.Add(couple.Item2);
+                        }
+                    }
+                }
+                if (delChainIdx >= 0 && delCoupleIdx >= 0)
+                {
+                    chains.RemoveAt(delChainIdx);
+                    containRef.RemoveAt(delCoupleIdx);
+                }
+                safeLock++;
+            }
+
+            // DEBUG
+            Debug.Print("Num of Chains " + chains.Count.ToString());
+            foreach (List<int> chain in chains)
+            {
+                Debug.Print("Chain-" + chains.IndexOf(chain).ToString());
+                Debug.Write("Index: ");
+                foreach (int num in chain)
+                    Debug.Write(num.ToString() + ", ");
+                Debug.Write("\n");
+            }
+
+            int depth = 0;
+            foreach (List<int> chain in chains)
+            {
+                if (chain.Count > depth)
+                {
+                    depth = chain.Count;
+                }
+            }
+
+            // DEBUG
+            // Rhino.RhinoApp.WriteLine("Note the depth of tree is: " + depth.ToString());
+            // foreach (List<Point3d[]> item in groups)
+            // {
+            //   Rhino.RhinoApp.WriteLine("Length of the first " + item.Count.ToString());
+            // }
+
+            // generate Point Array pairs for multi-connected region
+            // List<List<List<gbXYZ>>> mcrs = new List<List<List<gbXYZ>>>();
+            List<string> mcrParentLabel = new List<string>();
+            for (int i = 1; i < depth; i++)
+            {
+                foreach (List<int> chain in chains)
+                {
+                    if (i < chain.Count)
+                    {
+                        List<List<gbXYZ>> mcr = new List<List<gbXYZ>>();
+                        foreach (gbRegion region in nestedRegion[chain[i - 1]])
+                        {
+                            if (GBMethod.IsPtInPoly(nestedShell[chain[i]][0], region.loop))
+                            {
+                                mcr.Add(region.loop);
+                                mcr.Add(nestedShell[chain[i]]);
+                                string parentLabel = chain[i - 1].ToString() + ":" +
+                                  nestedRegion[chain[i - 1]].IndexOf(region).ToString();
+                                mcrParentLabel.Add(parentLabel);
+                                mcrs.Add(mcr);
+                            }
+                        }
+                    }
+                }
+            }
+            // DEBUG
+            // foreach (string label in mcrParentLabel)
+            // {
+            //   Rhino.RhinoApp.WriteLine("MCR label: " + label);
+            // }
+
+            // merge mcr for those share the same parent polyline
+            // this creates mcr with multiple holes
+            for (int i = mcrs.Count - 1; i >= 0; i--)
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (mcrParentLabel[j] == mcrParentLabel[i])
+                    {
+                        mcrs[i].RemoveAt(0);
+                        mcrs[j].AddRange(mcrs[i]);
+                        mcrs.RemoveAt(i);
+                    }
+                }
+            }
+
+            return;
         }
 
         /// <summary>
         /// ONLY used after the region detect function
         /// the input crvs must follows the right order (counter-clockwise)
         /// </summary>
-        /// <param name="crvs"></param>
-        /// <returns></returns>
         private static List<gbXYZ> SortPtLoop(List<gbSeg> lines)
         {
             if (lines.Count == 0)

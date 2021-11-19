@@ -61,9 +61,9 @@ namespace Gingerbread
 
             // process wall lines at each level
             // process space boundary and matching relation at each level
-            Dictionary<int, List<List<gbXYZ>>> dictLoop = new Dictionary<int, List<List<gbXYZ>>>();
+            Dictionary<int, List<gbRegion>> dictRegion = new Dictionary<int, List<gbRegion>>();
             Dictionary<int, List<gbXYZ>> dictShell = new Dictionary<int, List<gbXYZ>>();
-            Dictionary<int, List<List<string>>> dictMatch = new Dictionary<int, List<List<string>>>();
+
             for (int z = 0; z < levelNum; z++)
             {
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
@@ -79,22 +79,31 @@ namespace Gingerbread
 
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
                     Properties.Settings.Default.tolGroup);
-                List<gbSeg> orphans = new List<gbSeg>();
-                // dump some orphan segments that will be processed later
+
+                // a trush bin for stray lines that are processed after space detection
+                // three steps are dumping debris to this trush bin
+                // 1st cluster. assume that segments less than 4 are not likely to compose a region
+                // 2nd alignment and lattice regeneration. 
+                // 3rd after region detection. (not likely produces stray lines here if the former process done well)
+                List<gbSeg> strays = new List<gbSeg>();
                 for (int i = lineGroups.Count - 1; i >= 0; i--)
                 {
                     if (lineGroups[i].Count <= 3)
                     {
-                        orphans.AddRange(lineGroups[i]);
+                        strays.AddRange(lineGroups[i]);
                         lineGroups.RemoveAt(i);
                     }
                 }
 
                 // enter point alignment and space detection of each segment group
-                foreach (List<gbSeg> lineGroup in lineGroups)
+                List<List<gbRegion>> nestedRegion = new List<List<gbRegion>>();
+                List<List<gbXYZ>> nestedShell = new List<List<gbXYZ>>();
+
+                // enter point alignment and space detection of each segment group
+                for (int g = 0; g < lineGroups.Count; g++)
                 {
 
-                    List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroup), 0.00001);
+                    List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroups[g]), 0.00001);
 
 
                     List<gbXYZ> joints = PointAlign.GetJoints(lineShatters, 
@@ -126,46 +135,47 @@ namespace Gingerbread
                         out anchorInfo);
 
 
-                    List<gbSeg> strays; // abandoned for now
+                    List<gbSeg> latticeDebries; // abandoned for now
                     List<List<gbSeg>> nestedLattice = PointAlign.GetLattice(ptAlign, anchorInfo,
-                        Properties.Settings.Default.tolDouble, out strays);
+                        Properties.Settings.Default.tolDouble, out latticeDebries);
                     List<gbSeg> lattice = Util.FlattenList(nestedLattice);
+                    strays.AddRange(latticeDebries);
 
-
-
-                    List<List<gbXYZ>> nestedSpace;
-                    List<gbXYZ> nestedShell;
-                    List<List<string>> nestedMatch;
-                    List<List<gbSeg>> nestedOrphans;
+                    List<gbRegion> regions;
+                    List<gbXYZ> regionShell;
+                    List<List<gbSeg>> regionDebris;
 
                     Report(10 + z * 80 / levelNum, $"Processing floorplan on level {z} ...");
 
-                    SpaceDetection.GetBoundary(lattice, z, out nestedSpace, out nestedShell, out nestedMatch, out nestedOrphans);
+                    SpaceDetect.GetRegion(lattice, z, g, out regions, out regionShell, out regionDebris);
+                    strays.AddRange(Util.FlattenList(regionDebris));
 
-
-                    // left for some MCR coupling work
-
-
-                    dictLoop.Add(z, nestedSpace);
-                    dictShell.Add(z, nestedShell);
-                    dictMatch.Add(z, nestedMatch);
-
-                    break;
+                    nestedShell.Add(regionShell);
+                    nestedRegion.Add(regions);
                 }
+
+                // left for some MCR coupling work
+                // only a placeholder that solves nothing
+                //SpaceDetect.GetMCR(nestedRegion, nestedShell, out List<List<List<gbXYZ>>> mcrs);
+
+                // summarization after solving the MCR issues
+                dictRegion.Add(z, Util.FlattenList(nestedRegion));
+                dictShell.Add(z, Util.FlattenList(nestedShell));
             }
 
-            if (dictLoop.Count == 0 || dictShell.Count == 0)
-            {
-                System.Windows.MessageBox.Show("Something wrong with the space detection. \n" +
-                    "The process will be terminated.", "Warning");
-                return;
-            }
+
+            //if (dictLoop.Count == 0 || dictShell.Count == 0)
+            //{
+            //    System.Windows.MessageBox.Show("Something wrong with the space detection. \n" +
+            //        "The process will be terminated.", "Warning");
+            //    return;
+            //}
 
             Report(90, "Create gbXML geometry information ...");
 
 
             XMLGeometry.Generate(dictElevation,
-                dictLoop, dictShell, dictMatch,
+                dictRegion, dictShell, 
                 dictWindow, dictDoor, dictCurtain,
                 out List<gbZone> zones,
                 out List<gbFloor> floors,

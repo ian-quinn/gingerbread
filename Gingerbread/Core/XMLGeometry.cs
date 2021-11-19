@@ -10,9 +10,10 @@ namespace Gingerbread.Core
     {
         public static void Generate(
             Dictionary<int, Tuple<string, double>> dictElevation,
-            Dictionary<int, List<List<gbXYZ>>> dictLoop,
+            Dictionary<int, List<gbRegion>> dictRegion,
+            //Dictionary<int, List<List<gbXYZ>>> dictLoop,
             Dictionary<int, List<gbXYZ>> dictShell,
-            Dictionary<int, List<List<string>>> dictMatch,
+            //Dictionary<int, List<List<string>>> dictMatch,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
             Dictionary<int, List<gbSeg>> dictCurtain,
@@ -54,19 +55,20 @@ namespace Gingerbread.Core
 
                 List<gbZone> thisZone = new List<gbZone>();
                 List<gbSurface> thisSurface = new List<gbSurface>();
-                for (int j = 0; j < dictLoop[level.id].Count; j++)
+                foreach (gbRegion region in dictRegion[level.id])
                 {
-                    if (dictLoop[level.id][j].Count == 0)
+                    // skip the void region that is just a place holder
+                    if (region.loop.Count == 0)
                         continue;
-                    gbZone newZone = new gbZone("Level_" + level.id + "::Zone_" + j, level, dictLoop[level.id][j]);
+                    gbZone newZone = new gbZone(region.label, level, region.loop);
                     thisZone.Add(newZone);
                     //List<string> srfId = new List<string>();
                     //List<Line> boundaryLine = new List<Line>();
-                    for (int k = 0; k < dictLoop[level.id][j].Count - 1; k++)
+                    for (int k = 0; k < region.loop.Count - 1; k++)
                     {
                         //srfId.Add(newZone.walls[k].id);
                         //boundaryLine.Add(new Line(dictLoop[levelLabel[i]][j][k], dictLoop[levelLabel[i]][j][k + 1]));
-                        string adjacency = dictMatch[level.id][j][k];
+                        string adjacency = region.match[k];
                         newZone.walls[k].adjSrfId = adjacency;
                         if (adjacency == "Outside")
                             newZone.walls[k].type = surfaceTypeEnum.ExteriorWall;

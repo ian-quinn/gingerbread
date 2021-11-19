@@ -246,6 +246,20 @@ namespace Gingerbread.Core
         }
     }
 
+    // just have a try...
+    public class gbRegion
+    {
+        public string label; // label of current region
+        public List<gbXYZ> loop; // vertice loop of this region
+        public List<string> match; // label of the adjacent edge
+
+        public gbRegion(string label, List<gbXYZ> loop, List<string> match)
+        {
+            this.label = label;
+            this.loop = loop;
+            this.match = match;
+        }
+    }
 
     // note these classes aim for Energyplus IDF structures
     // in gbXML there must be no coincident surface, but in IDF there must be two identical 
@@ -367,7 +381,7 @@ namespace Gingerbread.Core
 
     public class gbZone
     {
-        public string id; // structured relationships Floor_1::Zone_1::Srf_1
+        public string id; // structured relationships F0::Z0::Srf_1
         public List<gbXYZ> loop;
 
         public gbLevel level;
