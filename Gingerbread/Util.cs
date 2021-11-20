@@ -251,9 +251,9 @@ namespace Gingerbread
         /// </summary>
         public static Curve GetLocationCurve(this Element e)
         {
-            Debug.Assert(null != e.Location, "expected an element with a valid Location");
+            Debug.Assert(null != e.Location, "Util:: " + "expected an element with a valid Location");
             LocationCurve lc = e.Location as LocationCurve;
-            Debug.Assert(null != lc, "expected an element with a valid LocationCurve");
+            Debug.Assert(null != lc, "Util:: " + "expected an element with a valid LocationCurve");
             return lc.Curve;
         }
 
@@ -275,7 +275,7 @@ namespace Gingerbread
             CategoryNameMap subcats = c.SubCategories;
             foreach (Category lineStyle in subcats)
             {
-                Debug.Print("Line style", string.Format("Linestyle {0} id {1}", lineStyle.Name, lineStyle.Id.ToString()));
+                Debug.Print("Util:: " + "Line style", string.Format("Linestyle {0} id {1}", lineStyle.Name, lineStyle.Id.ToString()));
             }
         }
 
@@ -398,7 +398,7 @@ namespace Gingerbread
                 }
                 catch
                 {
-                    Debug.Print("There's no matching pattern in the document");
+                    Debug.Print("Util:: " + "There's no matching pattern in the document");
                 }
             }
 
@@ -453,7 +453,7 @@ namespace Gingerbread
                 }
                 catch
                 {
-                    Debug.Print("There's no matching pattern in the document");
+                    Debug.Print("Util:: " + "There's no matching pattern in the document");
                 }
             }
 
@@ -757,7 +757,7 @@ namespace Gingerbread
             string s = u.ToString();
 
             Debug.Assert(s.StartsWith("UST_"),
-              "expected UnitSymbolType enumeration value to begin with 'UST_'");
+              "Util:: " + "expected UnitSymbolType enumeration value to begin with 'UST_'");
 
             s = s.Substring(4).Replace("_SUP_", "^").ToLower();
 

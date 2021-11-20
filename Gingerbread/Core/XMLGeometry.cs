@@ -30,7 +30,7 @@ namespace Gingerbread.Core
             
             foreach (gbLevel level in levels)
             {
-                Debug.Print($"On level {level.id} elevation {level.elevation} height {level.height}");
+                Debug.Print("XMLGeometry:: " + $"On level {level.id} elevation {level.elevation} height {level.height}");
             }
 
             // cached intermediate data
@@ -146,16 +146,16 @@ namespace Gingerbread.Core
                         List<gbXYZ> boundingBox = OrthoHull.GetRectHull(scatterPts);
                         boundingBox.RemoveAt(boundingBox.Count - 1); // transfer to open polyloop
 
-                        //Debug.Print("Srf location: " + srf.locationLine.ToString());
+                        //Debug.Print("XMLGeometry:: " + "Srf location: " + srf.locationLine.ToString());
                         gbXYZ srfVec = srf.locationLine.Direction;
                         gbXYZ srfOrigin = srf.locationLine.PointAt(0);
                         List<gbXYZ> openingLoop = new List<gbXYZ>();
                         foreach (gbXYZ pt in boundingBox)
                         {
-                            //Debug.Print("Pt before transformation: " + pt.ToString());
+                            //Debug.Print("XMLGeometry:: " + "Pt before transformation: " + pt.ToString());
                             gbXYZ _pt = pt.SwapPlaneZY().RotateOnPlaneZ(srfVec).Move(srfOrigin);
                             openingLoop.Add(_pt);
-                            //Debug.Print("Pt after transformation: " + _pt.ToString());
+                            //Debug.Print("XMLGeometry:: " + "Pt after transformation: " + _pt.ToString());
                         }
                         gbOpening newOpening = new gbOpening(srf.id + "::Opening_" +
                             srf.openings.Count, openingLoop);
@@ -229,16 +229,16 @@ namespace Gingerbread.Core
                         List<gbXYZ> boundingBox = OrthoHull.GetRectHull(scatterPts);
                         boundingBox.RemoveAt(boundingBox.Count - 1); // transfer to open polyloop
 
-                        //Debug.Print("Srf location: " + srf.locationLine.ToString());
+                        //Debug.Print("XMLGeometry:: " + "Srf location: " + srf.locationLine.ToString());
                         gbXYZ srfVec = srf.locationLine.Direction;
                         gbXYZ srfOrigin = srf.locationLine.PointAt(0);
                         List<gbXYZ> openingLoop = new List<gbXYZ>();
                         foreach (gbXYZ pt in boundingBox)
                         {
-                            //Debug.Print("Pt before transformation: " + pt.ToString());
+                            //Debug.Print("XMLGeometry:: " + "Pt before transformation: " + pt.ToString());
                             gbXYZ _pt = pt.SwapPlaneZY().RotateOnPlaneZ(srfVec).Move(srfOrigin);
                             openingLoop.Add(_pt);
-                            //Debug.Print("Pt after transformation: " + _pt.ToString());
+                            //Debug.Print("XMLGeometry:: " + "Pt after transformation: " + _pt.ToString());
                         }
                         gbOpening newOpening = new gbOpening(srf.id + "::Opening_" +
                             srf.openings.Count, openingLoop);

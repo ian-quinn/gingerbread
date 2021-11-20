@@ -45,7 +45,7 @@ namespace Gingerbread
 
             // ----------------------------------- Part C ends here ----------------------------------------//
 
-            
+
             //List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[0]);
 
             //for (int i = 0; i < flatLines.Count; i++)
@@ -53,7 +53,7 @@ namespace Gingerbread
             //        if (i != j)
             //            flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
             //                Properties.Settings.Default.expandTolerance);
-            ////Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+            ////Debug.Print("ExtEmendo:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
             //List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
             //    Properties.Settings.Default.groupTolerance);

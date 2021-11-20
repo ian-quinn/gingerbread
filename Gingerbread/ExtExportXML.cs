@@ -75,7 +75,7 @@ namespace Gingerbread
                         if (i != j)
                             flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
                                 Properties.Settings.Default.tolExpand);
-                //Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+                //Debug.Print("ExtExportEXML:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
                     Properties.Settings.Default.tolGroup);
@@ -156,7 +156,8 @@ namespace Gingerbread
 
                 // left for some MCR coupling work
                 // only a placeholder that solves nothing
-                //SpaceDetect.GetMCR(nestedRegion, nestedShell, out List<List<List<gbXYZ>>> mcrs);
+                SpaceDetect.GetMCR(nestedRegion, nestedShell, out List<List<List<gbXYZ>>> mcrs);
+                Debug.Print("ExtExportEXML:: " + "We got {0} MCR here", mcrs.Count);
 
                 // summarization after solving the MCR issues
                 dictRegion.Add(z, Util.FlattenList(nestedRegion));
@@ -200,7 +201,7 @@ namespace Gingerbread
             CurrentControl.CurrentValue = progress;
             CurrentUI.Dispatcher.Invoke(new ProgressBarDelegate(CurrentControl.NotifyUI), System.Windows.Threading.DispatcherPriority.Background);
             CurrentUI.btnCancel.Click += CurrentUI_Closed;
-            Debug.Print(status + " / " + progress);
+            Debug.Print("ExtExportEXML:: " + status + " / " + progress);
             if (Cancel)
             {
                 CurrentControl.CurrentContext = "Aborted";

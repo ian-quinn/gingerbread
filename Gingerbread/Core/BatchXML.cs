@@ -46,7 +46,7 @@ namespace Gingerbread.Core
                         if (i != j)
                             flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j], 
                                 Properties.Settings.Default.tolExpand);
-                            //Debug.Print(flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+                            //Debug.Print("BatchXML:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines, 
                     Properties.Settings.Default.tolGroup);
@@ -90,15 +90,15 @@ namespace Gingerbread.Core
                             handCopy.Add(h);
                         handsCopy.Add(handCopy);
                     }
-                    
+
                     //joints = joints.OrderBy(pt => (pt.X + pt.Y)).ToList();
                     //for (int i = 0; i < joints.Count; i++)
                     //{
-                    //    Debug.Print("F-{0} JOINTS-{1} ({2}, {3})", z, i, joints[i].X, joints[i].Y);
+                    //    Debug.Print("BatchXML:: " + "F-{0} JOINTS-{1} ({2}, {3})", z, i, joints[i].X, joints[i].Y);
                     //    string handcollector = "";
                     //    foreach (gbXYZ hand in hands[i])
                     //        handcollector += string.Format("({0:F2},{1:F2})-", hand.X, hand.Y);
-                    //    Debug.Print("F-{0} HANDS-{1} {2}", z, i, handcollector);
+                    //    Debug.Print("BatchXML:: " + "F-{0} HANDS-{1} {2}", z, i, handcollector);
                     //}
 
                     List<List<gbXYZ>> anchorInfo_temp;
@@ -144,8 +144,8 @@ namespace Gingerbread.Core
 
 
                     // DEBUG
-                    //Debug.Print("F-{0} LOOPS-{1}", z, nestedSpace.Count);
-                    //Debug.Print("F-{0} SHELLS-{1}", z, nestedShell.Count);
+                    //Debug.Print("BatchXML:: " + "F-{0} LOOPS-{1}", z, nestedSpace.Count);
+                    //Debug.Print(""BatchXML:: " + F-{0} SHELLS-{1}", z, nestedShell.Count);
                     //System.Windows.MessageBox.Show("Space Detection at F-" + z + "\n" +
                     //    "Loops: " + nestedSpace.Count + "\n" + 
                     //    "Shells: " + nestedShell.Count, "Report");

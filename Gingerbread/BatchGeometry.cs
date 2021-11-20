@@ -136,7 +136,7 @@ namespace Gingerbread
                     {
                         XYZ lp = Util.GetFamilyInstanceLocation(d);
                         doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), d.Name));
-                        Debug.Print($"F{z}: " + lp.ToString());
+                        Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
                     }
                 }
                 dictDoor.Add(z, doorLocs);
@@ -206,7 +206,6 @@ namespace Gingerbread
                     floorSlabs.Add(floorSlab);
                 }
                 dictFloor.Add(z, floorSlabs);
-                Debug.Print(floorSlabs.Count + " floor slabs added on level " + z);
             }
 
 

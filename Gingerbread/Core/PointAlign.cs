@@ -64,7 +64,7 @@ namespace Gingerbread.Core
                         // add the new vertex to the vertex list
                     }
                     crv.Reverse(); // reverse the curve for creating the opposite half-curve in the second part of the loop
-                                   //Debug.Print("Tested point is (" + testedPt.X.ToString() + ", " + testedPt.Y.ToString() + ")");
+                                   //Debug.Print("PointAlign:: " + "Tested point is (" + testedPt.X.ToString() + ", " + testedPt.Y.ToString() + ")");
                 }
             }
             List<List<gbXYZ>> vecList = new List<List<gbXYZ>>();

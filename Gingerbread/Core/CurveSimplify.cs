@@ -183,7 +183,7 @@ namespace Gingerbread.Core
 
                 c++;
             }
-            //Debug.Print("solution reached in {0} steps.", c + 1);
+            //Debug.Print("CurveSimplify:: " + "solution reached in {0} steps.", c + 1);
             
             return PolyLine.Create(ptList);
         }
@@ -209,9 +209,9 @@ namespace Gingerbread.Core
                 int noOfTestPoints = i;
                 var crvPrms = Enumerable.Range(0, noOfTestPoints)
                     .Select(x => (double) x / (noOfTestPoints - 1)).ToList();
-                //Debug.Print("### crvPrms ###" + Util.ListString(crvPrms));
+                //Debug.Print("CurveSimplify:: " + "### crvPrms ###" + Util.ListString(crvPrms));
                 var crvPoints = crvPrms.Select(p => crv.Evaluate(p, true)).ToList();
-                //Debug.Print("### crvPoints ###" + Util.ListString(crvPoints));
+                //Debug.Print("CurveSimplify:: " + "### crvPoints ###" + Util.ListString(crvPoints));
 
 
                 List<double> FirstNeighborLengths = new List<double>();
@@ -247,7 +247,7 @@ namespace Gingerbread.Core
                     RemoveMinDifferenceSegment(crvPoints, FirstNeighborLengths, SecondNeighborLengths, LengthDifferences,
                         LengthDifferenceSorted, LengthDifferenceSortedIds, LengthDifferenceId_PosIn_LengthDifferenceSortedIds);
                 }
-                //Debug.Print("### crvPoints after ###" + Util.ListString(crvPoints));
+                //Debug.Print("CurveSimplify:: " + "### crvPoints after ###" + Util.ListString(crvPoints));
                 PolyLine ply = PolyLine.Create(crvPoints);
                 if (Basic.PolyLineLength(ply) > Basic.PolyLineLength(plMax))
                 {

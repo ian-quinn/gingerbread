@@ -85,7 +85,7 @@ namespace Gingerbread.Core
             // For each Vertex that has only one outgoing half-curve, kill the half-curve and its opposite
             foreach (KeyValuePair<int, List<int>> path in VOut)
             {
-                //Debug.Print("This point has been connected to " + path.Value.Count.ToString() + " curves");
+                //Debug.Print("SpaceDetect:: " + "This point has been connected to " + path.Value.Count.ToString() + " curves");
                 if (path.Value.Count == 1)
                 {
                     HCK[path.Value[0]] = true;
@@ -102,7 +102,7 @@ namespace Gingerbread.Core
             {
                 int minIdx = -1;
                 double minAngle = 2 * Math.PI;
-                //Debug.Print(VOut[HCV[HCO[HCIdx]]].Count().ToString());
+                //Debug.Print("SpaceDetect:: " + VOut[HCV[HCO[HCIdx]]].Count().ToString());
                 foreach (int HCOut in VOut[HCV[HCO[HCIdx]]])
                 {
                     if (HCOut != HCO[HCIdx] & HCK[HCIdx] == false & HCK[HCOut] == false)
@@ -272,7 +272,7 @@ namespace Gingerbread.Core
 
             if (nestedRegion.Count != nestedShell.Count)
             {
-                Debug.Print("The number of space groups and shells are not equal. This may due to the space detection failure");
+                Debug.Print("SpaceDetect:: " + "The number of space groups and shells are not equal. This may due to the space detection failure");
                 return;
             }
 
@@ -283,6 +283,9 @@ namespace Gingerbread.Core
             // iterate to find all containment relations
             for (int i = 0; i < nestedShell.Count; i++)
             {
+                // to prevent null shells exist
+                if (nestedShell[i].Count == 0)
+                    continue;
                 for (int j = i + 1; j < nestedShell.Count; j++)
                 {
                     if (GBMethod.IsPtInPoly(nestedShell[i][0], nestedShell[j]) == true)
@@ -310,17 +313,17 @@ namespace Gingerbread.Core
             }
 
             // DEBUG
-            Debug.Write("Roots: ");
+            Debug.Write("SpaceDetect:: " + "Roots: ");
             foreach (int num in roots)
                 Debug.Write(num.ToString() + ", ");
             Debug.Write("\n");
-            Debug.Write("Branches: ");
+            Debug.Write("SpaceDetect:: " + "Branches: ");
             foreach (int num in branches)
                 Debug.Write(num.ToString() + ", ");
             Debug.Write("\n");
             foreach (Tuple<int, int> idx in containRef)
             {
-                Debug.Print("Containment: ({0}, {1})", idx.Item1, idx.Item2);
+                Debug.Print("SpaceDetect:: " + "Containment: ({0}, {1})", idx.Item1, idx.Item2);
             }
 
             // create root nodes (creating containment tree)
@@ -336,9 +339,10 @@ namespace Gingerbread.Core
             }
             // create branch nodes (creating containment tree)
             int safeLock = 0;
-            while (containRef.Count > 0 && safeLock < 10)
+            // not possible to exist containment surpass 10 levels
+             while (containRef.Count > 0 && safeLock < 10)
             {
-                Debug.Print("Iteration at: " + safeLock.ToString() +
+                Debug.Print("SpaceDetect:: " + "Iteration at: " + safeLock.ToString() +
                   " with " + containRef.Count.ToString() + "chains.");
                 int delChainIdx = -1;
                 int delCoupleIdx = -1;
@@ -367,11 +371,11 @@ namespace Gingerbread.Core
             }
 
             // DEBUG
-            Debug.Print("Num of Chains " + chains.Count.ToString());
+            Debug.Print("SpaceDetect:: " + "Num of Chains " + chains.Count.ToString());
             foreach (List<int> chain in chains)
             {
-                Debug.Print("Chain-" + chains.IndexOf(chain).ToString());
-                Debug.Write("Index: ");
+                Debug.Write("SpaceDetect:: " + "Chain-" + chains.IndexOf(chain).ToString());
+                Debug.Write(" ::Index-");
                 foreach (int num in chain)
                     Debug.Write(num.ToString() + ", ");
                 Debug.Write("\n");
@@ -385,7 +389,6 @@ namespace Gingerbread.Core
                     depth = chain.Count;
                 }
             }
-
             // DEBUG
             // Rhino.RhinoApp.WriteLine("Note the depth of tree is: " + depth.ToString());
             // foreach (List<Point3d[]> item in groups)
@@ -403,14 +406,18 @@ namespace Gingerbread.Core
                     if (i < chain.Count)
                     {
                         List<List<gbXYZ>> mcr = new List<List<gbXYZ>>();
+                        // loop through the parent group to find the right parent loop
                         foreach (gbRegion region in nestedRegion[chain[i - 1]])
                         {
+                            // to prevent there is null region with no data at all
+                            if (region.loop.Count == 0)
+                                continue;
                             if (GBMethod.IsPtInPoly(nestedShell[chain[i]][0], region.loop))
                             {
-                                mcr.Add(region.loop);
-                                mcr.Add(nestedShell[chain[i]]);
+                                mcr.Add(region.loop); // add the parent loop
+                                mcr.Add(nestedShell[chain[i]]); // add the following child loop
                                 string parentLabel = chain[i - 1].ToString() + ":" +
-                                  nestedRegion[chain[i - 1]].IndexOf(region).ToString();
+                                  nestedRegion[chain[i - 1]].IndexOf(region).ToString(); // which loop in which group
                                 mcrParentLabel.Add(parentLabel);
                                 mcrs.Add(mcr);
                             }

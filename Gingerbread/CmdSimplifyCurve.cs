@@ -59,7 +59,7 @@ namespace Gingerbread
                 // Here merging shattered lines to polylines is time-consuming
                 // This is for the simplification of polyline boudnaries while controlingn the number of vertices
                 List<PolyLine> plys = Core.Basic.JoinLineByCluster(segments);
-                Debug.Print("There are {0} polylines", plys.Count.ToString());
+                Debug.Print("CmdSimplifyCurve:: There are {0} polylines", plys.Count.ToString());
 
 
                 List<PolyLine> simplePlys = new List<PolyLine>();
@@ -73,7 +73,7 @@ namespace Gingerbread
                 //{
                 //    simplePlys.Add(Core.SimplifyCurve.DouglasPeuckerReduction(crv, Util.MmToFoot(500)));
                 //}
-                Debug.Print("There are {0} simplified polylines", simplePlys.Count.ToString());
+                Debug.Print("CmdSimplifyCurve:: There are {0} simplified polylines", simplePlys.Count.ToString());
 
 
                 using (Transaction tx = new Transaction(doc, "Draw simplified polyline"))

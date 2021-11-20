@@ -218,15 +218,15 @@ namespace Gingerbread.Core
             foreach (double interval in intervals)
                 if (Math.Round(interval, 6) > 1 || Math.Round(interval, 6) < 0)
                 {
-                    //Debug.Print("Trigger malfunction:");
+                    //Debug.Print("GBClass:: " + "Trigger malfunction:");
                     return new List<gbSeg>() { new gbSeg(start, end) };
                 }
             List<gbSeg> segments = new List<gbSeg>();
             intervals.Sort();
             intervals.Insert(0, 0);
             intervals.Add(1);
-            Debug.Print("Fractiles: " + Util.ListString(intervals));
-            Debug.Print("Host line: ({0:f3}, {1:f3})-({2:f3}, {3:f3})", Util.MToFoot(start.X),
+            Debug.Print("GBClass:: " + "Fractiles: " + Util.ListString(intervals));
+            Debug.Print("GBClass:: " + "Host line: ({0:f3}, {1:f3})-({2:f3}, {3:f3})", Util.MToFoot(start.X),
                 Util.MToFoot(start.Y), Util.MToFoot(end.X), Util.MToFoot(end.Y));
 
             for (int i = 0; i < intervals.Count - 1; i++)
@@ -236,7 +236,7 @@ namespace Gingerbread.Core
                     if (debris.Length > 0.0000001)
                         segments.Add(debris);
                 }
-            Debug.Print("Generated: " + segments.Count);
+            Debug.Print("GBClass:: " + "Generated: " + segments.Count);
 
             return segments;
         }
