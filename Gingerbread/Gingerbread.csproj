@@ -81,6 +81,7 @@
     <Compile Include="Core\OrthoHull.cs" />
     <Compile Include="Core\PointAlign.cs" />
     <Compile Include="Core\CurveSimplify.cs" />
+    <Compile Include="Core\RegionTessellate.cs" />
     <Compile Include="Core\SpaceDetect.cs" />
     <Compile Include="Core\XMLGeometry.cs" />
     <Compile Include="Core\XMLSchema.cs" />

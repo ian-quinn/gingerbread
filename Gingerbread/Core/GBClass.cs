@@ -49,6 +49,10 @@ namespace Gingerbread.Core
         {
             return Math.Sqrt(x * x + y * y + z * z);
         }
+        public gbXYZ Copy()
+        {
+            return new gbXYZ(X, Y, Z);
+        }
         public gbXYZ CrossProduct(gbXYZ b)
         {
             return new gbXYZ(
@@ -252,12 +256,32 @@ namespace Gingerbread.Core
         public string label; // label of current region
         public List<gbXYZ> loop; // vertice loop of this region
         public List<string> match; // label of the adjacent edge
+        public bool isShell = false; // reconsider this
+        //public bool isMCR = false; // reconsider this
+
+        // null by default
+        public List<List<gbXYZ>> innerLoops;
+        public List<List<string>> innerMatchs;
+        public List<List<gbXYZ>> tiles;
 
         public gbRegion(string label, List<gbXYZ> loop, List<string> match)
         {
             this.label = label;
             this.loop = loop;
             this.match = match;
+        }
+        public void InitializeMCR()
+        {
+            if (innerLoops != null && innerMatchs != null)
+            {
+                List<List<gbXYZ>> mcr = new List<List<gbXYZ>>();
+                mcr.Add(loop);
+                mcr.AddRange(innerLoops);
+                tiles = RegionTessellate.Rectangle(mcr);
+                //isMCR = true;
+                return;
+            }
+            return;
         }
     }
 
@@ -383,6 +407,7 @@ namespace Gingerbread.Core
     {
         public string id; // structured relationships F0::Z0::Srf_1
         public List<gbXYZ> loop;
+        public List<List<gbXYZ>> tiles;
 
         public gbLevel level;
 
@@ -403,15 +428,28 @@ namespace Gingerbread.Core
         public List<gbSurface> floors = new List<gbSurface>();
 
         // the input loop of points must be closed
-        public gbZone(string id, gbLevel level, List<gbXYZ> loop)
+        public gbZone(string id, gbLevel level, gbRegion region)
         {
             this.id = id;
-            this.loop = GBMethod.ElevatePtsLoop(loop, level.elevation);
+            this.loop = GBMethod.ElevatePtsLoop(region.loop, level.elevation);
+            if (region.tiles != null)
+            {
+                List<List<gbXYZ>> elevatedTiles = new List<List<gbXYZ>>();
+                foreach (List<gbXYZ> tile in region.tiles)
+                    elevatedTiles.Add(GBMethod.ElevatePtsLoop(tile, level.elevation));
+                tiles = elevatedTiles;
+            }
+            else
+            {
+                tiles = new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(region.loop, level.elevation) };
+            }
+
+                
 
             this.level = level;
             this.height = level.height;
 
-            area = GBMethod.GetPolyArea(loop);
+            area = GBMethod.GetPolyArea(region.loop); // PENDING
             volume = area * height;
 
             walls = new List<gbSurface>();
@@ -425,9 +463,37 @@ namespace Gingerbread.Core
                     this.loop[i] + new gbXYZ(0, 0, height)
                 };
                 // only extrude on axis-z
-                walls.Add(new gbSurface(id + "::Wall_" + i, id, subLoop, 90));
+                gbSurface wall = new gbSurface(id + "::Wall_" + i, id, subLoop, 90);
+                wall.adjSrfId = region.match[i];
+                if (region.match[i].Contains("Outside"))
+                    wall.type = surfaceTypeEnum.ExteriorWall;
+                else
+                    wall.type = surfaceTypeEnum.InteriorWall;
+                walls.Add(wall);
             }
 
+            if (region.innerLoops != null && region.innerMatchs != null)
+            {
+                for (int i = 0; i < region.innerLoops.Count; i++)
+                {
+                    List<gbSurface> innerWalls = new List<gbSurface>();
+                    for (int j = 0; j < region.innerLoops[i].Count - 1; j++)
+                    {
+                        List<gbXYZ> elevatedInnerLoop = GBMethod.ElevatePtsLoop(region.innerLoops[i], level.elevation);
+                        List<gbXYZ> subLoop = new List<gbXYZ>() {
+                            elevatedInnerLoop[j],
+                            elevatedInnerLoop[j + 1],
+                            elevatedInnerLoop[j + 1] + new gbXYZ(0, 0, height),
+                            elevatedInnerLoop[j] + new gbXYZ(0, 0, height)
+                        };
+                        gbSurface wall = new gbSurface(id + "::Wall" + i + "_" + j, id, subLoop, 90);
+                        wall.adjSrfId = region.innerMatchs[i][j];
+                        wall.type = surfaceTypeEnum.InteriorWall;
+                        innerWalls.Add(wall);
+                    }
+                    walls.AddRange(innerWalls);
+                }
+            }
         }
         /// <summary>
         /// Add up all surfaces of this zone

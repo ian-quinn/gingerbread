@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Gingerbread.Core;
 
@@ -19,8 +20,8 @@ namespace Gingerbread.Core
         // nested lists of points representing boundaries of each floor slab (there may be multiple isolated slabs)
         // nested lists of strings representing the surface matching relationships.
         // the surface matching across different levels will not be covered here
-        public static void GetRegion(List<gbSeg> lines, int levelId, int groupId, out List<gbRegion> regions,
-            out List<gbXYZ> shell, out List<List<gbSeg>> orphans)
+        public static void GetRegion(List<gbSeg> lines, int levelId, int groupId, 
+            out List<gbRegion> regions, out List<List<gbSeg>> orphans) // out List<gbXYZ> shell, 
         {
 
             List<gbXYZ> Vtc = new List<gbXYZ>(); // all unique vertices
@@ -206,8 +207,8 @@ namespace Gingerbread.Core
 
             foreach (KeyValuePair<int, List<gbSeg>> kvp in F)
             {
-                // if the face is orphan or outer shell skip the matching process
-                if (orphanId.Contains(kvp.Key) || shellId.Contains(kvp.Key))
+                // if the face is orphan skip the matching process
+                if (orphanId.Contains(kvp.Key)) // || shellId.Contains(kvp.Key)
                 {
                     //renumberOffset++;
                     ptLoops.Add(new List<gbXYZ>());
@@ -216,6 +217,7 @@ namespace Gingerbread.Core
                         new List<gbXYZ>(), new List<string>()));
                     continue;
                 }
+
                 List<gbSeg> edgeLoop = new List<gbSeg>();
                 List<string> infoLoop = new List<string>();
                 for (int j = 0; j < kvp.Value.Count; j++)
@@ -224,9 +226,12 @@ namespace Gingerbread.Core
                     FIdx.TryGetValue(HCF[adjCrvIdx], out List<int> adjFace);
 
                     string boundaryCondition;
-                    // the matching code should follow the definition in gbZone and gbSurface
+                    // the naming convention should follow the XML serialization
                     if (orphanId.Contains(HCF[adjCrvIdx]) || shellId.Contains(HCF[adjCrvIdx]))
-                        boundaryCondition = "Outside";
+                        //boundaryCondition = "Outside";
+                        // record the matching relations between shell and inner zone boundaries
+                        boundaryCondition = "F" + levelId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
+                            "::Outside_" + adjFace.IndexOf(adjCrvIdx).ToString();
                     else
                         //boundaryCondition = "Level_" + levelId + "::Zone_" + (HCF[adjCrvIdx] - renumberOffset).ToString() +
                         //    "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
@@ -243,8 +248,16 @@ namespace Gingerbread.Core
 
                 infoLoops.Add(infoLoop);
 
-                // additional for region test
-                regions.Add(new gbRegion("F" + levelId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop));
+                // mark the shell region. make it the first element in the list: regions
+                // this could mandate every nested regions to have its outer shell
+                gbRegion newRegion = new gbRegion("F" + levelId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop);
+                if (shellId.Contains(kvp.Key))
+                {
+                    newRegion.isShell = true;
+                    regions.Insert(0, newRegion);
+                }
+                else
+                    regions.Add(newRegion);
             }
 
             // the first item in shellId will be the output
@@ -257,45 +270,40 @@ namespace Gingerbread.Core
                 orphanLoops.Add(F[id]);
 
             // outputs
-            //loops = ptLoops;
-            orphans = orphanLoops;
-            shell = ptShell;
-            //match = infoLoops;
 
+            // following information all nested in gbRegion for convenience
+            //loops = ptLoops;
+            //shell = ptShell;
+            //match = infoLoops;
+            orphans = orphanLoops; // PENDING need to flatten this list
+            
             //Util.LogPrint("Region detection result: " + loops.Count + " " + shell.Count + " " + match.Count);
         }
 
-        public static void GetMCR(List<List<gbRegion>> nestedRegion, List<List<gbXYZ>> nestedShell,
-            out List<List<List<gbXYZ>>> mcrs)
+        public static void GetMCR(List<List<gbRegion>> nestedRegion)
+            // nest all loops
+            //List<List<gbXYZ>> nestedShell // out List<List<List<gbXYZ>>> mcrs)
         {
-            mcrs = new List<List<List<gbXYZ>>>();
-
-            if (nestedRegion.Count != nestedShell.Count)
-            {
-                Debug.Print("SpaceDetect:: " + "The number of space groups and shells are not equal. This may due to the space detection failure");
-                return;
-            }
-
             List<Tuple<int, int>> containRef = new List<Tuple<int, int>>(); // containment relations
             List<int> roots = new List<int>(); // shell index as root node
-            List<int> branches = new List<int>(); // shell being included
+            List<int> branches = new List<int>(); // branches[0] encloses branches[1] encloses branches[2]
 
             // iterate to find all containment relations
-            for (int i = 0; i < nestedShell.Count; i++)
+            for (int i = 0; i < nestedRegion.Count; i++)
             {
                 // to prevent null shells exist
-                if (nestedShell[i].Count == 0)
+                if (nestedRegion[i][0].loop.Count == 0)
                     continue;
-                for (int j = i + 1; j < nestedShell.Count; j++)
+                for (int j = i + 1; j < nestedRegion.Count; j++)
                 {
-                    if (GBMethod.IsPtInPoly(nestedShell[i][0], nestedShell[j]) == true)
+                    if (GBMethod.IsPtInPoly(nestedRegion[i][0].loop[0], nestedRegion[j][0].loop) == true)
                     {
                         containRef.Add(Tuple.Create(j, i));
                         if (!branches.Contains(i))
                             branches.Add(i);
                         continue;
                     }
-                    if (GBMethod.IsPtInPoly(nestedShell[j][0], nestedShell[i]) == true)
+                    if (GBMethod.IsPtInPoly(nestedRegion[j][0].loop[0], nestedRegion[i][0].loop) == true)
                     {
                         containRef.Add(Tuple.Create(i, j));
                         if (!branches.Contains(j))
@@ -306,25 +314,25 @@ namespace Gingerbread.Core
             }
 
             // locate root nodes
-            for (int i = 0; i < nestedShell.Count; i++)
+            for (int i = 0; i < nestedRegion.Count; i++)
             {
                 if (!branches.Contains(i))
                     roots.Add(i);
             }
 
             // DEBUG
-            Debug.Write("SpaceDetect:: " + "Roots: ");
-            foreach (int num in roots)
-                Debug.Write(num.ToString() + ", ");
-            Debug.Write("\n");
-            Debug.Write("SpaceDetect:: " + "Branches: ");
-            foreach (int num in branches)
-                Debug.Write(num.ToString() + ", ");
-            Debug.Write("\n");
-            foreach (Tuple<int, int> idx in containRef)
-            {
-                Debug.Print("SpaceDetect:: " + "Containment: ({0}, {1})", idx.Item1, idx.Item2);
-            }
+            //Debug.Write("SpaceDetect:: " + "Roots: ");
+            //foreach (int num in roots)
+            //    Debug.Write(num.ToString() + ", ");
+            //Debug.Write("\n");
+            //Debug.Write("SpaceDetect:: " + "Branches: ");
+            //foreach (int num in branches)
+            //    Debug.Write(num.ToString() + ", ");
+            //Debug.Write("\n");
+            //foreach (Tuple<int, int> idx in containRef)
+            //{
+            //    Debug.Print("SpaceDetect:: " + "Containment: ({0}, {1})", idx.Item1, idx.Item2);
+            //}
 
             // create root nodes (creating containment tree)
             List<List<int>> chains = new List<List<int>>();
@@ -339,7 +347,7 @@ namespace Gingerbread.Core
             }
             // create branch nodes (creating containment tree)
             int safeLock = 0;
-            // not possible to exist containment surpass 10 levels
+            // not possible to have a nesting over 10 levels
              while (containRef.Count > 0 && safeLock < 10)
             {
                 Debug.Print("SpaceDetect:: " + "Iteration at: " + safeLock.ToString() +
@@ -396,6 +404,9 @@ namespace Gingerbread.Core
             //   Rhino.RhinoApp.WriteLine("Length of the first " + item.Count.ToString());
             // }
 
+            // Prepare regex for label decoding
+            var pattern = "(.+)::(.+)";
+
             // generate Point Array pairs for multi-connected region
             // List<List<List<gbXYZ>>> mcrs = new List<List<List<gbXYZ>>>();
             List<string> mcrParentLabel = new List<string>();
@@ -405,21 +416,49 @@ namespace Gingerbread.Core
                 {
                     if (i < chain.Count)
                     {
-                        List<List<gbXYZ>> mcr = new List<List<gbXYZ>>();
                         // loop through the parent group to find the right parent loop
                         foreach (gbRegion region in nestedRegion[chain[i - 1]])
                         {
+                            if (region.isShell == true)
+                                continue;
                             // to prevent there is null region with no data at all
                             if (region.loop.Count == 0)
                                 continue;
-                            if (GBMethod.IsPtInPoly(nestedShell[chain[i]][0], region.loop))
+                            // check if the shell at this level is enclosed by any loop of the parent level
+                            // if ture, generate MCR and switch the current shell's isShell attribute to false
+                            if (GBMethod.IsPtInPoly(nestedRegion[chain[i]][0].loop[0], region.loop))
                             {
-                                mcr.Add(region.loop); // add the parent loop
-                                mcr.Add(nestedShell[chain[i]]); // add the following child loop
+                                // mcr.Add(region.loop); // add the parent loop
+                                if (region.innerLoops == null)
+                                {
+                                    region.innerLoops = new List<List<gbXYZ>>();
+                                    region.innerMatchs = new List<List<string>>();
+                                }
+                                // add this shell loop to the parent region as innerLoops
+                                region.innerLoops.Add(nestedRegion[chain[i]][0].loop);
+                                region.innerMatchs.Add(nestedRegion[chain[i]][0].match);
+                                region.InitializeMCR();
+
+                                foreach (gbRegion subRegion in nestedRegion[chain[i]])
+                                {
+                                    if (subRegion.isShell)
+                                        continue;
+                                    for (int j = 0; j < subRegion.match.Count; j++)
+                                    {
+                                        if (subRegion.match[j].Contains("Outside"))
+                                        {
+                                            Match match = Regex.Match(subRegion.match[j], pattern);
+                                            string appendix = match.Groups[2].Value.Split('_')[1];
+                                            subRegion.match[j] = region.label + "::Wall" + (region.innerLoops.Count - 1) + "_" + appendix;
+                                        }
+                                    }
+                                }
+                                nestedRegion[chain[i]][0].isShell = false; // or just delete it
+
                                 string parentLabel = chain[i - 1].ToString() + ":" +
                                   nestedRegion[chain[i - 1]].IndexOf(region).ToString(); // which loop in which group
                                 mcrParentLabel.Add(parentLabel);
-                                mcrs.Add(mcr);
+                                //mcrs.Add(mcr);
                             }
                         }
                     }
@@ -431,20 +470,22 @@ namespace Gingerbread.Core
             //   Rhino.RhinoApp.WriteLine("MCR label: " + label);
             // }
 
+            // me embed following belonging relations in the gbRegion.innerLoops
+
             // merge mcr for those share the same parent polyline
             // this creates mcr with multiple holes
-            for (int i = mcrs.Count - 1; i >= 0; i--)
-            {
-                for (int j = i - 1; j >= 0; j--)
-                {
-                    if (mcrParentLabel[j] == mcrParentLabel[i])
-                    {
-                        mcrs[i].RemoveAt(0);
-                        mcrs[j].AddRange(mcrs[i]);
-                        mcrs.RemoveAt(i);
-                    }
-                }
-            }
+            //for (int i = mcrs.Count - 1; i >= 0; i--)
+            //{
+            //    for (int j = i - 1; j >= 0; j--)
+            //    {
+            //        if (mcrParentLabel[j] == mcrParentLabel[i])
+            //        {
+            //            mcrs[i].RemoveAt(0);
+            //            mcrs[j].AddRange(mcrs[i]);
+            //            mcrs.RemoveAt(i);
+            //        }
+            //    }
+            //}
 
             return;
         }

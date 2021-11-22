@@ -4,6 +4,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Diagnostics;
 
 namespace Gingerbread.Core
 {
@@ -45,13 +46,14 @@ namespace Gingerbread.Core
 
             // SURFACE
             List<gbSurface> uniqueSrfs = new List<gbSurface>();
-            // i think we just do not declare this dictionary as an attribute of the class
+            // either one of the two doppelganger surfaces is okay to be added
+            // on condition that they are exactly the same!
             cmp.Surface = new Surface[faces.Count];
             int srfCounter = 0;
             for (int i = 0; i < faces.Count; i++)
             {
                 if (faces[i].loop.Count < 4)
-                    Util.LogPrint("Degenerated surface detected at: " + i);
+                    Debug.Print("Degenerated surface detected at: " + i);
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
                 if (IsDuplicateSrf(faces[i], uniqueSrfs))
                     continue;
@@ -272,7 +274,12 @@ namespace Gingerbread.Core
             // this second boudnary split is mandantory for energy simulation
             AdjacentSpaceId adjspace1 = new AdjacentSpaceId();
             adjspace1.spaceIdRef = face.parentId;
-            if (face.adjSrfId != "Outside")
+            if (face.adjSrfId.Contains("Outside"))
+            {
+                AdjacentSpaceId[] adjspaces = { adjspace1 };
+                surface.AdjacentSpaceId = adjspaces;
+            }
+            else
             {
                 // the adjacent space is decoded from the label of adjacent surface
                 // it is crucial about how you code the name
@@ -280,11 +287,6 @@ namespace Gingerbread.Core
                 Match match = Regex.Match(face.adjSrfId, "(.+)::(.+)");
                 adjspace2.spaceIdRef = match.Groups[1].Value;
                 AdjacentSpaceId[] adjspaces = { adjspace1, adjspace2 };
-                surface.AdjacentSpaceId = adjspaces;
-            }
-            else
-            {
-                AdjacentSpaceId[] adjspaces = { adjspace1 };
                 surface.AdjacentSpaceId = adjspaces;
             }
 

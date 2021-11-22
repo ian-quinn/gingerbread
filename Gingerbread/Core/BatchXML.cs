@@ -8,15 +8,17 @@ using System.Threading.Tasks;
 
 namespace Gingerbread.Core
 {
+    // this file is abandoned, only for reference
+    /*
     public class BatchXML
     {
         public static void Execute(
-            Dictionary<int, Tuple<string, double>> dictElevation, 
-            Dictionary<int, List<gbSeg>> dictWall, 
-            Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow, 
-            Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
-            Dictionary<int, List<gbSeg>> dictCurtain, 
-            out List<gbXYZ> testPts, 
+            Dictionary<int, Tuple<string, double>> dictElevation,
+            Dictionary<int, List<gbSeg>> dictWall,
+            Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
+            Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
+            Dictionary<int, List<gbSeg>> dictCurtain,
+            out List<gbXYZ> testPts,
             out List<List<gbXYZ>> testVecs)
         {
             int levelNum = dictElevation.Count;
@@ -44,11 +46,11 @@ namespace Gingerbread.Core
                 for (int i = 0; i < flatLines.Count; i++)
                     for (int j = 0; j < flatLines.Count; j++)
                         if (i != j)
-                            flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j], 
+                            flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
                                 Properties.Settings.Default.tolExpand);
-                            //Debug.Print("BatchXML:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+                //Debug.Print("BatchXML:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
 
-                List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines, 
+                List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
                     Properties.Settings.Default.tolGroup);
 
                 // a trush bin for stray lines that are processed after space detection
@@ -56,7 +58,7 @@ namespace Gingerbread.Core
                 // 1st cluster. assume that segments less than 4 are not likely to compose a region
                 // 2nd alignment and lattice regeneration. 
                 // 3rd after region detection. (not likely produces stray lines here if the former process done well)
-                List<gbSeg> strays = new List<gbSeg>(); 
+                List<gbSeg> strays = new List<gbSeg>();
                 for (int i = lineGroups.Count - 1; i >= 0; i--)
                 {
                     if (lineGroups[i].Count <= 3)
@@ -72,7 +74,7 @@ namespace Gingerbread.Core
                 List<List<List<string>>> nestedMatch = new List<List<List<string>>>();
                 List<List<gbRegion>> nestedRegion = new List<List<gbRegion>>();
 
-                for (int g = 0; g < lineGroups.Count; g++ )
+                for (int g = 0; g < lineGroups.Count; g++)
                 {
                     // Use a global short curve length tolerance here
                     List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroups[g]), 0.00001);
@@ -139,7 +141,7 @@ namespace Gingerbread.Core
                     List<gbRegion> regions;
 
 
-                    SpaceDetect.GetRegion(lattice, z, g, out regions, out regionShell, out regionDebris);
+                    RegionDetect.GetRegion(lattice, z, g, out regions, out regionDebris);
                     strays.AddRange(Util.FlattenList(regionDebris));
 
 
@@ -151,7 +153,7 @@ namespace Gingerbread.Core
                     //    "Shells: " + nestedShell.Count, "Report");
 
                     //nestedSpace.Add(regionLoops);
-                    nestedShell.Add(regionShell);
+                    //nestedShell.Add(regionShell);
                     //nestedMatch.Add(regionRefs);
                     nestedRegion.Add(regions);
                 }
@@ -175,7 +177,7 @@ namespace Gingerbread.Core
                 return;
             }
 
-            XMLGeometry.Generate(dictElevation, dictRegion, dictShell, 
+            XMLGeometry.Generate(dictElevation, dictRegion, dictShell,
                 dictWindow, dictDoor, dictCurtain,
                 out List<gbZone> zones,
                 out List<gbFloor> floors,
@@ -190,4 +192,5 @@ namespace Gingerbread.Core
             return;
         }
     }
+    */
 }

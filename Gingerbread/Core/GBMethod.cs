@@ -343,6 +343,18 @@ namespace Gingerbread.Core
             intersection = new gbXYZ();
             return SegIntersection(p1, p2, p3, p4, tol, out intersection, out fractile);
         }
+        public static bool IsSegPolyIntersected(gbSeg a, List<gbXYZ> poly, double tol)
+        {
+            for (int i = 0; i < poly.Count - 1; i++)
+            {
+                gbSeg edge = new gbSeg(poly[i], poly[i + 1]);
+                segIntersectEnum IntersectResult = SegIntersection(a, edge, tol, out gbXYZ intersection, out double fractile);
+                if (IntersectResult == segIntersectEnum.IntersectOnBoth ||
+                    IntersectResult == segIntersectEnum.ColineAContainB)
+                    return true;
+            }
+            return false;
+        }
 
         public static double PtDistanceToSeg(gbXYZ pt, gbSeg line,
           out gbXYZ plummet, out double stretch)
@@ -724,8 +736,51 @@ namespace Gingerbread.Core
             }
             return sectLoops;
         }
-        #endregion
+        public static List<List<gbXYZ>> ClipPoly(List<List<gbXYZ>> subjLoops, List<gbXYZ> clipLoop, ClipType operation)
+        {
+            //double zbase = subjLoop[0].Z;
 
+            IntPoint PtToIntPt(gbXYZ pt)
+            {
+                //Util.LogPrint("PRECISION: " + Math.Round(pt.X * 10000000) + " / " + Math.Round(pt.Y * 10000000));
+                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
+            }
+            gbXYZ IntPtToPt(IntPoint pt)
+            {
+                //Util.LogPrint("PRECISION: " + (pt.X * 0.0000001).ToString() + " / " + (pt.Y * 0.0000001).ToString());
+                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
+            }
+
+            List<List<IntPoint>> subj = new List<List<IntPoint>>();
+            List<IntPoint> clip = new List<IntPoint>();
+            foreach (List<gbXYZ> subjLoop in subjLoops)
+            {
+                List<IntPoint> _subj = new List<IntPoint>();
+                foreach (gbXYZ pt in subjLoop)
+                    _subj.Add(PtToIntPt(pt));
+                subj.Add(_subj);
+            }
+            foreach (gbXYZ pt in clipLoop)
+                clip.Add(PtToIntPt(pt));
+
+            List<List<IntPoint>> solutions = new List<List<IntPoint>>();
+            Clipper c = new Clipper();
+            c.AddPaths(subj, PolyType.ptSubject, true);
+            c.AddPath(clip, PolyType.ptClip, true);
+            c.Execute(operation, solutions);
+
+            List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();
+            foreach (List<IntPoint> solution in solutions)
+            {
+                List<gbXYZ> sectLoop = new List<gbXYZ>();
+                foreach (IntPoint pt in solution)
+                    sectLoop.Add(IntPtToPt(pt));
+                sectLoops.Add(sectLoop);
+            }
+            return sectLoops;
+        }
+
+        #endregion
     }
 }
 

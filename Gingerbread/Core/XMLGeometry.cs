@@ -28,10 +28,8 @@ namespace Gingerbread.Core
             for (int i = 0; i < levels.Count - 1; i++)
                 levels[i].height = levels[i + 1].elevation - levels[i].elevation;
             
-            foreach (gbLevel level in levels)
-            {
-                Debug.Print("XMLGeometry:: " + $"On level {level.id} elevation {level.elevation} height {level.height}");
-            }
+            //foreach (gbLevel level in levels)
+                //Debug.Print("XMLGeometry:: " + $"On level {level.id} elevation {level.elevation} height {level.height}");
 
             // cached intermediate data
             zones = new List<gbZone>();
@@ -60,21 +58,26 @@ namespace Gingerbread.Core
                     // skip the void region that is just a place holder
                     if (region.loop.Count == 0)
                         continue;
-                    gbZone newZone = new gbZone(region.label, level, region.loop);
+
+                    gbZone newZone = new gbZone(region.label, level, region);
                     thisZone.Add(newZone);
                     //List<string> srfId = new List<string>();
                     //List<Line> boundaryLine = new List<Line>();
-                    for (int k = 0; k < region.loop.Count - 1; k++)
-                    {
-                        //srfId.Add(newZone.walls[k].id);
-                        //boundaryLine.Add(new Line(dictLoop[levelLabel[i]][j][k], dictLoop[levelLabel[i]][j][k + 1]));
-                        string adjacency = region.match[k];
-                        newZone.walls[k].adjSrfId = adjacency;
-                        if (adjacency == "Outside")
-                            newZone.walls[k].type = surfaceTypeEnum.ExteriorWall;
-                        else
-                            newZone.walls[k].type = surfaceTypeEnum.InteriorWall;
-                    }
+
+                    //for (int k = 0; k < region.loop.Count - 1; k++)
+                    //{
+                    //    //srfId.Add(newZone.walls[k].id);
+                    //    //boundaryLine.Add(new Line(dictLoop[levelLabel[i]][j][k], dictLoop[levelLabel[i]][j][k + 1]));
+                    //    string adjacency = region.match[k];
+                    //    newZone.walls[k].adjSrfId = adjacency;
+                    //    if (adjacency.Contains("Outside"))
+                    //        newZone.walls[k].type = surfaceTypeEnum.ExteriorWall;
+                    //    else
+                    //        newZone.walls[k].type = surfaceTypeEnum.InteriorWall;
+                    //}
+
+
+
                     //srfIds.Add(srfId);
                     //boundaryLines.Add(boundaryLine);
                     thisSurface.AddRange(newZone.walls);
@@ -108,6 +111,7 @@ namespace Gingerbread.Core
                     {
                         double distance = GBMethod.PtDistanceToSeg(opening.Item1, thisSurface[k].locationLine,
                             out gbXYZ plummet, out double sectParam);
+                        distance = Math.Round(distance, 6);
                         if (distance < minDistance && sectParam > 0 && sectParam < 1)
                         {
                             minDistance = distance;
@@ -191,7 +195,11 @@ namespace Gingerbread.Core
                     {
                         double distance = GBMethod.PtDistanceToSeg(opening.Item1, thisSurface[k].locationLine,
                             out gbXYZ plummet, out double sectParam);
-                        if (distance < minDistance && sectParam > 0 && sectParam < 1)
+                        // PENDING
+                        distance = Math.Round(distance, 6);
+                        if (distance < minDistance &&
+                            // Math.Abs(distance - minDistance) > Properties.Settings.Default.tolDouble &&
+                            sectParam > 0 && sectParam < 1)
                         {
                             minDistance = distance;
                             minPlummet = plummet;
@@ -199,6 +207,8 @@ namespace Gingerbread.Core
                             hostId = k;
                         }
                     }
+                    //Debug.Print($"XMLGeometry:: {thisSurface[hostId].id} got insert point {minPlummet} with distance {minDistance}");
+
                     // if the projection distance surpass the lattice alignment threshold
                     // skip this component (its host wall may not spawn)
                     if (minDistance > Properties.Settings.Default.tolDelta)
@@ -296,29 +306,72 @@ namespace Gingerbread.Core
                 foreach (gbZone zone in dictZone[level.id])
                 {
                     // ground slab or roof check
+                    // translate zone tiles to surfaces
                     if (level.isBottom)
                     {
-                        List<gbXYZ> revLoop = zone.loop;
-                        revLoop.Reverse();
-                        gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, revLoop, 180);
-                        floor.type = surfaceTypeEnum.SlabOnGrade;
-                        floor.adjSrfId = "Outside";
-                        zone.floors.Add(floor);
+                        if (zone.tiles.Count == 1)
+                        {
+                            List<gbXYZ> revLoop = zone.loop;
+                            revLoop.Reverse();
+                            gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, revLoop, 180);
+                            floor.type = surfaceTypeEnum.SlabOnGrade;
+                            floor.adjSrfId = "Outside";
+                            zone.floors.Add(floor);
+                        }
+                        else
+                        {
+                            int counter = 0;
+                            foreach (List<gbXYZ> tile in zone.tiles)
+                            {
+                                List<gbXYZ> revTile = new List<gbXYZ>();
+                                foreach (gbXYZ pt in tile)
+                                    revTile.Add(pt);
+                                revTile.Reverse();
+                                gbSurface floorTile = new gbSurface(zone.id + "::Floor_" + counter, zone.id, revTile, 180);
+                                floorTile.type = surfaceTypeEnum.SlabOnGrade;
+                                floorTile.adjSrfId = "Outside";
+                                zone.floors.Add(floorTile);
+                                counter++;
+                            }
+                        }
                     }
                     if (level.id == levels.Count - 2)
                     {
-                        gbSurface ceiling = new gbSurface(zone.id + "::Ceil_0", zone.id,
+                        if (zone.tiles.Count == 1)
+                        {
+                            gbSurface ceiling = new gbSurface(zone.id + "::Ceil_0", zone.id,
                             GBMethod.ElevatePtsLoop(zone.loop, level.height), 0);
-                        ceiling.type = surfaceTypeEnum.Roof;
-                        ceiling.adjSrfId = "Outside";
-                        zone.ceilings.Add(ceiling);
+                            ceiling.type = surfaceTypeEnum.Roof;
+                            ceiling.adjSrfId = "Outside";
+                            zone.ceilings.Add(ceiling);
+                        }
+                        else
+                        {
+                            int counter = 0;
+                            foreach (List<gbXYZ> tile in zone.tiles)
+                            {
+                                gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
+                                    GBMethod.ElevatePtsLoop(tile, level.height), 0);
+                                ceilingTile.type = surfaceTypeEnum.Roof;
+                                ceilingTile.adjSrfId = "Outside";
+                                zone.ceilings.Add(ceilingTile);
+                                counter++;
+                            }
+                        }
                     }
 
                     // exposed floor or offset roof check
+                    // clip the zone tiles then translate them to surfaces
                     if (level.id != levels.Count - 2)
                         if (!GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(zone.loop, 0), dictShell[level.nextId]))
                         {
-                            List<List<gbXYZ>> sectLoops = GBMethod.ClipPoly(zone.loop, dictShell[level.nextId], ClipType.ctDifference);
+                            List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();
+                            foreach (List<gbXYZ> tile in zone.tiles)
+                            {
+                                List<List<gbXYZ>> result = GBMethod.ClipPoly(GBMethod.ElevatePtsLoop(tile, 0), 
+                                    dictShell[level.nextId], ClipType.ctDifference);
+                                sectLoops.AddRange(result);
+                            }
                             if (sectLoops.Count != 0)
                             {
                                 for (int j = 0; j < sectLoops.Count; j++)
@@ -334,7 +387,14 @@ namespace Gingerbread.Core
                     if (!level.isBottom)
                         if (!GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(zone.loop, 0), dictShell[level.prevId]))
                         {
-                            List<List<gbXYZ>> sectLoops = GBMethod.ClipPoly(zone.loop, dictShell[level.prevId], ClipType.ctDifference);
+
+                            List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();
+                            foreach (List<gbXYZ> tile in zone.tiles)
+                            {
+                                List<List<gbXYZ>> result = GBMethod.ClipPoly(GBMethod.ElevatePtsLoop(tile, 0), 
+                                    dictShell[level.prevId], ClipType.ctDifference);
+                                sectLoops.AddRange(result);
+                            }
                             if (sectLoops.Count != 0)
                             {
                                 for (int j = 0; j < sectLoops.Count; j++)
@@ -351,10 +411,21 @@ namespace Gingerbread.Core
                         }
 
                     // interior floor adjacency check
+                    // clip the tiles, do the matching, then transfer to the surfaces
                     if (level.id != levels.Count - 2)
                         foreach (gbZone adjZone in dictZone[level.id + 1])
                         {
-                            List<List<gbXYZ>> sectLoops = GBMethod.ClipPoly(zone.loop, adjZone.loop, ClipType.ctIntersection);
+                            // better way to reduce the calculation?
+                            List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();
+                            foreach (List<gbXYZ> tile in zone.tiles)
+                            {
+                                foreach (List<gbXYZ> adjTile in adjZone.tiles)
+                                {
+                                    List<List<gbXYZ>> result = GBMethod.ClipPoly(tile, adjTile, ClipType.ctIntersection);
+                                    sectLoops.AddRange(result);
+                                }
+                            }
+                                
                             if (sectLoops.Count == 0)
                                 continue;
                             for (int j = 0; j < sectLoops.Count; j++)
@@ -364,7 +435,7 @@ namespace Gingerbread.Core
                                 string splitCeilId = zone.id + "::Ceil_" + zone.ceilings.Count;
                                 string splitFloorId = adjZone.id + "::Floor_" + zone.floors.Count;
                                 // be cautious here
-                                // the ceiling here mean the shadowing floor, so the tile is still 180
+                                // the ceiling here mean the shadowing floor, so the tilt is still 180
                                 List<gbXYZ> revLoop = GBMethod.ElevatePtsLoop(sectLoops[j], adjZone.level.elevation);
                                 revLoop.Reverse();
                                 gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, revLoop, 180);

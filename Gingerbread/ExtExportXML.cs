@@ -142,35 +142,49 @@ namespace Gingerbread
                     strays.AddRange(latticeDebries);
 
                     List<gbRegion> regions;
-                    List<gbXYZ> regionShell;
+                    // shell is merged into regions as the first list element
+                    //List<gbXYZ> regionShell;
                     List<List<gbSeg>> regionDebris;
 
                     Report(10 + z * 80 / levelNum, $"Processing floorplan on level {z} ...");
 
-                    SpaceDetect.GetRegion(lattice, z, g, out regions, out regionShell, out regionDebris);
+                    SpaceDetect.GetRegion(lattice, z, g, out regions, out regionDebris);
                     strays.AddRange(Util.FlattenList(regionDebris));
 
-                    nestedShell.Add(regionShell);
+                    //nestedShell.Add(regionShell);
                     nestedRegion.Add(regions);
                 }
 
                 // left for some MCR coupling work
                 // only a placeholder that solves nothing
-                SpaceDetect.GetMCR(nestedRegion, nestedShell, out List<List<List<gbXYZ>>> mcrs);
-                Debug.Print("ExtExportEXML:: " + "We got {0} MCR here", mcrs.Count);
+                SpaceDetect.GetMCR(nestedRegion); //, nestedShell
 
-                // summarization after solving the MCR issues
-                dictRegion.Add(z, Util.FlattenList(nestedRegion));
-                dictShell.Add(z, Util.FlattenList(nestedShell));
+                // summarize geometries and flatten the list
+                List<gbRegion> thisLevelRegions = new List<gbRegion>();
+                List<gbXYZ> thisLevelShell = new List<gbXYZ>();
+                foreach (List<gbRegion> regions in nestedRegion)
+                {
+                    for (int i = 0; i < regions.Count; i++)
+                    {
+                        if (regions[i].innerLoops != null) // check MCR
+                            Debug.Print($"ExtExportEXML:: Got MCR with {regions[i].innerLoops.Count} holes");
+                        if (regions[i].isShell == true) // check shell
+                            thisLevelShell = regions[i].loop;
+                        if (i != 0) // check space region
+                            thisLevelRegions.Add(regions[i]);
+                    }
+                }
+                dictRegion.Add(z, thisLevelRegions);
+                dictShell.Add(z, thisLevelShell);
             }
 
 
-            //if (dictLoop.Count == 0 || dictShell.Count == 0)
-            //{
-            //    System.Windows.MessageBox.Show("Something wrong with the space detection. \n" +
-            //        "The process will be terminated.", "Warning");
-            //    return;
-            //}
+            if (dictRegion.Count == 0 || dictShell.Count == 0)
+            {
+                System.Windows.MessageBox.Show("Something wrong with the space detection. \n" +
+                    "The process will be terminated.", "Warning");
+                return;
+            }
 
             Report(90, "Create gbXML geometry information ...");
 
