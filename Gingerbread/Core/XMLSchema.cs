@@ -175,6 +175,15 @@ namespace Gingerbread.Core
         public Building[] Buildings { get; set; }
         [XmlElement(ElementName = "Surface", IsNullable = false)]
         public Surface[] Surface { get; set; }
+
+        // custom class for BEMBots
+        [XmlElement(ElementName = "Column", IsNullable = true)]
+        public Column[] Column { get; set; }
+        [XmlElement(ElementName = "Beam", IsNullable = true)]
+        public Beam[] Beam { get; set; }
+        [XmlElement(ElementName = "Shaft", IsNullable = true)]
+        public Shaft[] Shaft { get; set; }
+
     }
 
     [Serializable]
@@ -1559,10 +1568,47 @@ namespace Gingerbread.Core
         public Gap[] Gap { get; set; }
         [XmlElement]
         public Glaze[] Glaze { get; set; }
-
-
     }
 
+    [Serializable]
+    [XmlRootAttribute(ElementName = "gbXML", IsNullable = true, Namespace = "http://www.gbxml.org/schema")]
+    public class Column
+    {
+        [XmlAttribute]
+        public string id { get; set; }
+        [XmlAttribute]
+        public int level { get; set; }
+        [XmlElement]
+        public PlanarGeometry PlanarGeometry { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
+    }
+
+    [Serializable]
+    [XmlRootAttribute(ElementName = "gbXML", IsNullable = true, Namespace = "http://www.gbxml.org/schema")]
+    public class Beam
+    {
+        [XmlAttribute]
+        public string id { get; set; }
+        [XmlAttribute]
+        public int level { get; set; }
+        [XmlElement]
+        public PlanarGeometry PlanarGeometry { get; set; }
+        public string Width { get; set; }
+        public string Height { get; set; }
+    }
+
+    [Serializable]
+    [XmlRootAttribute(ElementName = "gbXML", IsNullable = true, Namespace = "http://www.gbxml.org/schema")]
+    public class Shaft
+    {
+        [XmlAttribute]
+        public string id { get; set; }
+        [XmlAttribute]
+        public int level { get; set; }
+        [XmlElement]
+        public PlanarGeometry PlanarGeometry { get; set; }
+    }
 
     public static class gb
     {

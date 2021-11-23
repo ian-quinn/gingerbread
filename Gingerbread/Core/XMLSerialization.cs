@@ -10,7 +10,8 @@ namespace Gingerbread.Core
 {
     class XMLSerialization
     {
-        public static void Generate(string path, List<gbZone> zones, List<gbFloor> floors, List<gbSurface> faces)
+        public static void Generate(string path, List<gbZone> zones, List<gbLoop> floors, List<gbSurface> faces,
+            List<gbLoop> columns, List<gbLoop> beams, List<gbLoop> shafts)
         //    Dictionary<string, string> adjDict)
         {
             gb.gbci = new CultureInfo(String.Empty);
@@ -63,9 +64,47 @@ namespace Gingerbread.Core
                 srfCounter++;
             }
 
+            //Appendix, columns, beams, shafts
+            cmp.Column = new Column[columns.Count];
+            for (int i = 0; i < columns.Count; i++)
+            {
+                Column column = new Column();
+                column.id = columns[i].id;
+                column.level = columns[i].level.id;
+                column.Width = string.Format("{0:0.000000}", columns[i].dimension1);
+                column.Height = string.Format("{0:0.000000}", columns[i].dimension2);
+                PlanarGeometry pg = new PlanarGeometry();
+                pg.PolyLoop = PtsToPolyLoop(columns[i].loop);
+                column.PlanarGeometry = pg;
+                cmp.Column[i] = column;
+            }
+            cmp.Beam = new Beam[beams.Count];
+            for (int i = 0; i < beams.Count; i++)
+            {
+                Beam beam = new Beam();
+                beam.id = beams[i].id;
+                beam.level = beams[i].level.id;
+                beam.Width = string.Format("{0:0.000000}", beams[i].dimension1);
+                beam.Height = string.Format("{0:0.000000}", beams[i].dimension2);
+                PlanarGeometry pg = new PlanarGeometry();
+                pg.PolyLoop = PtsToPolyLoop(beams[i].loop);
+                beam.PlanarGeometry = pg;
+                cmp.Beam[i] = beam;
+            }
+            cmp.Shaft = new Shaft[shafts.Count];
+            for (int i = 0; i < shafts.Count; i++)
+            {
+                Shaft shaft = new Shaft();
+                shaft.id = shafts[i].id;
+                shaft.level = shafts[i].level.id;
+                PlanarGeometry pg = new PlanarGeometry();
+                pg.PolyLoop = PtsToPolyLoop(shafts[i].loop);
+                shaft.PlanarGeometry = pg;
+                cmp.Shaft[i] = shaft;
+            }
 
             //write xml to the file
-            
+
             XmlSerializer writer = new XmlSerializer(typeof(gbXML));
             FileStream file = File.Create(path);
             writer.Serialize(file, gbx);

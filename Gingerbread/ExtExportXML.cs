@@ -44,6 +44,7 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictWall,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
+                out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor, 
                 out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
@@ -191,16 +192,19 @@ namespace Gingerbread
 
             XMLGeometry.Generate(dictElevation,
                 dictRegion, dictShell, 
-                dictWindow, dictDoor, dictCurtain,
+                dictWindow, dictDoor, dictColumn, dictBeam, dictCurtain, dictFloor, 
                 out List<gbZone> zones,
-                out List<gbFloor> floors,
-                out List<gbSurface> surfaces);
+                out List<gbLoop> floors,
+                out List<gbSurface> surfaces,
+                out List<gbLoop> columns, 
+                out List<gbLoop> beams, 
+                out List<gbLoop> shafts);
 
             Report(95, "Serilaize gbXML file ...");
 
             string fileName = "GingerbreadXML.xml";
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            XMLSerialization.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces);
+            XMLSerialization.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces, columns, beams, shafts);
 
             Report(100, "Done export to " + thisAssemblyFolderPath);
             CurrentUI.btnCancel.Visibility = System.Windows.Visibility.Collapsed;

@@ -16,10 +16,16 @@ namespace Gingerbread.Core
             //Dictionary<int, List<List<string>>> dictMatch,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
+            Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn, 
+            Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             Dictionary<int, List<gbSeg>> dictCurtain,
+            Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
             out List<gbZone> zones,
-            out List<gbFloor> floors,
-            out List<gbSurface> surfaces)
+            out List<gbLoop> floors,
+            out List<gbSurface> surfaces,
+            out List<gbLoop> columns, 
+            out List<gbLoop> beams, 
+            out List<gbLoop> shafts)
         {
             List<gbLevel> levels = new List<gbLevel>();
             int numLevels = dictElevation.Keys.Count;
@@ -34,7 +40,7 @@ namespace Gingerbread.Core
             // cached intermediate data
             zones = new List<gbZone>();
             surfaces = new List<gbSurface>();
-            floors = new List<gbFloor>();
+            floors = new List<gbLoop>();
             // cached spaces by floor for surface matching across levels
             Dictionary<int, List<gbZone>> dictZone = new Dictionary<int, List<gbZone>>();
 
@@ -294,7 +300,7 @@ namespace Gingerbread.Core
                     }
                 }
 
-                floors.Add(new gbFloor("F" + level.id, level, dictShell[level.id]));
+                floors.Add(new gbLoop("F" + level.id, level, dictShell[level.id]));
             }
 
             // second loop solve adjacencies among floors
@@ -461,6 +467,84 @@ namespace Gingerbread.Core
             // third loop summarize all faces
             foreach (gbZone zone in zones)
                 zone.Summarize();
+
+            //appendix
+            columns = new List<gbLoop>();
+            foreach (KeyValuePair<int, List<Tuple<gbXYZ, string>>> kvp in dictColumn)
+            {
+                int counter = 0;
+                foreach (Tuple<gbXYZ, string> label in kvp.Value)
+                {
+                    List<double> sizes = new List<double>();
+                    foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
+                    {
+                        double size = Convert.ToInt32(match.Value) / 1000.0;
+                        sizes.Add(size);
+                    }
+                    if (sizes.Count != 2)
+                        continue;
+                    List<gbXYZ> loop = new List<gbXYZ>();
+                    loop.Add(label.Item1 + new gbXYZ(-0.5 * sizes[0], -0.5 * sizes[1], 0));
+                    loop.Add(label.Item1 + new gbXYZ(0.5 * sizes[0], -0.5 * sizes[1], 0));
+                    loop.Add(label.Item1 + new gbXYZ(0.5 * sizes[0], 0.5 * sizes[1], 0));
+                    loop.Add(label.Item1 + new gbXYZ(-0.5 * sizes[0], 0.5 * sizes[1], 0));
+                    gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
+                    column.dimension1 = sizes[0];
+                    column.dimension2 = sizes[1];
+                    columns.Add(column);
+                    counter++;
+                }
+            }
+            beams = new List<gbLoop>();
+            foreach (KeyValuePair<int, List<Tuple<gbSeg, string>>> kvp in dictBeam)
+            {
+                int counter = 0;
+                foreach (Tuple<gbSeg, string> label in kvp.Value)
+                {
+                    List<double> sizes = new List<double>();
+                    foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
+                    {
+                        double size = Convert.ToInt32(match.Value) / 1000.0;
+                        sizes.Add(size);
+                    }
+                    if (sizes.Count != 2)
+                        continue;
+                    List<gbXYZ> loop = new List<gbXYZ>();
+                    gbXYZ startPt = label.Item1.PointAt(0);
+                    gbXYZ endPt = label.Item1.PointAt(1);
+                    gbXYZ vec1 = endPt - startPt;
+                    vec1.Unitize();
+                    gbXYZ vec2 = GBMethod.GetPendicularVec(vec1, true);
+                    loop.Add(startPt + 0.5 * sizes[0] * vec2);
+                    loop.Add(endPt + 0.5 * sizes[0] * vec2);
+                    loop.Add(endPt - 0.5 * sizes[0] * vec2);
+                    loop.Add(startPt - 0.5 * sizes[0] * vec2);
+                    gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
+                    beam.dimension1 = sizes[0];
+                    beam.dimension2 = sizes[1];
+                    beams.Add(beam);
+                    counter++;
+                }
+            }
+            shafts = new List<gbLoop>();
+            foreach (KeyValuePair<int, List<List<List<gbXYZ>>>> kvp in dictFloor)
+            {
+                int counter = 0;
+                foreach (List<List<gbXYZ>> panel in kvp.Value)
+                {
+                    // the outer shell may not be the first one
+                    // pick the clockwise ones as the hole edges
+                    for (int i = 0; i < panel.Count; i++)
+                    {
+                        if (GBMethod.IsClockwise(panel[i]))
+                        {
+                            gbLoop shaft = new gbLoop($"F{kvp.Key}_{counter}", levels[kvp.Key], panel[i]);
+                            shafts.Add(shaft);
+                            counter++;
+                        }
+                    }
+                }
+            }
         }
 
         static bool IsOpeningOverlap(List<gbOpening> openings, gbOpening newOpening)

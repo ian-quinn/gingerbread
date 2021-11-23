@@ -31,6 +31,7 @@ namespace Gingerbread
             out Dictionary<int, List<gbSeg>> dictWall,
             out Dictionary<int, List<gbSeg>> dictCurtain, 
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
+            out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
             out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
@@ -41,6 +42,7 @@ namespace Gingerbread
             dictWall = new Dictionary<int, List<gbSeg>>();
             dictCurtain = new Dictionary<int, List<gbSeg>>();
             dictColumn = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
+            dictBeam = new Dictionary<int, List<Tuple<gbSeg, string>>>();
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
@@ -102,24 +104,28 @@ namespace Gingerbread
                     Math.Round(Util.FootToM(levels[z].elevation), 3)
                     ));
                 dictWall.Add(z, new List<gbSeg>());
+                dictColumn.Add(z, new List<Tuple<gbXYZ, string>>());
+                dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
                 dictCurtain.Add(z, new List<gbSeg>());
 
-                // append to dictColumn
-                List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
-                ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
-                    new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
-                IList<Element> eColumns = new FilteredElementCollector(doc)
-                    .OfClass(typeof(FamilyInstance))
-                    .WherePasses(levelFilter)
-                    .WherePasses(bothColumnFilter)
-                    .ToElements();
-                foreach (Element e in eColumns)
-                {
-                    FamilyInstance c = e as FamilyInstance;
-                    XYZ lp = Util.GetFamilyInstanceLocation(c);
-                    columnLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), c.Name));
-                }
-                dictColumn.Add(z, columnLocs);
+
+                //// append to dictColumn
+                //List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
+                //ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
+                //    new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
+                //IList<Element> eColumns = new FilteredElementCollector(doc)
+                //    .OfClass(typeof(FamilyInstance))
+                //    .WherePasses(levelFilter)
+                //    .WherePasses(bothColumnFilter)
+                //    .ToElements();
+                //foreach (Element e in eColumns)
+                //{
+                //    FamilyInstance c = e as FamilyInstance;
+                //    XYZ lp = Util.GetFamilyInstanceLocation(c);
+                //    columnLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), c.Name));
+                //}
+                //dictColumn.Add(z, columnLocs);
+
 
                 // append to dictDoor
                 List<Tuple<gbXYZ, string>> doorLocs = new List<Tuple<gbXYZ, string>>();
@@ -254,6 +260,70 @@ namespace Gingerbread
                 }
             }
 
+            // allocate column information to each floor
+            List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
+            ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
+                new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
+            IList<Element> eColumns = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilyInstance))
+                .WherePasses(bothColumnFilter)
+                .ToElements();
+            foreach (Element e in eColumns)
+            {
+                FamilyInstance c = e as FamilyInstance;
+                XYZ lp = Util.GetFamilyInstanceLocation(c);
+
+                // get the height of the column by retrieving its geometry element
+                Options op = c.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = c.get_Geometry(op);
+                double summit = ge.GetBoundingBox().Max.Z;
+                double bottom = ge.GetBoundingBox().Min.Z;
+                for (int i = 0; i < levels.Count; i++)
+                {
+                    // add location lines if the wall lies within the range of this level
+                    if (c.LevelId == levels[i].id ||
+                       summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
+                       bottom <= (levels[i].elevation + 0.5 * levels[i].height))
+                    {
+                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), c.Name));
+                    }
+                }
+            }
+
+
+            // allocate beam information to each floor
+            List<Tuple<gbSeg, string>> beamLocs = new List<Tuple<gbSeg, string>>();
+            IList<Element> eBeams = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilyInstance))
+                .OfCategory(BuiltInCategory.OST_StructuralFraming)
+                .ToElements();
+            foreach (Element e in eBeams)
+            {
+                FamilyInstance c = e as FamilyInstance;
+                LocationCurve lc = c.Location as LocationCurve;
+                if (!(lc.Curve is Line))
+                    continue;
+                // get the height of the column by retrieving its geometry element
+                Options op = c.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = c.get_Geometry(op);
+                double summit = ge.GetBoundingBox().Max.Z;
+                double bottom = ge.GetBoundingBox().Min.Z;
+                //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
+
+                for (int i = 0; i < levels.Count; i++)
+                {
+                    //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
+                    // add location lines if the wall lies within the range of this level
+                    if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) <
+                        Properties.Settings.Default.tolDouble)
+                    {
+                        Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
+                        dictBeam[i].Add(new Tuple<gbSeg, string>(Util.gbSegConvert(lc.Curve as Line), c.Name));
+                    }
+                }
+            }
+
+
             dictElevation.Add(dictElevation.Count, new Tuple<string, double>("Roof",
                 Util.FootToM(levels.Last().elevation + levels.Last().height) ));
 
@@ -261,9 +331,10 @@ namespace Gingerbread
             checkInfo = "";
             for (int i = 0; i < levels.Count; i++)
             {
-                checkInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} \n";
-                checkInfo += $"    numCol-{dictColumn[i].Count} numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count} \n";
-                checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count} \n";
+                checkInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} geometry summary\n";
+                checkInfo += $"    numCol-{dictColumn[i].Count} numBeam-{dictBeam[i].Count}\n";
+                checkInfo += $"    numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count}\n";
+                checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count}\n";
                 checkInfo += $"    numFloorSlab-{dictFloor[i].Count} \n";
             }
             checkInfo += "Done model check.";

@@ -312,13 +312,15 @@ namespace Gingerbread.Core
         }
     }
 
-    public class gbFloor
+    public class gbLoop
     {
         public string id;
         public gbLevel level;
         public List<gbXYZ> loop;
+        public double dimension1;
+        public double dimension2;
         // convert the 2D loop to 3D floor geometry
-        public gbFloor(string id, gbLevel level, List<gbXYZ> loop)
+        public gbLoop(string id, gbLevel level, List<gbXYZ> loop)
         {
             this.id = id;
             this.level = level;
