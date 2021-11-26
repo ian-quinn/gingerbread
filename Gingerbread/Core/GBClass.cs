@@ -182,15 +182,22 @@ namespace Gingerbread.Core
 
     public class gbSeg
     {
-        private gbXYZ start;
-        private gbXYZ end;
-        private readonly double length;
-        private gbXYZ direction;
+        public gbXYZ start;
+        public gbXYZ end;
+        public double length;
+        public gbXYZ direction;
         public gbXYZ Start { get { return start; } }
         public gbXYZ End { get { return end; } }
         public double Length { get { return length; } }
         public gbXYZ Direction { get { return direction; } }
-
+        
+        public gbSeg()
+        {
+            start = new gbXYZ();
+            end = new gbXYZ();
+            length = 0;
+            direction = new gbXYZ();
+        }
         public gbSeg(gbXYZ start, gbXYZ end)
         {
             this.start = start;
@@ -212,6 +219,18 @@ namespace Gingerbread.Core
             end = start;
             start = temp;
             direction = -direction;
+        }
+        public void AdjustEndPt(int i, gbXYZ pt)
+        {
+            if (i == 0)
+                start = pt;
+            if (i == 1)
+                end = pt;
+            length = Math.Sqrt(
+                (end.X - start.X) * (end.X - start.X) +
+                (end.Y - start.Y) * (end.Y - start.Y) +
+                (end.Z - start.Z) * (end.Z - start.Z));
+            return;
         }
         public gbSeg Copy()
         {

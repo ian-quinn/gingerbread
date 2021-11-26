@@ -15,14 +15,14 @@ namespace Gingerbread
 {
     class BatchGeometry
     {
-        // declare gbLevel class for private use
-        private class gbLevel
+        // declare levelPack class for private use
+        private class levelPack
         {
             public ElementId id;
             public string name;
             public double elevation;
             public double height;
-            public gbLevel(ElementId id, string name, double elevation)
+            public levelPack(ElementId id, string name, double elevation)
             { this.id = id; this.name = name; this.elevation = elevation; this.height = 0; }
         };
 
@@ -48,7 +48,7 @@ namespace Gingerbread
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
 
             // batch levels for iteration
-            List<gbLevel> levels = new List<gbLevel>();
+            List<levelPack> levels = new List<levelPack>();
 
             // prefix the variables that are elements with e-. same rule to the rest
             // get all floors
@@ -59,7 +59,7 @@ namespace Gingerbread
             foreach (Element e in eFloors)
             {
                 Level level = doc.GetElement(e.LevelId) as Level;
-                gbLevel l = new gbLevel(e.LevelId, level.Name, level.Elevation);
+                levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
                 if (!levels.Contains(l))
                     levels.Add(l);
             }
@@ -72,7 +72,7 @@ namespace Gingerbread
             foreach (Element e in eRoofs)
             {
                 Level level = doc.GetElement(e.LevelId) as Level;
-                gbLevel l = new gbLevel(e.LevelId, level.Name, level.Elevation);
+                levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
                 if (!levels.Contains(l))
                     levels.Add(l);
             }
@@ -141,6 +141,8 @@ namespace Gingerbread
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
                         XYZ lp = Util.GetFamilyInstanceLocation(d);
+                        if (lp is null)
+                            continue;
                         doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), d.Name));
                         Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
                     }
@@ -159,6 +161,8 @@ namespace Gingerbread
                 {
                     FamilyInstance w = e as FamilyInstance;
                     XYZ lp = Util.GetFamilyInstanceLocation(w);
+                    if (lp is null)
+                        continue;
                     windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), w.Name));
                 }
                 dictWindow.Add(z, windowLocs);
@@ -270,6 +274,8 @@ namespace Gingerbread
                 .ToElements();
             foreach (Element e in eColumns)
             {
+                if (e is null)
+                    continue;
                 FamilyInstance c = e as FamilyInstance;
                 XYZ lp = Util.GetFamilyInstanceLocation(c);
 
@@ -299,10 +305,12 @@ namespace Gingerbread
                 .ToElements();
             foreach (Element e in eBeams)
             {
+                if (e is null)
+                    continue;
                 FamilyInstance c = e as FamilyInstance;
                 LocationCurve lc = c.Location as LocationCurve;
-                if (!(lc.Curve is Line))
-                    continue;
+                //if (!(lc.Curve is Line))
+                //    continue;
                 // get the height of the column by retrieving its geometry element
                 Options op = c.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = c.get_Geometry(op);

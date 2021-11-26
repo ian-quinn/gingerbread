@@ -79,6 +79,7 @@
     <Compile Include="Core\GBClass.cs" />
     <Compile Include="Core\GBMethod.cs" />
     <Compile Include="Core\OrthoHull.cs" />
+    <Compile Include="Core\LayoutPatch.cs" />
     <Compile Include="Core\PointAlign.cs" />
     <Compile Include="Core\CurveSimplify.cs" />
     <Compile Include="Core\RegionTessellate.cs" />

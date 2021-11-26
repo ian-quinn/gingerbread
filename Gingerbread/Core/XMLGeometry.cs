@@ -289,6 +289,7 @@ namespace Gingerbread.Core
 
                             gbOpening newOpening = new gbOpening(thisSurface[k].id + "::Opening_" +
                                thisSurface[k].openings.Count, GBMethod.PolyOffset(openingLoop, 0.1, true))
+                               //thisSurface[k].openings.Count, GBMethod.OffsetPoly(openingLoop, 0.1)[0])
                             {
                                 width = projection.Length,
                                 height = height,
@@ -481,16 +482,20 @@ namespace Gingerbread.Core
                         double size = Convert.ToInt32(match.Value) / 1000.0;
                         sizes.Add(size);
                     }
-                    if (sizes.Count != 2)
+                    if (sizes.Count == 0)
                         continue;
+                    double width = sizes[0];
+                    double height = sizes[0];
+                    if (sizes.Count == 2)
+                        height = sizes[1];
                     List<gbXYZ> loop = new List<gbXYZ>();
-                    loop.Add(label.Item1 + new gbXYZ(-0.5 * sizes[0], -0.5 * sizes[1], 0));
-                    loop.Add(label.Item1 + new gbXYZ(0.5 * sizes[0], -0.5 * sizes[1], 0));
-                    loop.Add(label.Item1 + new gbXYZ(0.5 * sizes[0], 0.5 * sizes[1], 0));
-                    loop.Add(label.Item1 + new gbXYZ(-0.5 * sizes[0], 0.5 * sizes[1], 0));
+                    loop.Add(label.Item1 + new gbXYZ(-0.5 * width, -0.5 * height, 0));
+                    loop.Add(label.Item1 + new gbXYZ(0.5 * width, -0.5 * height, 0));
+                    loop.Add(label.Item1 + new gbXYZ(0.5 * width, 0.5 * height, 0));
+                    loop.Add(label.Item1 + new gbXYZ(-0.5 * width, 0.5 * height, 0));
                     gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
-                    column.dimension1 = sizes[0];
-                    column.dimension2 = sizes[1];
+                    column.dimension1 = width;
+                    column.dimension2 = height;
                     columns.Add(column);
                     counter++;
                 }
@@ -507,21 +512,25 @@ namespace Gingerbread.Core
                         double size = Convert.ToInt32(match.Value) / 1000.0;
                         sizes.Add(size);
                     }
-                    if (sizes.Count != 2)
+                    if (sizes.Count == 0)
                         continue;
+                    double width = sizes[0];
+                    double height = sizes[0];
+                    if (sizes.Count == 2)
+                        height = sizes[1];
                     List<gbXYZ> loop = new List<gbXYZ>();
                     gbXYZ startPt = label.Item1.PointAt(0);
                     gbXYZ endPt = label.Item1.PointAt(1);
                     gbXYZ vec1 = endPt - startPt;
                     vec1.Unitize();
                     gbXYZ vec2 = GBMethod.GetPendicularVec(vec1, true);
-                    loop.Add(startPt + 0.5 * sizes[0] * vec2);
-                    loop.Add(endPt + 0.5 * sizes[0] * vec2);
-                    loop.Add(endPt - 0.5 * sizes[0] * vec2);
-                    loop.Add(startPt - 0.5 * sizes[0] * vec2);
+                    loop.Add(startPt + 0.5 * width * vec2);
+                    loop.Add(endPt + 0.5 * width * vec2);
+                    loop.Add(endPt - 0.5 * width * vec2);
+                    loop.Add(startPt - 0.5 * width * vec2);
                     gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
-                    beam.dimension1 = sizes[0];
-                    beam.dimension2 = sizes[1];
+                    beam.dimension1 = width;
+                    beam.dimension2 = height;
                     beams.Add(beam);
                     counter++;
                 }

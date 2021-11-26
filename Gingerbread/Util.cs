@@ -313,8 +313,13 @@ namespace Gingerbread
         {
             foreach (gbSeg seg in segs)
             {
-                Curve crv = gbSegConvert(seg) as Curve;
-                doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+                // Curve does not accept zero length, not like Grasshopper
+                // so check if the length satisfies the tolerance first
+                if (seg.Length >= Properties.Settings.Default.ShortCurveTolerance)
+                {
+                    Curve crv = gbSegConvert(seg) as Curve;
+                    doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+                }
             }
         }
         public static void SketchMarker(Document doc, XYZ pt, double size = 1, string style = "O")

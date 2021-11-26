@@ -71,15 +71,102 @@ namespace Gingerbread
 
                 List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[z]);
 
+                List<gbXYZ> pilePts = GBMethod.PilePts(flatLines);
+                List<gbXYZ> boundary = OrthoHull.GetOrthoHull(pilePts);
+
                 for (int i = 0; i < flatLines.Count; i++)
                     for (int j = 0; j < flatLines.Count; j++)
                         if (i != j)
                             flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
                                 Properties.Settings.Default.tolExpand);
-                //Debug.Print("ExtExportEXML:: " + flatLines[i].Start.Serialize() + " / " + flatLines[i].End.Serialize());
+                //GBMethod.SegExtension2(flatLines[i], flatLines[j],
+                //    Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
 
+                //List<gbSeg> edges = new List<gbSeg>();
+                //List<gbXYZ> offset = GBMethod.OffsetPoly(boundary, -0.5)[0];
+                //RegionTessellate.SimplifyPoly(offset);
+                //offset.Add(offset[0]);
+                //for (int i = 0; i < offset.Count - 1; i++)
+                //{
+                //    gbSeg edge = new gbSeg(offset[i], offset[i + 1]);
+                //    if (edge.Length != 0)
+                //        edges.Add(new gbSeg(offset[i], offset[i + 1]));
+                //}
+
+                //RegionTessellate.SimplifyPoly(boundary);
+                //boundary.Add(boundary[0]);
+                ////Util.DrawDetailLines(doc, Util.gbSegsConvert(edges));
+
+                //LayoutPatch.PerimeterPatch(flatLines, boundary, -0.5);
+
+                // VISUALIZATION
+                //using (Transaction tx = new Transaction(doc, "Sketch extended lines"))
+                //{
+                //    tx.Start();
+                //    Util.SketchSegs(doc, flatLines);
+                //    tx.Commit();
+                //}
+
+                // patch the column
+
+                // this will cluster parallel segments with minor gaps < tolGroup
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
                     Properties.Settings.Default.tolGroup);
+
+                /*
+                // pile the points of the line groups and get the ortho-hull
+                List<List<gbXYZ>> orthoHulls = new List<List<gbXYZ>>();
+                bool[] isBlock = new bool[orthoHulls.Count];
+
+                foreach (List<gbSeg> lineGroup in lineGroups)
+                    orthoHulls.Add(OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup)));
+
+                for (int i = 0; i < orthoHulls.Count; i++)
+                {
+                    int counter = 0;
+                    for (int j = 0; j < orthoHulls.Count; j++)
+                    {
+                        if (i != j)
+                            if (GBMethod.IsPtInPoly(orthoHulls[i][0], orthoHulls[j]))
+                                counter++;
+                    }
+                    if (counter > 0)
+                        isBlock[i] = false;
+                    else
+                        isBlock[i] = true;
+                }
+                // usually there will be only one block per floor
+                // floor panel that is not enclosed by a wall block will be regarded as shading surface
+                // floor panel that is enclosed will be nested for boolean union operation
+                List<List<gbXYZ>> shadings = new List<List<gbXYZ>>();
+                //List<List<gbXYZ>> blocks = new List<List<gbXYZ>>();
+                Dictionary<int, List<List<gbXYZ>>> nestedPanel = new Dictionary<int, List<List<gbXYZ>>>();
+                foreach (List<List<gbXYZ>> panel in dictFloor[z])
+                {
+                    gbXYZ centroid = GBMethod.GetPolyCentroid(panel[0]); // sort the outer shell to the first
+                    for (int i = 0; i < orthoHulls.Count; i++)
+                    {
+                        if (isBlock[i])
+                        {
+                            if (GBMethod.IsPtInPoly(centroid, orthoHulls[i]))
+                            {
+                                if (nestedPanel.ContainsKey(i))
+                                    nestedPanel[i].Add(panel[0]);
+                                else
+                                    nestedPanel.Add(i, new List<List<gbXYZ>>() { panel[0] });
+                            }
+                            else
+                                shadings.Add(panel[0]);
+                        }
+                    }
+                }
+
+                // boolean union within each nestedPanel, e.g. the block
+
+                // boolean operation: floor - wall = void & wall - floor = shading
+                */
+
+
 
                 // a trush bin for stray lines that are processed after space detection
                 // three steps are dumping debris to this trush bin
@@ -142,6 +229,19 @@ namespace Gingerbread
                     List<gbSeg> lattice = Util.FlattenList(nestedLattice);
                     strays.AddRange(latticeDebries);
 
+
+
+                    // VISUALIZATION
+                    using (Transaction tx = new Transaction(doc, "Sketch grids"))
+                    {
+                        tx.Start();
+                        Util.SketchSegs(doc, Util.FlattenList(nestedLattice));
+                        Debug.Print("Gridline sketched");
+                        tx.Commit();
+                    }
+
+
+
                     List<gbRegion> regions;
                     // shell is merged into regions as the first list element
                     //List<gbXYZ> regionShell;
@@ -151,6 +251,20 @@ namespace Gingerbread
 
                     SpaceDetect.GetRegion(lattice, z, g, out regions, out regionDebris);
                     strays.AddRange(Util.FlattenList(regionDebris));
+
+
+
+                    // VISUALIZATION
+                    List<gbSeg> loop = new List<gbSeg>();
+                    foreach (gbRegion region in regions)
+                    {
+                        for (int k = 0; k < region.loop.Count - 1; k++)
+                            loop.Add(new gbSeg(region.loop[k], region.loop[k + 1]));
+                    }
+                    Util.DrawDetailLines(doc, Util.gbSegsConvert(loop));
+                    Debug.Print("Region sketched");
+
+
 
                     //nestedShell.Add(regionShell);
                     nestedRegion.Add(regions);
