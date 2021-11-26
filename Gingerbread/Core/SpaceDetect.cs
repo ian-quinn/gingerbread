@@ -175,7 +175,7 @@ namespace Gingerbread.Core
             {
                 // if the face edges are not enclosed, regard them as orphans
                 segIntersectEnum intersectionCheck = GBMethod.SegIntersection(
-                    kvp.Value[0], kvp.Value.Last(), 0, out gbXYZ intersection, out double stretch);
+                    kvp.Value[0], kvp.Value.Last(), 0, out gbXYZ intersection, out double t1, out double t2);
                 if (!(intersectionCheck == segIntersectEnum.IntersectOnBoth ||
                     intersectionCheck == segIntersectEnum.ColineJoint))
                 {

@@ -112,59 +112,6 @@ namespace Gingerbread.Core
         }
 
 
-        // futher there will be gbLine method to modify line endpoints directly
-        // for now, just regenerate one. always the longer one when trimming.
-        public static gbSeg SegExtension(gbSeg a, gbSeg b, double tolerance)
-        {
-            gbXYZ p1 = a.PointAt(0);
-            gbXYZ p2 = a.PointAt(1);
-            gbXYZ p3 = b.PointAt(0);
-            gbXYZ p4 = b.PointAt(1);
-            gbXYZ intersection = new gbXYZ();
-            double dx12 = p2.X - p1.X;
-            double dy12 = p2.Y - p1.Y;
-            double dx34 = p4.X - p3.X;
-            double dy34 = p4.Y - p3.Y;
-            gbSeg extLine = a;
-            double extensionA = 0;
-            double extensionB = 0;
-
-            double denominator = (dy12 * dx34 - dx12 * dy34);
-
-            double t1 =
-                ((p1.X - p3.X) * dy34 + (p3.Y - p1.Y) * dx34)
-                    / denominator;
-            if (double.IsInfinity(t1))
-                return extLine;
-
-            double t2 =
-                ((p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12)
-                    / -denominator;
-
-            intersection = new gbXYZ(p1.X + dx12 * t1, p1.Y + dy12 * t1, 0);
-
-            if (t2 < 0)
-                extensionB = Math.Abs(t2) * b.Length;
-            else if (t2 > 1)
-                extensionB = (t2 - 1) * b.Length;
-
-            if (t1 < 0)
-            {
-                extensionA = Math.Abs(t1) * a.Length;
-                extLine = new gbSeg(intersection, p2);
-            }
-            else if (t1 > 1)
-            {
-                extensionA = (t1 - 1) * a.Length;
-                extLine = new gbSeg(p1, intersection);
-            }
-            if (extensionA < tolerance && extensionB < tolerance)
-                return extLine;
-            else
-                return a;
-        }
-
-
         public static double GetPolyArea(List<gbXYZ> pts)
         {
             var count = pts.Count;
@@ -238,6 +185,42 @@ namespace Gingerbread.Core
             return area;
         }
 
+        public static gbXYZ GetPolyCentroid(List<gbXYZ> poly)
+        {
+            double[] ans = new double[2];
+
+            int n = poly.Count;
+            double signedArea = 0;
+
+            // For all vertices
+            for (int i = 0; i < n; i++)
+            {
+                double x0 = poly[i].X;
+                double y0 = poly[i].Y;
+                double x1 = poly[(i + 1) % n].X;
+                double y1 = poly[(i + 1) % n].Y;
+
+                // Calculate value of A
+                // using shoelace formula
+                double A = (x0 * y1) - (x1 * y0);
+                signedArea += A;
+
+                // Calculating coordinates of
+                // centroid of polygon
+                ans[0] += (x0 + x1) * A;
+                ans[1] += (y0 + y1) * A;
+            }
+            signedArea *= 0.5;
+            gbXYZ centroid = new gbXYZ(ans[0] / (6 * signedArea),
+              ans[1] / (6 * signedArea), 0);
+            return centroid;
+        }
+
+        public gbXYZ GetLabelCentroid()
+        {
+            return new gbXYZ();
+        }
+
         public static bool IsClockwise(List<gbXYZ> pts)
         {
             var count = pts.Count;
@@ -263,7 +246,7 @@ namespace Gingerbread.Core
         /// Return the intersectEnum, output the intersection point and the ratio if the point falls on the first segment.
         /// </summary>
         public static segIntersectEnum SegIntersection(gbXYZ p1, gbXYZ p2, gbXYZ p3, gbXYZ p4, double tol, 
-            out gbXYZ intersection, out double fractile)
+            out gbXYZ intersection, out double t1, out double t2)
         {
             // represents stretch vector of seg1 vec1 = (dx12, dy12)
             double dx12 = p2.X - p1.X;
@@ -279,7 +262,8 @@ namespace Gingerbread.Core
             double denominator = dy12 * dx34 - dx12 * dy34;
             // co-line checker as cross product of (p3 - p1) and vec1/vec
             double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
-            fractile = 0;
+            t1 = 0;
+            t2 = 0;
 
             if (denominator == 0 && stretch != 0)
                 return segIntersectEnum.Parallel;
@@ -318,9 +302,9 @@ namespace Gingerbread.Core
 
             intersect = segIntersectEnum.IntersectOnLine;
 
-            double t1 = ((p1.X - p3.X) * dy34 + (p3.Y - p1.Y) * dx34) / denominator;
-            double t2 = ((p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12) / -denominator;
-            fractile = t1;
+            t1 = ((p1.X - p3.X) * dy34 + (p3.Y - p1.Y) * dx34) / denominator;
+            t2 = ((p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12) / -denominator;
+            //fractile = t1;
 
             if ((t1 >= 0 - tol) && (t1 <= 1 + tol))
                 intersect = segIntersectEnum.IntersectOnA;
@@ -334,27 +318,131 @@ namespace Gingerbread.Core
             return intersect;
         }
         public static segIntersectEnum SegIntersection(gbSeg a, gbSeg b, double tol, 
-            out gbXYZ intersection, out double fractile)
+            out gbXYZ intersection, out double t1, out double t2)
         {
             gbXYZ p1 = a.PointAt(0);
             gbXYZ p2 = a.PointAt(1);
             gbXYZ p3 = b.PointAt(0);
             gbXYZ p4 = b.PointAt(1);
             intersection = new gbXYZ();
-            return SegIntersection(p1, p2, p3, p4, tol, out intersection, out fractile);
+            return SegIntersection(p1, p2, p3, p4, tol, out intersection, out t1, out t2);
         }
         public static bool IsSegPolyIntersected(gbSeg a, List<gbXYZ> poly, double tol)
         {
             for (int i = 0; i < poly.Count - 1; i++)
             {
                 gbSeg edge = new gbSeg(poly[i], poly[i + 1]);
-                segIntersectEnum IntersectResult = SegIntersection(a, edge, tol, out gbXYZ intersection, out double fractile);
+                segIntersectEnum IntersectResult = SegIntersection(a, edge, tol, out gbXYZ intersection, out double t1, out double t2);
                 if (IntersectResult == segIntersectEnum.IntersectOnBoth ||
                     IntersectResult == segIntersectEnum.ColineAContainB)
                     return true;
             }
             return false;
         }
+
+        // futher there will be gbLine method to modify line endpoints directly
+        // for now, just regenerate one. always the longer one when trimming.
+        public static gbSeg SegExtension(gbSeg a, gbSeg b, double tolerance)
+        {
+            gbXYZ p1 = a.PointAt(0);
+            gbXYZ p2 = a.PointAt(1);
+            gbXYZ p3 = b.PointAt(0);
+            gbXYZ p4 = b.PointAt(1);
+            gbXYZ intersection = new gbXYZ();
+            double dx12 = p2.X - p1.X;
+            double dy12 = p2.Y - p1.Y;
+            double dx34 = p4.X - p3.X;
+            double dy34 = p4.Y - p3.Y;
+            gbSeg extLine = a;
+            double extensionA = 0;
+            double extensionB = 0;
+
+            double denominator = (dy12 * dx34 - dx12 * dy34);
+
+            double t1 =
+                ((p1.X - p3.X) * dy34 + (p3.Y - p1.Y) * dx34)
+                    / denominator;
+            if (double.IsInfinity(t1))
+                return extLine;
+
+            double t2 =
+                ((p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12)
+                    / -denominator;
+
+            intersection = new gbXYZ(p1.X + dx12 * t1, p1.Y + dy12 * t1, 0);
+
+            if (t2 < 0)
+                extensionB = Math.Abs(t2) * b.Length;
+            else if (t2 > 1)
+                extensionB = (t2 - 1) * b.Length;
+
+            if (t1 < 0)
+            {
+                extensionA = Math.Abs(t1) * a.Length;
+                extLine = new gbSeg(intersection, p2);
+            }
+            else if (t1 > 1)
+            {
+                extensionA = (t1 - 1) * a.Length;
+                extLine = new gbSeg(p1, intersection);
+            }
+            if (extensionA < tolerance && extensionB < tolerance)
+                return extLine;
+            else
+                return a;
+        }
+        
+        // extrusion/trim will modify the segment directly
+        public static void SegExtension2(gbSeg subj, gbSeg obj, double tol, double delta)
+        {
+            segIntersectEnum sectType = SegIntersection(subj, obj, tol, out gbXYZ intersection, out double t1, out double t2);
+            if (sectType == segIntersectEnum.ColineDisjoint)
+            {
+                double minDistance = double.PositiveInfinity;
+                Tuple<int, int> substitute = new Tuple<int, int>(0, 0);
+                for (int i = 0; i < 2; i++)
+                {
+                    for (int j = 0; j < 2; j++)
+                    {
+                        double d = subj.PointAt(i).DistanceTo(obj.PointAt(j));
+                        if (d < minDistance)
+                        {
+                            minDistance = d;
+                            substitute = new Tuple<int, int>(i, j);
+                        }
+                    }
+                }
+                if (minDistance < delta)
+                    subj.AdjustEndPt(substitute.Item1, obj.PointAt(substitute.Item2));
+                    //return new gbSeg(obj.PointAt(substitute.Item2), subj.PointAt(1 - substitute.Item1));
+            }
+            if (sectType == segIntersectEnum.IntersectOnLine)
+            {
+                double stretchA = t1 > 1 ? subj.Length * (t1 - 1) : subj.Length * (0 - t1);
+                double stretchB = t2 > 1 ? obj.Length * (t2 - 1) : obj.Length * (0 - t2);
+                if (stretchA < delta && stretchB < delta)
+                    if (t1 > 1)
+                        subj.AdjustEndPt(1, intersection);
+                        //return new gbSeg(subj.PointAt(1), intersection);
+                    else
+                        subj.AdjustEndPt(0, intersection);
+                        //return new gbSeg(subj.PointAt(0), intersection);
+            }
+            if (sectType == segIntersectEnum.IntersectOnB)
+            {
+                double stretchA = t1 > 1 ? subj.Length * (t1 - 1) : subj.Length * (0 - t1);
+                if (stretchA < delta)
+                    if (t1 > 1)
+                        subj.AdjustEndPt(1, intersection);
+                        //return new gbSeg(subj.PointAt(0), intersection);
+                    else
+                        subj.AdjustEndPt(0, intersection);
+                        //return new gbSeg(subj.PointAt(0), intersection);
+            }
+            //return subj.Copy();
+        }
+
+
 
         public static double PtDistanceToSeg(gbXYZ pt, gbSeg line,
           out gbXYZ plummet, out double stretch)
@@ -414,6 +502,59 @@ namespace Gingerbread.Core
             return new gbSeg(startPt, endPt);
         }
 
+        public static gbSeg SegMerge(gbSeg a, gbSeg b, double tol)
+        {
+            gbXYZ p1 = a.PointAt(0);
+            gbXYZ p2 = a.PointAt(1);
+            gbXYZ p3 = b.PointAt(0);
+            gbXYZ p4 = b.PointAt(1);
+
+            // represents stretch vector of seg1 vec1 = (dx12, dy12)
+            double dx12 = p2.X - p1.X;
+            double dy12 = p2.Y - p1.Y;
+            // represents stretch vector of seg2 vec2 = (dx34, dy34)
+            double dx34 = p4.X - p3.X;
+            double dy34 = p4.Y - p3.Y;
+
+            // checker as cross product of vec1 and vec2
+            double denominator = dy12 * dx34 - dx12 * dy34;
+            // co-line checker as cross product of (p3 - p1) and vec1/vec
+            double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
+
+            if (denominator == 0 && stretch != 0)
+                return new gbSeg();
+            if (denominator == 0 && stretch == 0)
+            {
+                // express endpoints of seg2 in terms of seg1 parameter
+                double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
+                double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
+                if (s1 > s2)
+                {
+                    Util.Swap(ref s1, ref s2);
+                    Util.Swap(ref p3, ref p4);
+                }
+                if ((s1 > 0 && s1 < 1) || (s2 > 0 && s2 < 1))
+                    if ((s1 > 0 && s1 < 1) && (s2 > 0 && s2 < 1))
+                        return a.Copy();
+                    else if (s1 > 0 && s1 < 1)
+                        return new gbSeg(p1, p4);
+                    else
+                        return new gbSeg(p3, p2);
+                if (s1 < 0 && s2 > 1)
+                    return b.Copy();
+                if (s1 >= 1)
+                    if (s1 < 1 + tol)
+                        return new gbSeg(p1, p4);
+                    else
+                        return new gbSeg();
+                if (s2 <= 0)
+                    if (s2 < 0 - tol)
+                        return new gbSeg(p3, p2);
+                    else
+                        return new gbSeg();
+            }
+            return new gbSeg();
+        }
 
         /// <summary>
         /// Create a expansion box by line segment offset
@@ -507,13 +648,13 @@ namespace Gingerbread.Core
         }
         public static bool IsSegFuzzyIntersected(gbSeg a, gbSeg b, double tolerance)
         {
-            gbXYZ intersection; double fractile;
-            if (SegIntersection(a, b, 0, out intersection, out fractile) == segIntersectEnum.IntersectOnBoth)
+            gbXYZ intersection; double t1, t2;
+            if (SegIntersection(a, b, 0, out intersection, out t1, out t2) == segIntersectEnum.IntersectOnBoth)
                 return true;
             List<gbXYZ> expansionBox = SegExpansionBox(b, tolerance);
             for (int i = 0; i < expansionBox.Count - 1; i++)
                 if (SegIntersection(a.PointAt(0), a.PointAt(1), 
-                    expansionBox[i], expansionBox[i + 1], 0, out intersection, out fractile)
+                    expansionBox[i], expansionBox[i + 1], 0, out intersection, out t1, out t2)
                     == segIntersectEnum.IntersectOnBoth)
                     return true;
             if (IsPtInPoly(a.PointAt(0), expansionBox)
@@ -533,8 +674,8 @@ namespace Gingerbread.Core
                 {
                     if (i != j)
                         if (SegIntersection(crvs[i], crvs[j], 0.000001, 
-                            out gbXYZ intersection, out double fractile) == segIntersectEnum.IntersectOnBoth)
-                            breakParams.Add(fractile);
+                            out gbXYZ intersection, out double t1, out double t2) == segIntersectEnum.IntersectOnBoth)
+                            breakParams.Add(t1);
                         else
                             continue;
                 }
@@ -778,6 +919,37 @@ namespace Gingerbread.Core
                 sectLoops.Add(sectLoop);
             }
             return sectLoops;
+        }
+
+        public static List<List<gbXYZ>> OffsetPoly(List<gbXYZ> poly, double offset)
+        {
+            IntPoint PtToIntPt(gbXYZ pt)
+            {
+                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
+            }
+            gbXYZ IntPtToPt(IntPoint pt)
+            {
+                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
+            }
+
+            List<IntPoint> path = new List<IntPoint>();
+            foreach (gbXYZ pt in poly)
+                path.Add(PtToIntPt(pt));
+
+            List<List<IntPoint>> solutions = new List<List<IntPoint>>();
+            ClipperOffset co = new ClipperOffset();
+            co.AddPath(path, JoinType.jtMiter, EndType.etClosedPolygon);
+            co.Execute(ref solutions, Math.Round(offset * 10000000));
+
+            List<List<gbXYZ>> offsetLoops = new List<List<gbXYZ>>();
+            foreach (List<IntPoint> solution in solutions)
+            {
+                List<gbXYZ> offsetLoop = new List<gbXYZ>();
+                foreach (IntPoint pt in solution)
+                    offsetLoop.Add(IntPtToPt(pt));
+                offsetLoops.Add(offsetLoop);
+            }
+            return offsetLoops;
         }
 
         #endregion
