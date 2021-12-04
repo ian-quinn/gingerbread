@@ -52,6 +52,24 @@ namespace Gingerbread.Views
             ExEvent = ExternalEvent.Create(extExportXML);
         }
 
+        private void BtnApply(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.originX = double.Parse(Xcoord.Text);
+            Properties.Settings.Default.originY = double.Parse(Ycoord.Text);
+            Properties.Settings.Default.tolGroup = double.Parse(cluster.Text);
+            Properties.Settings.Default.tolExpand = double.Parse(expansion.Text);
+            Properties.Settings.Default.tolDelta = double.Parse(threshold.Text);
+            Properties.Settings.Default.Save();
+        }
+
+        private void BtnReset(object sender, RoutedEventArgs e)
+        {
+            Properties.Settings.Default.originX = 0;
+            Properties.Settings.Default.originY = 0;
+            Properties.Settings.Default.tolGroup = 0.1;
+            Properties.Settings.Default.tolExpand = 0.5;
+            Properties.Settings.Default.tolDelta = 0.1;
+        }
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {
@@ -90,8 +108,6 @@ namespace Gingerbread.Views
                     File.Copy(XMLPath, dlg.FileName, true);
             }
         }
-
-
     }
 }
 

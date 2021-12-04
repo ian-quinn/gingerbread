@@ -191,7 +191,16 @@ namespace Gingerbread
                 for (int g = 0; g < lineGroups.Count; g++)
                 {
 
-                    List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroups[g]), 0.00001);
+                    List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroups[g]), 0.001);
+
+                    //VISUALIZATION
+                    using (Transaction tx = new Transaction(doc, "Sketch shatters"))
+                    {
+                        tx.Start();
+                        Util.SketchSegs(doc, lineShatters);
+                        Debug.Print("Gridline sketched");
+                        tx.Commit();
+                    }
 
 
                     List<gbXYZ> joints = PointAlign.GetJoints(lineShatters, 
@@ -222,23 +231,41 @@ namespace Gingerbread
                         Properties.Settings.Default.tolDouble,
                         out anchorInfo);
 
+                    // VISUALIZATION
+                    using (Transaction tx = new Transaction(doc, "Sketch anchors"))
+                    {
+                        tx.Start();
+                        View currentView = doc.ActiveView;
+                        ElementId defaultTypeId = doc.GetDefaultElementTypeId(ElementTypeGroup.TextNoteType);
+                        Util.SketchMarkers(doc, Util.gbXYZsConvert(ptAlign), 0.4);
+                        gbXYZ northAxis = new gbXYZ(0, 1, 0);
+                        for (int i = 0; i < ptAlign.Count; i++)
+                        {
+                            string handInfo = "";
+                            foreach (gbXYZ hand in anchorInfo[i])
+                                handInfo += Math.Round(GBMethod.VectorAngle(northAxis, hand), 1).ToString() + "-";
+                            TextNote note = TextNote.Create(doc, currentView.Id, Util.gbXYZConvert(ptAlign[i]),
+                                handInfo, defaultTypeId);
+                        }
+                        tx.Commit();
+                    }
+
 
                     List<gbSeg> latticeDebries; // abandoned for now
-                    List<List<gbSeg>> nestedLattice = PointAlign.GetLattice(ptAlign, anchorInfo,
+                    List<gbSeg> lattice = PointAlign.GetLattice(ptAlign, anchorInfo,
                         Properties.Settings.Default.tolDouble, out latticeDebries);
-                    List<gbSeg> lattice = Util.FlattenList(nestedLattice);
                     strays.AddRange(latticeDebries);
 
 
 
                     // VISUALIZATION
-                    using (Transaction tx = new Transaction(doc, "Sketch grids"))
-                    {
-                        tx.Start();
-                        Util.SketchSegs(doc, Util.FlattenList(nestedLattice));
-                        Debug.Print("Gridline sketched");
-                        tx.Commit();
-                    }
+                    //using (Transaction tx = new Transaction(doc, "Sketch grids"))
+                    //{
+                    //    tx.Start();
+                    //    Util.SketchSegs(doc, lattice);
+                    //    Debug.Print("Gridline sketched");
+                    //    tx.Commit();
+                    //}
 
 
 
@@ -323,6 +350,7 @@ namespace Gingerbread
             Report(100, "Done export to " + thisAssemblyFolderPath);
             CurrentUI.btnCancel.Visibility = System.Windows.Visibility.Collapsed;
             CurrentUI.btnGenerate.Visibility = System.Windows.Visibility.Visible;
+
 
             return;
 

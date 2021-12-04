@@ -51,6 +51,15 @@ namespace Gingerbread.Core
             return angle;
         }
 
+        public static double VectorAngle2D(gbXYZ vec1, gbXYZ vec2)
+        {
+            double value = Math.Round(vec1.DotProduct(vec2) / vec1.Norm() / vec2.Norm(), 6);
+            double angle = Math.Acos(value);
+            angle = angle * 180 / Math.PI;
+
+            return angle;
+        }
+
         // for pre-process of the wall centerlines
         // futher this function will be used to cast XYZ class to gbPoint class
         // here it only serves to flatten Point3d to Point2d (pseudo)

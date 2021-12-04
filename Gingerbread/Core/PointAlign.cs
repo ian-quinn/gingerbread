@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -442,7 +443,7 @@ namespace Gingerbread.Core
         /// <summary>
         /// Alignment step 3: Recreate lattice from the aligned anchors
         /// </summary>
-        public static List<List<gbSeg>> GetLattice(List<gbXYZ> anchors, List<List<gbXYZ>> anchorInfo,
+        public static List<gbSeg> GetLattice(List<gbXYZ> anchors, List<List<gbXYZ>> anchorInfo,
             double tolerance, out List<gbSeg> strays)
         {
             // tolerance - apply when compare two values to avoid double precision failure
@@ -469,8 +470,15 @@ namespace Gingerbread.Core
                 int endId = -1;
                 for (int i = anchors.Count - 1; i >= 0; i--)
                 {
+                    // these new added checkings follow the lattice generation down below
+                    // not passed debugging right now, pending
+                    double thetaBetween = Math.Abs(GBMethod.VectorAngle2D(anchors[pointer] - anchors[i], 
+                        anchorInfo[pointer][0]) - 90);
+                    if (thetaBetween < 85)
+                        continue;
+
                     // check if the receiving anchor has the opposite projection vector
-                    if (i != pointer && IsIncluded(anchorInfo[i], -anchorInfo[pointer][0], tolerance))
+                    if (i != pointer && IsJointPaired(anchorInfo[i], -anchorInfo[pointer][0], 2))
                     {
                         double distance = DistanceToRay(anchors[i], anchors[pointer],
                           anchorInfo[pointer][0], out double stretch);
@@ -505,56 +513,95 @@ namespace Gingerbread.Core
                 anchorInfo.RemoveAt(pointer);
                 // a safe lock
                 // if there is always an anchor with single outgoing vector
-                // and ti cannot find a corresponding point to form a segment with 
+                // and it cannot find a corresponding point to form a segment with 
                 // there will be infinite loops. working on how to solve this
                 if (counter > 200)
                     break;
             }
-            //Rhino.RhinoApp.WriteLine("Iterate {0} times!", counter);
 
-            List<List<gbSeg>> grids = new List<List<gbSeg>>();
+            // There is no need to keep the tree structure
+            List<gbSeg> grids = new List<gbSeg>();
 
             for (int i = 0; i < anchors.Count; i++)
             {
-                List<gbSeg> grid = new List<gbSeg>();
                 foreach (gbXYZ vec in anchorInfo[i])
                 {
+                    //Debug.Print($"Begin {anchors[i]} No.{i} at vec-{anchorInfo[i].IndexOf(vec)} {vec}");
                     double max = double.PositiveInfinity;
                     int endId = -1;
                     for (int j = 0; j < anchors.Count; j++)
                     {
-                        if (i != j && IsIncluded(anchorInfo[j], -vec, tolerance))
+                        
+                        double thetaBetween = Math.Abs(GBMethod.VectorAngle2D(anchors[j] - anchors[i], vec) - 90);
+                        if (thetaBetween < 85)
                         {
-                            //Rhino.RhinoApp.Write("Loop: {0} | ", j);
-                            double distance = DistanceToRay(anchors[j], anchors[i], vec,
-                              out double stretch);
-                            //Rhino.RhinoApp.Write(stretch.ToString() + "\n");
-                            if (distance < tolerance && stretch > 0)
+                            //Debug.Print($"Point {anchors[j]} fails term 1 with {GBMethod.VectorAngle2D(anchors[j] - anchors[i], vec)}");
+                            continue;
+                        }
+                        if (i != j && IsJointPaired(anchorInfo[j], -vec, 2))
+                        {
+                            double distance = DistanceToRay(anchors[j], anchors[i], vec, out double stretch);
+                            //Debug.Print($"----[j] {anchors[j]} with d: {distance} s: {stretch}");
+                            if (distance < 0.2 && stretch > 0)
                             {
                                 if (stretch < max)
                                 {
                                     max = stretch;
                                     endId = j;
                                 }
+                                //Debug.Print("Accepted");
                             }
                         }
+                        //else
+                        //{
+                        //    Debug.Write($"Point {anchors[j]} No.{j} fails term 2 with");
+                        //    foreach (gbXYZ dd in anchorInfo[j])
+                        //        Debug.Write($"{dd}-{GBMethod.VectorAngle2D(dd, -vec)}-");
+                        //    Debug.Write("\n");
+                        //}
                     }
 
                     if (endId >= 0)
                     {
-                        grid.Add(new gbSeg(anchors[i], anchors[endId]));
-                        //anchorInfo[endId].Remove(-vec);
-                        for (int j = anchorInfo[endId].Count - 1; j >= 0; j--)
-                        {
-                            if (VecAlmostTheSame(anchorInfo[endId][j], -vec, tolerance))
-                                anchorInfo[endId].RemoveAt(j);
-                        }
+                        grids.Add(new gbSeg(anchors[i], anchors[endId]));
+
+                        // if not removing the retrospective vector, there will be duplicated segments
+                        // which means the original lattice grid will be doubled
+                        // then we only need to sort out the double segments as lattice grid
+                        // this may prevent a situation that if joint A found a wrong B, it will not affect
+                        // the joint B to find the right A. Therefore, a retrospective connection is established
+
+                        //for (int j = anchorInfo[endId].Count - 1; j >= 0; j--)
+                        //{
+                        //    if (VecAlmostTheSame(anchorInfo[endId][j], -vec, tolerance))
+                        //        anchorInfo[endId].RemoveAt(j);
+                        //}
                     }
+                    //else
+                    //{
+                    //    Debug.Print("One lost anchor vector has been fount");
+                    //}
                 }
-                grids.Add(grid);
             }
 
-            return grids;
+            List<gbSeg> lattice = new List<gbSeg>();
+
+            for (int i = grids.Count - 1; i >= 0; i--)
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    if (IsSegReciprocal(grids[i], grids[j], tolerance))
+                    {
+                        //lattice.RemoveAt(i);
+                        lattice.Add(grids[i]);
+                        break;
+                    }
+                }
+            }
+            Debug.Print("PointAlign:: lattice count after skim: " + lattice.Count);
+
+
+            return lattice;
         }
 
         #region support functions
@@ -675,6 +722,22 @@ namespace Gingerbread.Core
             foreach (gbXYZ vec in vecs)
                 if (VecAlmostTheSame(vec, newVec, tolerance))
                     return true;
+            return false;
+        }
+
+        public static bool IsJointPaired(List<gbXYZ> vecs, gbXYZ newVec, double angle)
+        {
+            foreach (gbXYZ vec in vecs)
+                if (GBMethod.VectorAngle2D(vec, newVec) < angle)
+                    return true;
+            return false;
+        }
+
+        public static bool IsSegReciprocal(gbSeg a, gbSeg b, double tolerance)
+        {
+            if (PtAlmostTheSame(a.PointAt(0), b.PointAt(1), tolerance) &&
+                PtAlmostTheSame(a.PointAt(1), b.PointAt(0), tolerance))
+                return true;
             return false;
         }
 

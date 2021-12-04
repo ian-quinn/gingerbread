@@ -49,7 +49,7 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
         public double tolExpand {
             get {
                 return ((double)(this["tolExpand"]));
@@ -73,7 +73,7 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.2")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
         public double tolDelta {
             get {
                 return ((double)(this["tolDelta"]));
@@ -116,6 +116,30 @@ namespace Gingerbread.Properties {
             }
             set {
                 this["checkInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double originX {
+            get {
+                return ((double)(this["originX"]));
+            }
+            set {
+                this["originX"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double originY {
+            get {
+                return ((double)(this["originY"]));
+            }
+            set {
+                this["originY"] = value;
             }
         }
     }

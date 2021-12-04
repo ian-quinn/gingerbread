@@ -349,7 +349,7 @@ namespace Gingerbread
             SketchPlane sketchPlane = PlaneWorld(doc);
             foreach(XYZ pt in pts)
             {
-                XYZ flatPt = new XYZ(MToFoot(pt.X), MToFoot(pt.Y), 0);
+                XYZ flatPt = new XYZ(pt.X, pt.Y, 0);
                 if (style == "O")
                 {
                     XYZ xAxis = new XYZ(1, 0, 0);

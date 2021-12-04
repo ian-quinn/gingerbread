@@ -9,13 +9,13 @@
       <Value Profile="(Default)">0.1</Value>
     </Setting>
     <Setting Name="tolExpand" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.2</Value>
+      <Value Profile="(Default)">0.5</Value>
     </Setting>
     <Setting Name="tolTheta" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="tolDelta" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.2</Value>
+      <Value Profile="(Default)">0.1</Value>
     </Setting>
     <Setting Name="tolDouble" Type="System.Double" Scope="User">
       <Value Profile="(Default)">1E-05</Value>
@@ -25,6 +25,12 @@
     </Setting>
     <Setting Name="checkInfo" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="originX" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="originY" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

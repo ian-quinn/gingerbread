@@ -117,8 +117,8 @@ namespace Gingerbread.Core
             CartesianPoint cpt = new CartesianPoint();
             cpt.Coordinate = new string[3];
             CultureInfo ci = new CultureInfo(String.Empty);
-            string xformat = string.Format(ci, "{0:0.000000}", pt.X);
-            string yformat = string.Format(ci, "{0:0.000000}", pt.Y);
+            string xformat = string.Format(ci, "{0:0.000000}", pt.X - Properties.Settings.Default.originX);
+            string yformat = string.Format(ci, "{0:0.000000}", pt.Y - Properties.Settings.Default.originY);
             string zformat = string.Format(ci, "{0:0.000000}", pt.Z);
             cpt.Coordinate[0] = xformat;
             cpt.Coordinate[1] = yformat;
@@ -346,12 +346,31 @@ namespace Gingerbread.Core
             if (face.openings.Count > 0)
             {
                 surface.Opening = new Opening[face.openings.Count];
+                int winCounter = 0;
+                int doorCounter = 0;
+                int nullCounter = 0;
                 for (int i = 0; i < face.openings.Count; i++)
                 {
                     Opening op = new Opening();
+                    
                     op.id = face.openings[i].id;
                     op.openingType = face.openings[i].type;
-
+                    if (op.openingType == openingTypeEnum.FixedWindow)
+                    {
+                        op.Name = surface.Name + "_Window_" + winCounter;
+                        winCounter++;
+                    }
+                    else if (op.openingType == openingTypeEnum.NonSlidingDoor)
+                    {
+                        op.Name = surface.Name + "_Door_" + doorCounter;
+                        doorCounter++;
+                    }
+                    else
+                    {
+                        op.Name = surface.Name + "_Null_" + nullCounter;
+                        nullCounter++;
+                    }
+                        
                     RectangularGeometry op_rg = new RectangularGeometry();
                     op_rg.Azimuth = face.azimuth.ToString();
                     op_rg.Tilt = face.tilt.ToString();
