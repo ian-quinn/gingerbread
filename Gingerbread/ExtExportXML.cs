@@ -64,6 +64,8 @@ namespace Gingerbread
             // process space boundary and matching relation at each level
             Dictionary<int, List<gbRegion>> dictRegion = new Dictionary<int, List<gbRegion>>();
             Dictionary<int, List<gbXYZ>> dictShell = new Dictionary<int, List<gbXYZ>>();
+            List<gbSeg> preBlueprint = new List<gbSeg>();
+            List<gbSeg> nextBlueprint = new List<gbSeg>();
 
             for (int z = 0; z < levelNum; z++)
             {
@@ -216,19 +218,31 @@ namespace Gingerbread
                     //    handsCopy.Add(handCopy);
                     //}
 
+                    // VISUALIZATION
+                    if (z == 1)
+                        using (Transaction tx = new Transaction(doc, "Sketch blueprint"))
+                        {
+                            tx.Start();
+                            Util.SketchSegs(doc, preBlueprint);
+                            Debug.Print("Gridline sketched");
+                            tx.Commit();
+                        }
 
-                    List<List<gbXYZ>> anchorInfo_temp;
-                    List<List<gbXYZ>> anchorInfo;
-                    List<gbXYZ> ptAlign_temp = PointAlign.AlignPts(joints, hands,
+                    List<List<gbXYZ>> anchorInfo_temp, anchorInfo;
+                    List<gbSeg> nextBlueprint_1, nextBlueprint_2;
+                    List<gbXYZ> ptAlign_temp = PointAlign.AlignPts(joints, hands, preBlueprint,
                         Properties.Settings.Default.tolTheta,
                         Properties.Settings.Default.tolDelta,
                         Properties.Settings.Default.tolDouble,
-                        out anchorInfo_temp);
-                    List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp,
+                        out anchorInfo_temp, out nextBlueprint_1);
+                    List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp, preBlueprint, 
                         Properties.Settings.Default.tolTheta - Math.PI / 2,
                         Properties.Settings.Default.tolDelta,
                         Properties.Settings.Default.tolDouble,
-                        out anchorInfo);
+                        out anchorInfo, out nextBlueprint_2);
+                    nextBlueprint.AddRange(nextBlueprint_1);
+                    nextBlueprint.AddRange(nextBlueprint_2);
+                    preBlueprint = nextBlueprint;
 
                     // VISUALIZATION
                     //using (Transaction tx = new Transaction(doc, "Sketch anchors"))
@@ -254,7 +268,6 @@ namespace Gingerbread
                     List<gbSeg> lattice = PointAlign.GetLattice(ptAlign, anchorInfo,
                         Properties.Settings.Default.tolDouble, out latticeDebries);
                     strays.AddRange(latticeDebries);
-
 
 
                     // VISUALIZATION

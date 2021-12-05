@@ -89,9 +89,9 @@ namespace Gingerbread.Core
         /// <param name="anchorInfo"></param>
         /// <returns></returns>
         public static List<gbXYZ> AlignPts(
-          List<gbXYZ> pts, List<List<gbXYZ>> vecList,
+          List<gbXYZ> pts, List<List<gbXYZ>> vecList, List<gbSeg> preBlueprint, 
           double theta, double delta, double tolerance,
-          out List<List<gbXYZ>> anchorInfo)
+          out List<List<gbXYZ>> anchorInfo, out List<gbSeg> nextBlueprint)
         //out List<gbSeg> axes, out List<List<gbXYZ>> ptGroups)
         {
             // Copy the original points for iteration
@@ -113,6 +113,7 @@ namespace Gingerbread.Core
 
             // Define exact alignment direction
             gbXYZ scanRay = new gbXYZ(Math.Cos(theta), Math.Sin(theta), 0);
+            nextBlueprint = new List<gbSeg>();
 
             while (ptPool.Count > 0)
             {
@@ -235,7 +236,7 @@ namespace Gingerbread.Core
 
                     if (maxMember == 1) // one point as axis
                     {
-                        p2 = p1 + scanRay;
+                        p2 = p1 + 10 * scanRay;
                         axis = new gbSeg(p1, p2);
                         splits.Add(0);
                         isConnected.Add(false);
@@ -269,6 +270,27 @@ namespace Gingerbread.Core
 
                     //AXES.Add(axis);
 
+                    // modify this axis inline with ther former blueprint
+                    //double maxOverlap = 0;
+                    double minDistance = Properties.Settings.Default.tolDelta;
+                    gbSeg offsetAxis = axis;
+                    foreach (gbSeg preAxis in preBlueprint)
+                    {
+                        double distance = GBMethod.SegDistanceToSeg(axis, preAxis, out double overlap, out gbSeg proj);
+                        if (distance < minDistance)
+                        {
+                            minDistance = distance;
+                            offsetAxis = proj;
+                            Debug.Print($"PointAlign:: offsetAxis updated with overlap {overlap} distance {distance}");
+                        }
+                    }
+                    if (minDistance < Properties.Settings.Default.tolDelta)
+                    {
+                        axis = offsetAxis;
+                        Debug.Print($"Axis moves to {axis}");
+                    }
+
+                    nextBlueprint.Add(axis);
 
                     // travers each point group and align the joints to anchors
                     for (int i = 0; i < ptGroup.Count; i++)
@@ -299,7 +321,7 @@ namespace Gingerbread.Core
                         gbXYZ moveDirection = RoundVec(new gbXYZ(
                           plummet.X - ptGroup[i].X,
                           plummet.Y - ptGroup[i].Y,
-                          0), 0.00000001);
+                          0), 0.0000001);
                         moveDirection.Unitize();
                         //Rhino.RhinoApp.WriteLine("EVIL VEC IS ({0}, {1})", moveDirection.X, moveDirection.Y);
 

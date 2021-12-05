@@ -480,6 +480,39 @@ namespace Gingerbread.Core
             return Math.Sqrt(dx * dx + dy * dy);
         }
 
+        public static double SegDistanceToSeg(gbSeg subj, gbSeg obj, out double overlap, out gbSeg proj)
+        {
+            gbXYZ start = subj.Start;
+            gbXYZ end = subj.End;
+            double angle = VectorAngle2D(subj.direction, obj.direction);
+            if (Math.Abs(angle - 90) > 89)
+            {
+                double d1 = PtDistanceToSeg(start, obj, out gbXYZ plummet1, out double t1);
+                double d2 = PtDistanceToSeg(end, obj, out gbXYZ plummet2, out double t2);
+                if (t1 > t2)
+                    Util.Swap(ref t1, ref t2);
+                if (t2 < 0 || t1 > 1)
+                    overlap = 0;
+                else if (t1 < 0 && t2 > 1)
+                    overlap = 1;
+                else if (t1 < 0)
+                    overlap = 0 - t1;
+                else if (t2 > 1)
+                    overlap = 1 - t2;
+                else
+                    overlap = t2 - t1;
+                proj = new gbSeg(plummet1, plummet2);
+                return d1 <= d2 ? d1 : d2;
+            }
+            else
+            {
+                proj = null;
+                overlap = 0;
+                return double.PositiveInfinity;
+            }
+                
+        }
+
         public static gbSeg SegProjection(gbSeg a, gbSeg b, out double distance)
         {
             double paramA, paramB;
