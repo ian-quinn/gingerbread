@@ -22,20 +22,20 @@ namespace Gingerbread.Core
             gbx.lengthUnit = lengthUnitEnum.Feet;
             gbx.temperatureUnit = temperatureUnitEnum.F;
 
-            Campus cmp = CreateCampus("sample_0");
+            Campus cmp = CreateCampus("DXI_Conf_Center");
 
             cmp.Buildings = new Building[10000];
             gbx.Campus = cmp; // backward mapping
 
             //where does this location information from?  it could be smartly inferred somehow, but otherwise specified by the user/programmer
             Location zeloc = new Location();
-            zeloc.Name = "???";
-            zeloc.Latitude = "00.00";
-            zeloc.Longitude = "00.00";
+            zeloc.Name = "Shanghai, China";
+            zeloc.Latitude = "121.50";
+            zeloc.Longitude = "31.28";
             cmp.Location = zeloc; // backward mapping
 
             // set an array as big as possible, revise here
-            cmp.Buildings[0] = MakeBuilding(10000, "bldg_0", buildingTypeEnum.AutomotiveFacility);
+            cmp.Buildings[0] = MakeBuilding(10000, "bldg_0", buildingTypeEnum.Office);
 
             // STOREY
             for (int i = 0; i < floors.Count; i++)
@@ -54,7 +54,10 @@ namespace Gingerbread.Core
             for (int i = 0; i < faces.Count; i++)
             {
                 if (faces[i].loop.Count < 4)
-                    Debug.Print("Degenerated surface detected at: " + i);
+                {
+                    Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
+                    continue;
+                }
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
                 if (IsDuplicateSrf(faces[i], uniqueSrfs))
                     continue;

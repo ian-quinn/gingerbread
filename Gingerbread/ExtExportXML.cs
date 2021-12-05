@@ -190,17 +190,16 @@ namespace Gingerbread
                 // enter point alignment and space detection of each segment group
                 for (int g = 0; g < lineGroups.Count; g++)
                 {
-
                     List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineGroups[g]), 0.001);
 
                     //VISUALIZATION
-                    using (Transaction tx = new Transaction(doc, "Sketch shatters"))
-                    {
-                        tx.Start();
-                        Util.SketchSegs(doc, lineShatters);
-                        Debug.Print("Gridline sketched");
-                        tx.Commit();
-                    }
+                    //using (Transaction tx = new Transaction(doc, "Sketch shatters"))
+                    //{
+                    //    tx.Start();
+                    //    Util.SketchSegs(doc, lineShatters);
+                    //    Debug.Print("Gridline sketched");
+                    //    tx.Commit();
+                    //}
 
 
                     List<gbXYZ> joints = PointAlign.GetJoints(lineShatters, 
@@ -208,14 +207,14 @@ namespace Gingerbread
 
 
                     // deepcopy hands for debugging
-                    List<List<gbXYZ>> handsCopy = new List<List<gbXYZ>>();
-                    foreach (List<gbXYZ> hand in hands)
-                    {
-                        List<gbXYZ> handCopy = new List<gbXYZ>();
-                        foreach (gbXYZ h in hand)
-                            handCopy.Add(h);
-                        handsCopy.Add(handCopy);
-                    }
+                    //List<List<gbXYZ>> handsCopy = new List<List<gbXYZ>>();
+                    //foreach (List<gbXYZ> hand in hands)
+                    //{
+                    //    List<gbXYZ> handCopy = new List<gbXYZ>();
+                    //    foreach (gbXYZ h in hand)
+                    //        handCopy.Add(h);
+                    //    handsCopy.Add(handCopy);
+                    //}
 
 
                     List<List<gbXYZ>> anchorInfo_temp;
@@ -232,23 +231,23 @@ namespace Gingerbread
                         out anchorInfo);
 
                     // VISUALIZATION
-                    using (Transaction tx = new Transaction(doc, "Sketch anchors"))
-                    {
-                        tx.Start();
-                        View currentView = doc.ActiveView;
-                        ElementId defaultTypeId = doc.GetDefaultElementTypeId(ElementTypeGroup.TextNoteType);
-                        Util.SketchMarkers(doc, Util.gbXYZsConvert(ptAlign), 0.4);
-                        gbXYZ northAxis = new gbXYZ(0, 1, 0);
-                        for (int i = 0; i < ptAlign.Count; i++)
-                        {
-                            string handInfo = "";
-                            foreach (gbXYZ hand in anchorInfo[i])
-                                handInfo += Math.Round(GBMethod.VectorAngle(northAxis, hand), 1).ToString() + "-";
-                            TextNote note = TextNote.Create(doc, currentView.Id, Util.gbXYZConvert(ptAlign[i]),
-                                handInfo, defaultTypeId);
-                        }
-                        tx.Commit();
-                    }
+                    //using (Transaction tx = new Transaction(doc, "Sketch anchors"))
+                    //{
+                    //    tx.Start();
+                    //    View currentView = doc.ActiveView;
+                    //    ElementId defaultTypeId = doc.GetDefaultElementTypeId(ElementTypeGroup.TextNoteType);
+                    //    Util.SketchMarkers(doc, Util.gbXYZsConvert(ptAlign), 0.4);
+                    //    gbXYZ northAxis = new gbXYZ(0, 1, 0);
+                    //    for (int i = 0; i < ptAlign.Count; i++)
+                    //    {
+                    //        string handInfo = "";
+                    //        foreach (gbXYZ hand in anchorInfo[i])
+                    //            handInfo += Math.Round(GBMethod.VectorAngle(northAxis, hand), 1).ToString() + "-";
+                    //        TextNote note = TextNote.Create(doc, currentView.Id, Util.gbXYZConvert(ptAlign[i]),
+                    //            handInfo, defaultTypeId);
+                    //    }
+                    //    tx.Commit();
+                    //}
 
 
                     List<gbSeg> latticeDebries; // abandoned for now
@@ -279,17 +278,17 @@ namespace Gingerbread
                     SpaceDetect.GetRegion(lattice, z, g, out regions, out regionDebris);
                     strays.AddRange(Util.FlattenList(regionDebris));
 
-
+                    Debug.Print($"At level-{z} group-{g} with {regions.Count} regions");
 
                     // VISUALIZATION
-                    List<gbSeg> loop = new List<gbSeg>();
-                    foreach (gbRegion region in regions)
-                    {
-                        for (int k = 0; k < region.loop.Count - 1; k++)
-                            loop.Add(new gbSeg(region.loop[k], region.loop[k + 1]));
-                    }
-                    Util.DrawDetailLines(doc, Util.gbSegsConvert(loop));
-                    Debug.Print("Region sketched");
+                    //List<gbSeg> loop = new List<gbSeg>();
+                    //foreach (gbRegion region in regions)
+                    //{
+                    //    for (int k = 0; k < region.loop.Count - 1; k++)
+                    //        loop.Add(new gbSeg(region.loop[k], region.loop[k + 1]));
+                    //}
+                    //Util.DrawDetailLines(doc, Util.gbSegsConvert(loop));
+                    //Debug.Print("Region sketched");
 
 
 
@@ -297,8 +296,9 @@ namespace Gingerbread
                     nestedRegion.Add(regions);
                 }
 
-                // left for some MCR coupling work
-                // only a placeholder that solves nothing
+                Debug.Print($"At level-{z} with {nestedRegion.Count} clusters");
+
+                // MCR split
                 SpaceDetect.GetMCR(nestedRegion); //, nestedShell
 
                 // summarize geometries and flatten the list

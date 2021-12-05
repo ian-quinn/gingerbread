@@ -62,7 +62,7 @@ namespace Gingerbread.Core
                 foreach (gbRegion region in dictRegion[level.id])
                 {
                     // skip the void region that is just a place holder
-                    if (region.loop.Count == 0)
+                    if (region.loop == null || region.loop.Count == 0)
                         continue;
 
                     gbZone newZone = new gbZone(region.label, level, region);
@@ -95,8 +95,10 @@ namespace Gingerbread.Core
                 // so following this order we create windows first because they are least likely to be mis-drawn 
                 // by people and of higher importance in building simulation. Then if the curtain wall has a 
                 // collision with windows, cancel its generation. 
+                //Debug.Print($"XMLGeometry:: this level-{level.id} has {dictWindow[level.id].Count} windows");
                 foreach (Tuple<gbXYZ, string> opening in dictWindow[level.id])
                 {
+                    //Debug.Print($"XMLGeometry:: window {opening.Item1} {opening.Item2}");
                     // get the planar size of this component
                     // cancel generation if not valid
                     List<double> sizes = new List<double>();
@@ -108,7 +110,7 @@ namespace Gingerbread.Core
                     if (sizes.Count != 2)
                         continue;
 
-                    double minDistance = Double.PositiveInfinity;
+                    double minDistance = double.PositiveInfinity;
                     double minParam = 0;
                     gbXYZ minPlummet = opening.Item1;
                     int hostId = 0;
@@ -128,7 +130,7 @@ namespace Gingerbread.Core
                     }
                     // if the projection distance surpass the lattice alignment threshold
                     // skip this component (its host wall may not spawn)
-                    if (minDistance > Properties.Settings.Default.tolDelta)
+                    if (minDistance > 2 * Properties.Settings.Default.tolDelta)
                         continue;
 
                     gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);
@@ -179,8 +181,10 @@ namespace Gingerbread.Core
                 // as to doors
                 // such process is the same as the one creating windows
                 // they will be merged if there is no difference detected in future
+                Debug.Print($"XMLGeometry:: There are {dictDoor[level.id].Count} doors on level-{level.id}");
                 foreach (Tuple<gbXYZ, string> opening in dictDoor[level.id])
                 {
+                    Debug.Print($"XMLGeometry:: Door inserts at {opening.Item1} with dimension {opening.Item2}");
                     // get the planar size of this component 
                     // cancel generation if not valid
                     List<double> sizes = new List<double>();
@@ -192,7 +196,7 @@ namespace Gingerbread.Core
                     if (sizes.Count != 2)
                         continue;
 
-                    double minDistance = Double.PositiveInfinity;
+                    double minDistance = double.PositiveInfinity;
                     double minParam = 0;
                     gbXYZ minPlummet = opening.Item1;
                     int hostId = 0;
@@ -217,7 +221,7 @@ namespace Gingerbread.Core
 
                     // if the projection distance surpass the lattice alignment threshold
                     // skip this component (its host wall may not spawn)
-                    if (minDistance > Properties.Settings.Default.tolDelta)
+                    if (minDistance > 2 * Properties.Settings.Default.tolDelta)
                         continue;
 
                     gbXYZ origin = thisSurface[hostId].locationLine.PointAt(0);
@@ -243,13 +247,45 @@ namespace Gingerbread.Core
                     {
                         List<gbXYZ> scatterPts = Util.FlattenList(loopCluster);
                         List<gbXYZ> boundingBox = OrthoHull.GetRectHull(scatterPts);
-                        boundingBox.RemoveAt(boundingBox.Count - 1); // transfer to open polyloop
 
-                        //Debug.Print("XMLGeometry:: " + "Srf location: " + srf.locationLine.ToString());
+                        // clip by surface boundary. take intersection
+                        List<gbXYZ> srfLoop2d = new List<gbXYZ>();
+                        srfLoop2d.Add(new gbXYZ(0, 0, 0));
+                        srfLoop2d.Add(new gbXYZ(srf.width, 0, 0));
+                        srfLoop2d.Add(new gbXYZ(srf.width, srf.height, 0));
+                        srfLoop2d.Add(new gbXYZ(0, srf.height, 0));
+                        srfLoop2d.Add(srfLoop2d[0]);
+                        Debug.Write($"XMLGeometry:: Doorloop");
+                        foreach (gbXYZ pt in boundingBox)
+                            Debug.Write($"{pt}-");
+                        Debug.Write($"\n");
+                        Debug.Write($"XMLGeometry:: Srfloop");
+                        foreach (gbXYZ pt in srfLoop2d)
+                            Debug.Write($"{pt}-");
+                        Debug.Write($"\n");
+
+                        List<gbXYZ> rectifiedOpening = new List<gbXYZ>();
+                        if (GBMethod.IsPolyInPoly(boundingBox, srfLoop2d))
+                            rectifiedOpening = boundingBox;
+                        else
+                        {
+                            List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfLoop2d, ClipType.ctIntersection);
+                            rectifiedOpening = section[0];
+                            Debug.Write($"XMLGeometry:: Rectified");
+                            foreach (gbXYZ pt in rectifiedOpening)
+                                Debug.Write($"{pt}-");
+                            Debug.Write($"\n");
+                            Debug.Print("Did boolean operation");
+                        }
+
+                        // the returning rectified Opening has already been an open loop
+                        //rectifiedOpening.RemoveAt(rectifiedOpening.Count - 1); // transfer to open polyloop
+
+                        Debug.Print("XMLGeometry:: " + "Srf location: " + srf.locationLine.ToString());
                         gbXYZ srfVec = srf.locationLine.Direction;
                         gbXYZ srfOrigin = srf.locationLine.PointAt(0);
                         List<gbXYZ> openingLoop = new List<gbXYZ>();
-                        foreach (gbXYZ pt in boundingBox)
+                        foreach (gbXYZ pt in rectifiedOpening)
                         {
                             //Debug.Print("XMLGeometry:: " + "Pt before transformation: " + pt.ToString());
                             gbXYZ _pt = pt.SwapPlaneZY().RotateOnPlaneZ(srfVec).Move(srfOrigin);
@@ -316,12 +352,22 @@ namespace Gingerbread.Core
                     // translate zone tiles to surfaces
                     if (level.isBottom)
                     {
-                        if (zone.tiles.Count == 1)
+                        // to prevent empty tesselaltion
+                        if (zone.tiles == null)
                         {
+                            Debug.Print("XMLGeometry:: WARNING No tiles due to MCR tessellation failure!");
+                        }
+                        else if (zone.tiles.Count == 1)
+                        {
+                            // the existance of zone.loop has been checked before
+                            // consider to add another check here
                             List<gbXYZ> revLoop = zone.loop;
                             revLoop.Reverse();
                             gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, revLoop, 180);
-                            floor.type = surfaceTypeEnum.SlabOnGrade;
+                            if (zone.level.elevation - 0 > 0.1)
+                                floor.type = surfaceTypeEnum.ExposedFloor;
+                            else
+                                floor.type = surfaceTypeEnum.SlabOnGrade;
                             floor.adjSrfId = "Outside";
                             zone.floors.Add(floor);
                         }
@@ -330,6 +376,13 @@ namespace Gingerbread.Core
                             int counter = 0;
                             foreach (List<gbXYZ> tile in zone.tiles)
                             {
+                                // to prevent empty tile loop
+                                if (tile.Count == 0)
+                                {
+                                    Debug.Print($"XMLGeometry:: WARNING This MCR zone tile is null!");
+                                    continue;
+                                }
+                                    
                                 List<gbXYZ> revTile = new List<gbXYZ>();
                                 foreach (gbXYZ pt in tile)
                                     revTile.Add(pt);

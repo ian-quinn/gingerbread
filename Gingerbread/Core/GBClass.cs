@@ -248,9 +248,9 @@ namespace Gingerbread.Core
             intervals.Sort();
             intervals.Insert(0, 0);
             intervals.Add(1);
-            Debug.Print("GBClass:: " + "Fractiles: " + Util.ListString(intervals));
-            Debug.Print("GBClass:: " + "Host line: ({0:f3}, {1:f3})-({2:f3}, {3:f3})", Util.MToFoot(start.X),
-                Util.MToFoot(start.Y), Util.MToFoot(end.X), Util.MToFoot(end.Y));
+            //Debug.Print("GBClass:: " + "Fractiles: " + Util.ListString(intervals));
+            //Debug.Print("GBClass:: " + "Host line: ({0:f3}, {1:f3})-({2:f3}, {3:f3})", Util.MToFoot(start.X),
+            //    Util.MToFoot(start.Y), Util.MToFoot(end.X), Util.MToFoot(end.Y));
 
             for (int i = 0; i < intervals.Count - 1; i++)
                 if (intervals[i] != intervals[i + 1])
@@ -259,7 +259,7 @@ namespace Gingerbread.Core
                     if (debris.Length > 0.0000001)
                         segments.Add(debris);
                 }
-            Debug.Print("GBClass:: " + "Generated: " + segments.Count);
+            //Debug.Print("GBClass:: " + "Generated: " + segments.Count);
 
             return segments;
         }

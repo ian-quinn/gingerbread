@@ -392,11 +392,23 @@ namespace Gingerbread.Core
             int depth = 0;
             foreach (List<int> chain in chains)
             {
+                if (nestedRegion[chain.Last()].Count == 2)
+                    if (GBMethod.GetPolyArea(nestedRegion[chain.Last()][0].loop) < 5)
+                    {
+                        // the nestRegion with only one region
+                        // one is the clockwise region and theother is the counter-clockwise shell
+                        nestedRegion[chain.Last()][0].loop = null;
+                        nestedRegion[chain.Last()][1].loop = null;
+                        nestedRegion[chain.Last()][0].isShell = false;
+                        chain.RemoveAt(chain.Count - 1);
+                        Debug.Print("SpaceDetect:: Remove one region with too small area");
+                    }
                 if (chain.Count > depth)
                 {
                     depth = chain.Count;
                 }
             }
+            Debug.Print("SpaceDetect:: Containment chain has depth: " + depth);
             // DEBUG
             // Rhino.RhinoApp.WriteLine("Note the depth of tree is: " + depth.ToString());
             // foreach (List<Point3d[]> item in groups)

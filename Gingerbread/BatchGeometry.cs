@@ -137,13 +137,16 @@ namespace Gingerbread
                 foreach (Element e in eDoors)
                 {
                     FamilyInstance d = e as FamilyInstance;
+                    FamilySymbol ds = d.Symbol;
+                    double height = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                    double width = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
                     Wall wall = d.Host as Wall;
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
                         XYZ lp = Util.GetFamilyInstanceLocation(d);
                         if (lp is null)
                             continue;
-                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), d.Name));
+                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
                         Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
                     }
                 }
@@ -160,10 +163,13 @@ namespace Gingerbread
                 foreach (Element e in eWindows)
                 {
                     FamilyInstance w = e as FamilyInstance;
+                    FamilySymbol ws = w.Symbol;
+                    double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                    double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
                     XYZ lp = Util.GetFamilyInstanceLocation(w);
                     if (lp is null)
                         continue;
-                    windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), w.Name));
+                    windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
                 }
                 dictWindow.Add(z, windowLocs);
 
@@ -252,10 +258,15 @@ namespace Gingerbread
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location lines if the wall lies within the range of this level
-                    if (wall.LevelId == levels[i].id || 
-                       summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
-                       bottom <= (levels[i].elevation + 0.5 * levels[i].height))
+                    Debug.Print($"summit {summit} bottom {bottom} vs. lv^ " +
+                        $"{levels[i].elevation + 0.8 * levels[i].height} lv_ {levels[i].elevation + 0.2 * levels[i].height}");
+                    // mark the hosting level of a wall only by its geometry irrelevant to its level attribute
+                    // could be dangerous. Pending for updates
+                    if (//wall.LevelId == levels[i].id || 
+                       (summit >= levels[i].elevation + 0.8 * levels[i].height &&
+                       bottom <= levels[i].elevation + 0.2 * levels[i].height))
                     {
+                        Debug.Print("Accepted");
                         dictWall[i].AddRange(temps);
                         // additionally, if the walltype is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
