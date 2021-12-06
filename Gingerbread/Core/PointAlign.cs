@@ -104,16 +104,14 @@ namespace Gingerbread.Core
             }
 
 
-            // Results declearation
+            // declare outputs
             List<gbXYZ> ptRastered = new List<gbXYZ>();
             List<int> ptIdRastered = new List<int>();
-            //axes = new List<gbSeg>();
-            //ptGroups = new List<List<gbXYZ>>();
+            nextBlueprint = new List<gbSeg>();
 
 
             // Define exact alignment direction
             gbXYZ scanRay = new gbXYZ(Math.Cos(theta), Math.Sin(theta), 0);
-            nextBlueprint = new List<gbSeg>();
 
             while (ptPool.Count > 0)
             {
@@ -122,7 +120,8 @@ namespace Gingerbread.Core
                 ptPool.RemoveAt(0);
                 ptIdPool.RemoveAt(0);
 
-                // Generate the group of points almost in line
+                // Generate each group of points almost in line
+                // use the scanRay to scan all points and find those within the treshold delta
                 for (int i = 0; i < ptGroup.Count; i++)
                 {
                     for (int j = ptPool.Count - 1; j >= 0; j--)
@@ -142,6 +141,9 @@ namespace Gingerbread.Core
                 }
                 //ptGroups.Add(ptGroup);
 
+                // ###################
+                // within this ptGroup
+
                 List<int> escapeIdx = new List<int>();
 
                 // as to orphan point just ignore it
@@ -151,10 +153,11 @@ namespace Gingerbread.Core
                     ptIdRastered.Add(ptIdGroup[0]);
                 }
 
-                // if more than one generate the axis
+                // if more than one point in ptGroup generate their alignment axis
                 if (ptGroup.Count > 1)
                 {
                     // rotate the world plane so the alignment happens on Y axis
+                    // translate the project coordinates to rotated ones
                     List<gbXYZ> transPts = new List<gbXYZ>();
                     List<int> transIdx = new List<int>();
                     for (int i = 0; i < ptGroup.Count; i++)
@@ -166,6 +169,9 @@ namespace Gingerbread.Core
                         transIdx.Add(i);
                     }
 
+                    // similar process with the previous cluster process
+                    // but to check all points with the same Y axis
+                    // then generate the axis by the most co-lined points
                     // these can be recoded to something with LINQ
                     List<List<int>> tempIdGroups = new List<List<int>>();
                     while (transIdx.Count > 0)
@@ -186,6 +192,7 @@ namespace Gingerbread.Core
                         tempIdGroups.Add(tempIdGroup);
                     }
 
+                    // check which group has the most co-lined points
                     int axisIdx = 0;
                     int maxMember = 0;
                     for (int i = 0; i < tempIdGroups.Count; i++)
@@ -197,7 +204,10 @@ namespace Gingerbread.Core
                         }
                     }
 
-
+                    // mark the Y coordinate of this axis
+                    // the points already on this axis will be added to escapeIdx
+                    // escapeIdx is not used. consider to erase it in the future
+                    // no need to move them in the following process
                     List<int> axisIdPts = tempIdGroups[axisIdx];
                     foreach (int idx in axisIdPts)
                         escapeIdx.Add(ptIdGroup[idx]);
@@ -219,7 +229,7 @@ namespace Gingerbread.Core
                     Rhino.RhinoApp.Write("\n");
                     */
 
-                    // transform reversal and get the axis
+                    // transform back to original coordinates and get the axis
                     // no digit rounding here
                     gbXYZ p1 = new gbXYZ(
                       axisPts[0].X * Math.Cos(theta) - axisY * Math.Sin(theta),
@@ -268,45 +278,49 @@ namespace Gingerbread.Core
                     DisplayBoolList(isConnected);
                     */
 
-                    //AXES.Add(axis);
-
-                    // modify this axis inline with ther former blueprint
-                    //double maxOverlap = 0;
+                    // align this axis with the former blueprint
+                    // search for the nearest axis in blueprint for alignment
                     double minDistance = Properties.Settings.Default.tolDelta;
                     gbSeg offsetAxis = axis;
+                    gbXYZ offset = new gbXYZ();
                     foreach (gbSeg preAxis in preBlueprint)
                     {
                         double distance = GBMethod.SegDistanceToSeg(axis, preAxis, out double overlap, out gbSeg proj);
-                        if (distance < minDistance)
+                        if (distance < minDistance)// && overlap > 0.5)
                         {
                             minDistance = distance;
                             offsetAxis = proj;
-                            Debug.Print($"PointAlign:: offsetAxis updated with overlap {overlap} distance {distance}");
+                            //Debug.Print($"PointAlign:: checking {preAxis} with {overlap:F2} distance {distance:F2}");
+                            //Debug.Print($"PointAlign:: updated minimum distance");
                         }
                     }
+                    // record the offset vector when the suitable target axis is found
                     if (minDistance < Properties.Settings.Default.tolDelta)
                     {
-                        axis = offsetAxis;
-                        Debug.Print($"Axis moves to {axis}");
+                        //Debug.Print($"Axis {axis} moves to {offsetAxis}");
+                        double distance = GBMethod.PtDistanceToSeg(axis.start, offsetAxis, out gbXYZ plummet, out double t);
+                        offset = plummet - axis.start;
                     }
 
-                    nextBlueprint.Add(axis);
+                    // record the offset axis for the next level
+                    // do not set axis = offsetAxis or the joint information will be lost
+                    nextBlueprint.Add(offsetAxis);
 
-                    // travers each point group and align the joints to anchors
+                    // iterate all points in ptGroup, align them to the axis and calculate the vector array of joints
+                    //Debug.Print($"Pointalign:: {ptGroup.Count} pts ready for alignment");
                     for (int i = 0; i < ptGroup.Count; i++)
                     {
+                        // no need to move the point if it is already on the axis
                         if (tempIdGroups[axisIdx].Contains(i))
                         {
                             //Rhino.RhinoApp.WriteLine("One point belongs to the axis");
-                            ptRastered.Add(ptGroup[i]);
+                            ptRastered.Add(ptGroup[i] + offset);
                             ptIdRastered.Add(ptIdGroup[i]);
                             continue;
                         }
 
-                        double t;
-                        gbXYZ plummet;
-                        double distance = DistanceToLine(ptGroup[i], axis, out plummet, out t);
-                        //Rhino.RhinoApp.WriteLine("I GOT T! " + t.ToString());
+                        double distance = DistanceToLine(ptGroup[i], axis, out gbXYZ plummet, out double t);
+                        //Debug.Print($"PointAlign:: plummet {plummet}");
 
                         int insertIdx = -1;
                         for (int j = 0; j < splits.Count; j++)
@@ -353,7 +367,7 @@ namespace Gingerbread.Core
                             }
                         }
 
-                        ptRastered.Add(plummet);
+                        ptRastered.Add(plummet + offset);
                         ptIdRastered.Add(ptIdGroup[i]);
                     }
                 }
