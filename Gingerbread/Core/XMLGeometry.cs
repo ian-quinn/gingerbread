@@ -495,7 +495,11 @@ namespace Gingerbread.Core
                             // for floorplan similarity
                             double zoneSimilarity = 0;
                             foreach (List<gbXYZ> sectLoop in sectLoops)
-                                zoneSimilarity += Math.Pow(GBMethod.GetPolyArea(sectLoop) / zone.area, 2);
+                            {
+                                double r1 = GBMethod.GetPolyArea(sectLoop) / zone.area;
+                                double r2 = GBMethod.GetPolyArea(sectLoop) / adjZone.area;
+                                zoneSimilarity += r1 < r2 ? Math.Pow(r1, 2) : Math.Pow(r2, 2);
+                            }
                             // if boundary loops of the two region are not intersected at all
                             // ignore it
                             if (zoneSimilarity > 0)
