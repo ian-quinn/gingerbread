@@ -321,6 +321,7 @@ namespace Gingerbread.Core
 
         public bool isTop = false;
         public bool isBottom = false;
+        public bool isShadowing = false;
         public gbLevel(int id, string label, double elevation, int numAllLevels)
         {
             this.id = id;

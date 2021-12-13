@@ -142,6 +142,34 @@ namespace Gingerbread
               : null;
         }
 
+        public static IEnumerable<Document> GetLinkedDocuments(Document doc)
+        {
+            var linkedfiles = GetLinkedFileReferences(doc);
+            var linkedFileNames = linkedfiles
+                .Select(x => ModelPathUtils.ConvertModelPathToUserVisiblePath(x.GetAbsolutePath()))
+                .ToList();
+
+            return doc.Application.Documents
+                .Cast<Document>()
+                .Where(document => linkedFileNames
+                    .Any(fileName => document.PathName.Equals(fileName)));
+        }
+
+        public static IEnumerable<ExternalFileReference> GetLinkedFileReferences(Document doc)
+        {
+            //ElementFilter categoryFilter = new ElementCategoryFilter(BuiltInCategory.OST_RvtLinks);
+            //ElementFilter typeFilter = new ElementClassFilter(typeof(Instance));
+            //ElementFilter logicalFilter = new LogicalAndFilter(categoryFilter, typeFilter);
+            var collector = new FilteredElementCollector(doc);
+            var linkedElements = collector
+                .OfClass(typeof(RevitLinkType))
+                //.OfCategory(BuiltInCategory.OST_RvtLinks)
+                //.WherePasses(logicalFilter)
+                .Select(x => x.GetExternalFileReference())
+                .ToList();
+
+            return linkedElements;
+        }
         #endregion
 
         #region Conversion
@@ -261,11 +289,44 @@ namespace Gingerbread
         /// Return the location point of a family instance or null.
         /// This null coalesces the location so you won't get an 
         /// error if the FamilyInstance is an invalid object.  
+        /// Borrowed from Jeremy. Abandoned for now. 
         /// </summary>
         public static XYZ GetFamilyInstanceLocation(FamilyInstance fi)
         {
             return ((LocationPoint)fi?.Location)?.Point;
         }
+
+        public static XYZ GetFamilyInstanceLocationPoint(FamilyInstance fi)
+        {
+            LocationPoint lp = fi.Location as LocationPoint;
+            // LocationPoint.Point may not be XYZ?
+            if (null != lp)
+            {
+                double x = lp.Point.X;
+                double y = lp.Point.Y;
+                double z = lp.Point.Z;
+                return new XYZ(x, y, z);
+            }
+            else
+            {
+                //is it hosted?
+                Element host = fi.Host;
+                if (host == null) return null;
+                LocationCurve locationCurve = (LocationCurve)host.Location;
+                if (locationCurve == null) return null;
+                XYZ point = locationCurve.Curve.Evaluate(fi.HostParameter, false);
+                if (point == null)
+                    return null;
+                return point;
+            }
+        }
+
+        public static Curve GetFamilyInstanceLocationCurve(FamilyInstance fi)
+        {
+            return ((LocationCurve)fi?.Location)?.Curve;
+        }
+
+
 
 
         // Detailed line methods
@@ -808,6 +869,14 @@ namespace Gingerbread
                 fusion = fusion + PointString(list[index]) + " ";
             }
             return fusion;
+        }
+
+        public static double SumDoubles(List<double> nums)
+        {
+            double sum = 0;
+            foreach (double num in nums)
+                sum += num;
+            return sum;
         }
 
 

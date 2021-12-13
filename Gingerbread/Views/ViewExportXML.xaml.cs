@@ -11,6 +11,7 @@ using CefSharp.Wpf;
 using CefSharp;
 using CefSharp.SchemeHandler;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 
 namespace Gingerbread.Views
 {
@@ -69,6 +70,27 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGroup = 0.1;
             Properties.Settings.Default.tolExpand = 0.5;
             Properties.Settings.Default.tolDelta = 0.1;
+        }
+
+        private void ExtraInfo_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.extraInfo = true;
+        }
+        private void ExtraInfo_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.extraInfo = false;
+        }
+        private void IncludeRef_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.includeRef = true;
+        }
+        private void IncludeRef_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.includeRef = false;
         }
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)

@@ -346,6 +346,9 @@ namespace Gingerbread.Core
             {
                 if (level.isTop) break;
 
+                // sum of area ratio to check if the next floor is shadowing the current one
+                List<double> sumSimilarity = new List<double>();
+
                 foreach (gbZone zone in dictZone[level.id])
                 {
                     // ground slab or roof check
@@ -485,6 +488,19 @@ namespace Gingerbread.Core
                                     sectLoops.AddRange(result);
                                 }
                             }
+
+
+                            // record the area of each tile
+                            // calculate the sigma(tile area/zone area)^2 as an index
+                            // for floorplan similarity
+                            double zoneSimilarity = 0;
+                            foreach (List<gbXYZ> sectLoop in sectLoops)
+                                zoneSimilarity += Math.Pow(GBMethod.GetPolyArea(sectLoop) / zone.area, 2);
+                            // if boundary loops of the two region are not intersected at all
+                            // ignore it
+                            if (zoneSimilarity > 0)
+                                sumSimilarity.Add(zoneSimilarity);
+
                                 
                             if (sectLoops.Count == 0)
                                 continue;
@@ -516,6 +532,11 @@ namespace Gingerbread.Core
                 }
 
                 zones.AddRange(dictZone[level.id]);
+
+                // mark the next floor as shadowing if the similarity index satisfied
+                Debug.Print($"XMLGeometry:: similarity check at level-{level.nextId}: {Util.SumDoubles(sumSimilarity) / sumSimilarity.Count}");
+                if (Util.SumDoubles(sumSimilarity) / sumSimilarity.Count > 0.95)
+                    levels[level.nextId].isShadowing = true;
             }
 
             // third loop summarize all faces

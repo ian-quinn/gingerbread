@@ -47,6 +47,11 @@ namespace Gingerbread
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
 
+            // retrieve all linked documents
+            List<Document> refDocs = new List<Document>();
+            if (Properties.Settings.Default.includeRef)
+                refDocs = Util.GetLinkedDocuments(doc).ToList();
+
             // batch levels for iteration
             List<levelPack> levels = new List<levelPack>();
 
@@ -258,15 +263,15 @@ namespace Gingerbread
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location lines if the wall lies within the range of this level
-                    Debug.Print($"summit {summit} bottom {bottom} vs. lv^ " +
-                        $"{levels[i].elevation + 0.8 * levels[i].height} lv_ {levels[i].elevation + 0.2 * levels[i].height}");
+                    //Debug.Print($"summit {summit} bottom {bottom} vs. lv^ " +
+                    //    $"{levels[i].elevation + 0.8 * levels[i].height} lv_ {levels[i].elevation + 0.2 * levels[i].height}");
+                    
                     // mark the hosting level of a wall only by its geometry irrelevant to its level attribute
-                    // could be dangerous. Pending for updates
+                    // this could be dangerous. PENDING for updates
                     if (//wall.LevelId == levels[i].id || 
                        (summit >= levels[i].elevation + 0.8 * levels[i].height &&
                        bottom <= levels[i].elevation + 0.2 * levels[i].height))
                     {
-                        Debug.Print("Accepted");
                         dictWall[i].AddRange(temps);
                         // additionally, if the walltype is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
@@ -275,56 +280,115 @@ namespace Gingerbread
                 }
             }
 
+
             // allocate column information to each floor
+            // also read data from linked Revit model if necessary
             List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
             ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
                 new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
+
             IList<Element> eColumns = new FilteredElementCollector(doc)
                 .OfClass(typeof(FamilyInstance))
                 .WherePasses(bothColumnFilter)
                 .ToElements();
+            //Debug.Print($"Type of the element {eColumns[0].GetType()}");
+
+            List<FamilyInstance> fiColumns = new List<FamilyInstance>();
+
             foreach (Element e in eColumns)
             {
                 if (e is null)
                     continue;
-                FamilyInstance c = e as FamilyInstance;
-                XYZ lp = Util.GetFamilyInstanceLocation(c);
+                fiColumns.Add(e as FamilyInstance);
+            }
 
+            foreach (Document refDoc in refDocs)
+            {
+                IList<Element> _eColumns = new FilteredElementCollector(refDoc)
+                    .OfClass(typeof(FamilyInstance))
+                    .WherePasses(bothColumnFilter)
+                    .ToElements();
+                //Debug.Print($"All together elements {_eColumns.Count}");
+                foreach (Element e in _eColumns)
+                {
+                    if (e is null)
+                        continue;
+                    FamilyInstance fi = e as FamilyInstance;
+                    //Debug.Print($"Trying to convert... {fi.GetType()}");
+                    fiColumns.Add(fi);
+                }
+            }
+            foreach (FamilyInstance fi in fiColumns)
+            {
+                // FamilyInstance.Location.LocationPoint may not be XYZ
+                // PENDING come back to this later
+                // note that this method allows null as a return value
+                XYZ lp = Util.GetFamilyInstanceLocationPoint(fi);
+                if (null == lp)
+                    continue;
+                
                 // get the height of the column by retrieving its geometry element
-                Options op = c.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = c.get_Geometry(op);
+                Options op = fi.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = fi.get_Geometry(op);
+                Debug.Print($"Got geometry");
+
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    // add location lines if the wall lies within the range of this level
-                    if (c.LevelId == levels[i].id ||
+                    // add location point if the column lies within the range of this level
+                    // this is irrelevant to its host level
+                    // sometimes the levels from linked file are not corresponding to the current model
+                    if (//fi.LevelId == levels[i].id ||
                        summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
                        bottom <= (levels[i].elevation + 0.5 * levels[i].height))
                     {
-                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), c.Name));
+                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), fi.Name));
                     }
                 }
             }
 
 
             // allocate beam information to each floor
+            // read data from linked Revit model if necessary
             List<Tuple<gbSeg, string>> beamLocs = new List<Tuple<gbSeg, string>>();
             IList<Element> eBeams = new FilteredElementCollector(doc)
                 .OfClass(typeof(FamilyInstance))
                 .OfCategory(BuiltInCategory.OST_StructuralFraming)
                 .ToElements();
+
+            List<FamilyInstance> fiBeams = new List<FamilyInstance>();
             foreach (Element e in eBeams)
             {
                 if (e is null)
                     continue;
-                FamilyInstance c = e as FamilyInstance;
-                LocationCurve lc = c.Location as LocationCurve;
-                //if (!(lc.Curve is Line))
-                //    continue;
-                // get the height of the column by retrieving its geometry element
-                Options op = c.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = c.get_Geometry(op);
+                fiBeams.Add(e as FamilyInstance);
+            }
+
+            foreach (Document refDoc in refDocs)
+            {
+                IList<Element> _eBeams = new FilteredElementCollector(refDoc)
+                    .OfClass(typeof(FamilyInstance))
+                    .OfCategory(BuiltInCategory.OST_StructuralFraming)
+                    .ToElements();
+                foreach (Element e in _eBeams)
+                {
+                    if (e is null)
+                        continue;
+                    fiBeams.Add(e as FamilyInstance);
+                }
+            }
+
+            foreach (FamilyInstance fi in fiBeams)
+            {
+                // is it dangerous not considering the curve might not be a line?
+                LocationCurve lc = fi.Location as LocationCurve;
+                if (null == lc)
+                    continue;
+
+
+                Options op = fi.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = fi.get_Geometry(op);
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
                 //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
@@ -332,12 +396,13 @@ namespace Gingerbread
                 for (int i = 0; i < levels.Count; i++)
                 {
                     //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
-                    // add location lines if the wall lies within the range of this level
-                    if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) <
-                        Properties.Settings.Default.tolDouble)
+                    // compare the upper limit and the level elevation
+                    // assume a tolerance of 0.2m
+                    if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
                     {
-                        Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
-                        dictBeam[i].Add(new Tuple<gbSeg, string>(Util.gbSegConvert(lc.Curve as Line), c.Name));
+                        //Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
+                        dictBeam[i].Add(new Tuple<gbSeg, string>(Util.gbSegConvert(lc.Curve as Line), fi.Name));
+                        break;
                     }
                 }
             }

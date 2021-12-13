@@ -292,6 +292,9 @@ namespace Gingerbread.Core
                 space.spbound[i] = sb;
             }
 
+            if (zone.level.isShadowing == true)
+                space.isShadowing = "true";
+
             return space;
         }
 

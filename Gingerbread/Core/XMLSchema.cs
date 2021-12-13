@@ -1274,6 +1274,8 @@ namespace Gingerbread.Core
         public string conditionType;
         [XmlAttribute]
         public string buildingStoreyIdRef;
+        [XmlAttribute]
+        public string isShadowing;
 
         public string Name { get; set; }
         public PeopleNumber PeopleNumber { get; set; }

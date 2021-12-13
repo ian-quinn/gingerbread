@@ -142,5 +142,29 @@ namespace Gingerbread.Properties {
                 this["originY"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool extraInfo {
+            get {
+                return ((bool)(this["extraInfo"]));
+            }
+            set {
+                this["extraInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool includeRef {
+            get {
+                return ((bool)(this["includeRef"]));
+            }
+            set {
+                this["includeRef"] = value;
+            }
+        }
     }
 }

@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="Manual"
              Background="White"
-             Height="500" Width="930"
+             Height="540" Width="930"
              SizeToContent="WidthAndHeight"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -27,7 +27,7 @@
         
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
             <StackPanel Orientation="Vertical">
-                <GroupBox Header="Header Info" Padding="5" Width="200" Height="235">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="225">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -125,7 +125,18 @@
                     
                 </GroupBox>
 
-                    <Grid Margin="0 10 0 0">
+                <StackPanel Margin="0 10 5 5">
+                    <CheckBox x:Name="ExtraInfo" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=extraInfo, Mode=TwoWay}"
+                              Checked ="ExtraInfo_Checked" Unchecked ="ExtraInfo_Unchecked"
+                              Margin="0 0 0 5">
+                        Export additional info</CheckBox>
+                    <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
+                              Checked ="IncludeRef_Checked" 
+                              Unchecked ="IncludeRef_Unchecked">
+                        Include linked Revit model</CheckBox>
+                </StackPanel>
+
+                <Grid Margin="0 10 0 0">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="1*"/>
                         <ColumnDefinition Width="10"/>
