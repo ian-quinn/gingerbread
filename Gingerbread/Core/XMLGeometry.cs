@@ -57,6 +57,16 @@ namespace Gingerbread.Core
             {
                 if (level.isTop) break;
 
+                // prepare the label list 
+                List<Tuple<gbXYZ, double>> hollows = new List<Tuple<gbXYZ, double>>();
+                foreach (List<List<gbXYZ>> panel in dictFloor[level.id])
+                    for (int i = 1; i < panel.Count; i++)
+                    {
+                        double area = GBMethod.GetPolyArea(panel[i]);
+                        gbXYZ centroid = GBMethod.GetPolyCentroid(panel[i]);
+                        hollows.Add(new Tuple<gbXYZ, double>(centroid, area));
+                    }
+
                 List<gbZone> thisZone = new List<gbZone>();
                 List<gbSurface> thisSurface = new List<gbSurface>();
                 foreach (gbRegion region in dictRegion[level.id])
@@ -66,6 +76,22 @@ namespace Gingerbread.Core
                         continue;
 
                     gbZone newZone = new gbZone(region.label, level, region);
+                    newZone.function = "Office";
+
+                    foreach (Tuple<gbXYZ, double> hollow in hollows)
+                        if (GBMethod.IsPtInPoly(hollow.Item1, region.loop))
+                        {
+                            double areaRatio = hollow.Item2 / newZone.area;
+                            if (areaRatio > 0.5 && areaRatio < 1)
+                            {
+                                if (hollow.Item2 < 10)
+                                    newZone.function = "Shaft";
+                                else
+                                    newZone.function = "Stair";
+                            }
+                        }
+
+
                     thisZone.Add(newZone);
                     //List<string> srfId = new List<string>();
                     //List<Line> boundaryLine = new List<Line>();

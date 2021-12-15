@@ -42,8 +42,19 @@ namespace Gingerbread.Core
                 cmp.Buildings[0].bldgStories[i] = MakeStorey(floors[i].level, floors[i].loop);
 
             // SPACE
+            // PENDING use another way to generate the label
+            int currentLevel = 0;
+            int counter = 0;
             for (int i = 0; i < zones.Count; i++)
-                cmp.Buildings[0].Spaces[i] = MakeSpace(zones[i], i);
+            {
+                if (zones[i].level.id != currentLevel)
+                {
+                    counter = 0;
+                    currentLevel = zones[i].level.id;
+                }
+                cmp.Buildings[0].Spaces[i] = MakeSpace(zones[i], counter);
+                counter++;
+            }
 
             // SURFACE
             List<gbSurface> uniqueSrfs = new List<gbSurface>();
@@ -159,7 +170,7 @@ namespace Gingerbread.Core
             zeb.id = bldgname;
             zeb.buildingType = bldgType;
             //this has been arbitrarily defined and could be changed
-            zeb.bldgStories = new BuildingStorey[1000];
+            zeb.bldgStories = new BuildingStorey[100];
             zeb.Spaces = new Space[10000];
             return zeb;
         }
@@ -244,7 +255,7 @@ namespace Gingerbread.Core
             space = AddSpaceProgram(space);
 
             space.id = zone.id;
-            space.Name = "Space-" + GUID + "-" + zone.function;
+            space.Name = $"F{zone.level.id}_{GUID}_{zone.function}";
             space.buildingStoreyIdRef = zone.level.label;
             space.Area = zone.area;
             space.Volume = zone.volume;
