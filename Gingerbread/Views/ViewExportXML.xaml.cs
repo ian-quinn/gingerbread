@@ -45,11 +45,11 @@ namespace Gingerbread.Views
             //    MessageBox.Show("the browser has been initialized!");
             //    Browser.Load("https://www.baidu.com");
             //}
+            txtState.Text = "Stand by";
 
             extExportXML = new ExtExportXML();
             extExportXML.CurrentUI = this;
             extExportXML.CurrentControl = new ProgressBarControl();
-            extExportXML.CurrentControl.CurrentContext = "Stand by";
             ExEvent = ExternalEvent.Create(extExportXML);
         }
 
@@ -61,6 +61,9 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolExpand = double.Parse(expansion.Text);
             Properties.Settings.Default.tolDelta = double.Parse(threshold.Text);
             Properties.Settings.Default.Save();
+            txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
+            txtState.Visibility = System.Windows.Visibility.Visible;
+            txtState.Text = "Settings updated.";
         }
 
         private void BtnReset(object sender, RoutedEventArgs e)
@@ -70,6 +73,9 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGroup = 0.1;
             Properties.Settings.Default.tolExpand = 0.5;
             Properties.Settings.Default.tolDelta = 0.1;
+            txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
+            txtState.Visibility = System.Windows.Visibility.Visible;
+            txtState.Text = "Reset to default value.";
         }
 
         private void ExtraInfo_Checked(object sender, RoutedEventArgs e)
@@ -103,6 +109,8 @@ namespace Gingerbread.Views
         {
             btnGenerate.Visibility = System.Windows.Visibility.Collapsed;
             btnCancel.Visibility = System.Windows.Visibility.Visible;
+            txtUpdate.Visibility = System.Windows.Visibility.Visible;
+            txtState.Visibility = System.Windows.Visibility.Collapsed;
             ExEvent.Raise();
         }
         private void BtnCancel(object sender, RoutedEventArgs e)

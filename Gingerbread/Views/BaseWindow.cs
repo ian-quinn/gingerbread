@@ -15,6 +15,7 @@ namespace Gingerbread.Views
         {
             //this.ApplyTemplate();
             InitializeStyle();
+            
             this.Loaded += delegate
             {
                 InitializeEvent();
@@ -28,16 +29,30 @@ namespace Gingerbread.Views
             };
             ControlTemplate baseTemplate = resourceDict["BaseWindowControlTemplate"] as ControlTemplate;
 
-            //Button minBtn = this.Template.FindName("MinimizeButton", this) as Button;
-            //minBtn.Click += delegate
-            //{
-            //    this.WindowState = WindowState.Minimized;
-            //};
-
-            Button closeBtn = this.Template.FindName("CloseButton", this) as Button;
-            closeBtn.Click += delegate
+            Button infoBtn = this.Template.FindName("InfoButton", this) as Button;
+            Style style = new Style(typeof(ToolTip));
+            style.Setters.Add(new Setter(UIElement.VisibilityProperty, Visibility.Collapsed));
+            style.Seal();
+            bool _isToolTipVisible = false;
+            this.Resources.Add(typeof(ToolTip), style);
+            infoBtn.Click += delegate
             {
-                this.Close();
+                if (_isToolTipVisible)
+                {
+                    this.Resources.Add(typeof(ToolTip), style); //hide
+                    _isToolTipVisible = false;
+                }
+                else
+                {
+                    this.Resources.Remove(typeof(ToolTip)); //show
+                    _isToolTipVisible = true;
+                }
+            };
+
+            Button minBtn = this.Template.FindName("MinimizeButton", this) as Button;
+            minBtn.Click += delegate
+            {
+                this.WindowState = WindowState.Minimized;
             };
 
             //Button maxBtn = this.Template.FindName("MaximizeButton", this) as Button;
@@ -45,6 +60,12 @@ namespace Gingerbread.Views
             //{
             //    this.WindowState = (this.WindowState == WindowState.Normal ? WindowState.Maximized : WindowState.Normal);
             //};
+
+            Button closeBtn = this.Template.FindName("CloseButton", this) as Button;
+            closeBtn.Click += delegate
+            {
+                this.Close();
+            };
 
             Border mainHeader = this.Template.FindName("MainWindowBorder", this) as Border;
             mainHeader.MouseMove += delegate (object sender, MouseEventArgs e)
@@ -54,6 +75,7 @@ namespace Gingerbread.Views
                     this.DragMove();
                 }
             };
+
             //mainHeader.MouseLeftButtonDown += delegate (object sender, MouseButtonEventArgs e)
             //{
             //    if (e.ClickCount >= 2)

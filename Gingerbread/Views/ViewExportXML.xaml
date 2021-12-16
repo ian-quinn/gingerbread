@@ -27,7 +27,7 @@
         
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
             <StackPanel Orientation="Vertical">
-                <GroupBox Header="Header Info" Padding="5" Width="200" Height="225">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="165">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -42,27 +42,23 @@
 
                         <StackPanel Grid.Column="0" Margin="0 0 5 0">
                             <TextBlock Text="Address" Margin="0 4 0 5"/>
-                            <TextBlock Text="Latitude" Margin="0 4 0 5"/>
+                            <TextBlock Text="Lat/Long" Margin="0 4 0 5"/>
                             <TextBlock Text="Elevation" Margin="0 5 0 5"/>
-                            <TextBlock Text="Longitude" Margin="0 5 0 5"/>
                             <TextBlock Text="Building Name" Margin="0 5 0 5"/>
                             <TextBlock Text="Project No." Margin="0 5 0 5"/>
-                            <TextBlock Text="Author" Margin="0 5 0 5"/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="5 0 0 0">
                             <TextBox Name="locationName" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="latitude" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="longitude" Padding="2" Text="" Margin="0 2 0 2"/>
+                            <TextBox Name="latlong" Padding="2" Text="" Margin="0 2 0 2"/>
                             <TextBox Name="elevation" Padding="2" Text="" Margin="0 2 0 2"/>
                             <TextBox Name="nameBuilding" Padding="2" Text="" Margin="0 2 0 2"/>
                             <TextBox Name="numProject" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="author" Padding="2" Text="" Margin="0 2 0 2"/>
                         </StackPanel>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Tolerance" Margin="0 5 0 0" Padding="5" Width="200" Height="110">
+                <GroupBox Header="Tolerance (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="110">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -76,9 +72,15 @@
                         </Grid.ColumnDefinitions>
 
                         <StackPanel Grid.Column="0" Margin="0 0 5 0">
-                            <TextBlock Text="tolGroup" Margin="0 4 0 5"/>
-                            <TextBlock Text="tolExpand" Margin="0 4 0 5"/>
-                            <TextBlock Text="tolDelta" Margin="0 4 0 5"/>
+                            <TextBlock Text="tolGroup" Margin="0 4 0 5" 
+                                       ToolTip="The tolerance during line segment grouping. The segment will be offset&#x0a;
+outwardly with this tolerance, then clustered by their intersection relationship."/>
+                            <TextBlock Text="tolExpand" Margin="0 4 0 5" 
+                                       ToolTip="The tolerance during floorplan patching. All points whose distance to&#x0a;
+the boundary within this tolerance will be dragged onto that boundary."/>
+                            <TextBlock Text="tolDelta" Margin="0 4 0 5" 
+                                       ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
+will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
                         </StackPanel>
 
                         <StackPanel Grid.Column="1" Margin="5 0 0 0">
@@ -92,7 +94,8 @@
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Origin" Margin="0 5 0 0" Padding="5" Width="200" Height="58">
+                <GroupBox Header="Origin (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="58" 
+                          ToolTip="Set the origin of the gbXML model. If not&#x0a;specified, current coordinate will be used.">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -127,12 +130,14 @@
 
                 <StackPanel Margin="0 10 5 5">
                     <CheckBox x:Name="ExtraInfo" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=extraInfo, Mode=TwoWay}"
-                              Checked ="ExtraInfo_Checked" Unchecked ="ExtraInfo_Unchecked"
-                              Margin="0 0 0 5">
+                              Checked ="ExtraInfo_Checked" Unchecked ="ExtraInfo_Unchecked" Margin="0 0 0 5" 
+                              ToolTip="Export additional information for HVAC automatic design. Including: &#x0a;
+locations of columns and beams, floor multipliers for model simplification, &#x0a; extra simulation settings...">
                         Export additional info</CheckBox>
                     <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
-                              Checked ="IncludeRef_Checked" 
-                              Unchecked ="IncludeRef_Unchecked">
+                              Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked" 
+                              ToolTip="Retrieve geometry from all linked .rvt files. There should not be&#x0a;
+duplicate components among documents. All documents must share the same&#x0a;Cartesian coordinate globally. This could be time-consuming...">
                         Include linked Revit model</CheckBox>
                 </StackPanel>
 
@@ -168,11 +173,12 @@
         <Grid Grid.Row="1" Margin="5">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="80"/>
-                <ColumnDefinition Width="80"/>
+                <ColumnDefinition Width="75"/>
+                <ColumnDefinition Width="75"/>
                 <ColumnDefinition Width="10"/>
             </Grid.ColumnDefinitions>
-            <TextBlock Grid.Column="0" x:Name="txtStatus" Text="{Binding CurrentContext}" VerticalAlignment="Center" Margin="5 0 5 0"/>
+            <TextBlock Grid.Column="0" x:Name="txtState" VerticalAlignment="Center" Margin="5 0 5 0"/>
+            <TextBlock Grid.Column="0" x:Name="txtUpdate" Text="{Binding CurrentContext}" VerticalAlignment="Center" Margin="5 0 5 0" Visibility="Collapsed" />
             <Button Grid.Column="1" x:Name="btnGenerate" Content="Generate" Click="BtnGenerate" Margin="0 0 5 5"/>
             <Button Grid.Column="1" x:Name="btnCancel" Content="Cancel" Click="BtnCancel" Visibility="Collapsed" IsCancel="True" Margin="0 0 5 5"/>
             <Button Grid.Column="2" Content="Save as" Click="BtnSaveAs" Margin="5 0 0 5"/>

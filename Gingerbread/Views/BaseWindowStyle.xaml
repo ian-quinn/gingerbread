@@ -9,7 +9,7 @@
             <Setter.Value>
                 <ControlTemplate TargetType="Button">
                     <Grid x:Name="LayoutRoot" Background="Transparent" Width="44" Height="30">
-                        <TextBlock x:Name="txt" Text="{TemplateBinding Content}" FontFamily="Segoe MDL2 Assets" FontSize="10" 
+                        <TextBlock x:Name="txt" Text="{TemplateBinding Content}" FontFamily="Segoe MDL2 Assets" FontSize="12" 
                                 Foreground="Black" HorizontalAlignment="Center" VerticalAlignment="Center"
                                 RenderOptions.ClearTypeHint="Auto" TextOptions.TextRenderingMode="Aliased"  TextOptions.TextFormattingMode="Display"/>
                     </Grid>
@@ -24,8 +24,11 @@
         </Setter>
     </Style>
     <!--Title bar buttons-->
+    <Style x:Key="InfoButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+        <Setter Property="Content" Value="&#xE897;" />
+    </Style>
     <Style x:Key="MinimizeButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
-        <Setter Property="Content" Value="&#xE949;"/>
+        <Setter Property="Content" Value="&#xE738;"/>
     </Style>
     <Style x:Key="MaximizeButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
         <Setter Property="Content" Value="&#xE739;"/>
@@ -90,6 +93,8 @@
 
                         <!--Caption buttons-->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+                            <Button x:Name="InfoButton" Style="{StaticResource InfoButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
+                            
                             <Button x:Name="MinimizeButton" Style="{StaticResource MinimizeButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
                             
                             <!--<Button x:Name="RestoreButton" Visibility="Collapsed" Style="{StaticResource RestoreButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
