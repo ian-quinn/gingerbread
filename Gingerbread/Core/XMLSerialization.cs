@@ -42,9 +42,12 @@ namespace Gingerbread.Core
                 cmp.Buildings[0].bldgStories[i] = MakeStorey(floors[i].level, floors[i].loop);
 
             // SPACE
+            // a list for space that is replacable by multipliers during energy simulation
+            List<string> spaceRemovableID = new List<string>();
             // PENDING use another way to generate the label
             int currentLevel = 0;
             int counter = 0;
+
             for (int i = 0; i < zones.Count; i++)
             {
                 if (zones[i].level.id != currentLevel)
@@ -54,6 +57,9 @@ namespace Gingerbread.Core
                 }
                 cmp.Buildings[0].Spaces[i] = MakeSpace(zones[i], counter);
                 counter++;
+
+                if (zones[i].level.isShadowing == true)
+                    spaceRemovableID.Add(zones[i].id);
             }
 
             // SURFACE
@@ -74,7 +80,17 @@ namespace Gingerbread.Core
                     continue;
                 uniqueSrfs.Add(faces[i]);
 
-                cmp.Surface[i] = MakeSurface(faces[i], srfCounter);
+                Surface newSurface = MakeSurface(faces[i], srfCounter);
+
+                // check if its adjacent spaces are all shadowing spaces, and removable
+                if (newSurface.AdjacentSpaceId.Length == 1)
+                    if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef))
+                        newSurface.isShadowing = "true";
+                if (newSurface.AdjacentSpaceId.Length == 2)
+                    if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef) && 
+                        spaceRemovableID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
+                        newSurface.isShadowing = "true";
+                cmp.Surface[i] = newSurface;
                 srfCounter++;
             }
 

@@ -1355,6 +1355,8 @@ namespace Gingerbread.Core
         public surfaceTypeEnum surfaceType { get; set; }
         [XmlAttribute]
         public string constructionIdRef { get; set; }
+        [XmlAttribute]
+        public string isShadowing { get; set; }
         public string Name { get; set; }
         [XmlElement(IsNullable = false, ElementName = "AdjacentSpaceId")]
         public AdjacentSpaceId[] AdjacentSpaceId { get; set; }

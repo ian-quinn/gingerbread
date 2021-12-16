@@ -368,6 +368,9 @@ namespace Gingerbread.Core
 
             // second loop solve adjacencies among floors
             // perform on already created zones
+            // prepare a counter for shadowing level indexation
+            int shadowingCounter = 0;
+
             foreach (gbLevel level in levels)
             {
                 if (level.isTop) break;
@@ -566,7 +569,23 @@ namespace Gingerbread.Core
                 // mark the next floor as shadowing if the similarity index satisfied
                 Debug.Print($"XMLGeometry:: similarity check at level-{level.nextId}: {Util.SumDoubles(sumSimilarity) / sumSimilarity.Count}");
                 if (Util.SumDoubles(sumSimilarity) / sumSimilarity.Count > 0.95)
-                    levels[level.nextId].isShadowing = true;
+                {
+                    shadowingCounter++;
+                    // this iteration excludes the top floor that can never be removed, level.nestId is safe
+                    // the first shadowing floor is the base floor for multiplier, not removable
+                    // floor is removable staring from the second shadowing floor
+                    if (shadowingCounter > 1)
+                    {
+                        levels[level.nextId].isShadowing = true;
+                        Debug.Print($"XMLGeometry:: shadowing floor-{level.nextId} detected");
+                    }
+                }
+                else
+                {
+                    shadowingCounter = 0;
+                    // when shadowing stops, keep the current level
+                    levels[level.id].isShadowing = false;
+                }
             }
 
             // third loop summarize all faces
