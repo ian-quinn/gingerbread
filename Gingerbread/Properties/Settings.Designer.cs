@@ -166,5 +166,16 @@ namespace Gingerbread.Properties {
                 this["includeRef"] = value;
             }
         }
+
+        public string OrganizationDescription { get; internal set; }
+        public string OrganizationName { get; internal set; }
+        public string BuildingName { get; internal set; }
+        public string Author { get; internal set; }
+        public string Number { get; internal set; }
+        public string Address { get; internal set; }
+        public string Name { get; internal set; }
+        public string ClientName { get; internal set; }
+        public string Status { get; internal set; }
+        public string IssueDate { get; internal set; }
     }
 }

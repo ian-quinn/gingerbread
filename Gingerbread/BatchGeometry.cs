@@ -29,12 +29,17 @@ namespace Gingerbread
         public static void Execute(Document doc, 
             out Dictionary<int, Tuple<string, double>> dictElevation,
             out Dictionary<int, List<gbSeg>> dictWall,
-            out Dictionary<int, List<gbSeg>> dictCurtain, 
+            out Dictionary<int, List<gbSeg>> dictCurtain,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
             out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
-            out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
+           out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
+            out Dictionary<int, List<gbSeg>> dictSeparationline,
+            out Dictionary<int, List<gbSeg>> dictGrid,
+            out Dictionary<int, List<gbXYZ>> dictRoom,
+             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
+            out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
             out string checkInfo)
         {
             // initiate variables for output
@@ -46,7 +51,11 @@ namespace Gingerbread
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
-
+            dictSeparationline = new Dictionary<int, List<gbSeg>>();
+            dictGrid = new Dictionary<int, List<gbSeg>>();
+            dictRoom = new Dictionary<int, List<gbXYZ>>();
+            dictWindowplus = new Dictionary<string, List<Tuple<string, double>>>();
+            dictDoorplus = new Dictionary<string, List<Tuple<string, double>>>();
             // retrieve all linked documents
             List<Document> refDocs = new List<Document>();
             if (Properties.Settings.Default.includeRef)
@@ -54,6 +63,119 @@ namespace Gingerbread
 
             // batch levels for iteration
             List<levelPack> levels = new List<levelPack>();
+
+            ProjectInfo projectInfo = doc.ProjectInformation;
+            Dictionary<string, string> dictproinfo = new Dictionary<string, string>();
+            dictproinfo.Add("OrganizationDescription", projectInfo.OrganizationDescription);
+            dictproinfo.Add("OrganizationName", projectInfo.OrganizationName);
+            dictproinfo.Add("BuildingName", projectInfo.BuildingName);
+            dictproinfo.Add("Author", projectInfo.Author);
+            dictproinfo.Add("Number", projectInfo.Number);
+            dictproinfo.Add("Name", projectInfo.Name);
+            dictproinfo.Add("Address", projectInfo.Address);
+            dictproinfo.Add("ClientName", projectInfo.ClientName);
+            dictproinfo.Add("Status", projectInfo.Status);
+            dictproinfo.Add("IssueDate", projectInfo.IssueDate);
+
+            Properties.Settings.Default.OrganizationDescription = projectInfo.OrganizationDescription;
+            Properties.Settings.Default.OrganizationName = projectInfo.OrganizationName;
+            Properties.Settings.Default.BuildingName = projectInfo.BuildingName;
+            Properties.Settings.Default.Author = projectInfo.Author;
+            Properties.Settings.Default.Number = projectInfo.Number;
+            Properties.Settings.Default.Name = projectInfo.Name;
+            Properties.Settings.Default.Address = projectInfo.Address;
+            Properties.Settings.Default.ClientName = projectInfo.ClientName;
+            Properties.Settings.Default.Status = projectInfo.Status;
+            Properties.Settings.Default.IssueDate = projectInfo.IssueDate;
+            Properties.Settings.Default.Save();
+
+            IList<Element> eWindowplus = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilyInstance))
+                    .OfCategory(BuiltInCategory.OST_Windows)
+                    .ToElements();
+            foreach (Element e in eWindowplus)
+            {
+                List<Tuple<string, double>> properties = new List<Tuple<string, double>>();
+                FamilyInstance f = e as FamilyInstance;
+                string name = f.Name;
+                FamilySymbol fs = f.Symbol;
+                double height = fs.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble();
+                properties.Add(new Tuple<string, double>("heitht", height));
+                double width = fs.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble();
+                properties.Add(new Tuple<string, double>("width", width));
+                if (fs.HasThermalProperties())
+                {
+                    FamilyThermalProperties ft = fs.GetThermalProperties();
+                    if (ft == null)
+                    {
+                        double value_r = 0;
+                        properties.Add(new Tuple<string, double>("value_r", value_r));
+                        double value_k = 0;
+                        properties.Add(new Tuple<string, double>("value_k", value_k));
+                    }
+                    else
+                    {
+                        double value_r = ft.ThermalResistance;
+                        properties.Add(new Tuple<string, double>("value_r", value_r));
+                        double value_k = ft.HeatTransferCoefficient;
+                        properties.Add(new Tuple<string, double>("value_k", value_k));
+                    }
+
+                }
+                else
+                {
+                    double value_r = 0;
+                    properties.Add(new Tuple<string, double>("value_r", value_r));
+                    double value_k = 0;
+                    properties.Add(new Tuple<string, double>("value_k", value_k));
+                }
+                if (!dictWindowplus.Keys.Contains(name))
+                    dictWindowplus.Add(name, properties);
+            }
+
+            IList<Element> eDoorplus = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilyInstance))
+                    .OfCategory(BuiltInCategory.OST_Doors)
+                    .ToElements();
+            foreach (Element e in eDoorplus)
+            {
+                List<Tuple<string, double>> properties = new List<Tuple<string, double>>();
+                FamilyInstance f = e as FamilyInstance;
+                string name = f.Name;
+                FamilySymbol fs = f.Symbol;
+                double height = fs.get_Parameter(BuiltInParameter.DOOR_HEIGHT).AsDouble();
+                properties.Add(new Tuple<string, double>("heitht", height));
+                double width = fs.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble();
+                properties.Add(new Tuple<string, double>("width", width));
+                if (fs.HasThermalProperties())
+                {
+                    FamilyThermalProperties ft = fs.GetThermalProperties();
+                    if (ft == null)
+                    {
+                        double value_r = 0;
+                        properties.Add(new Tuple<string, double>("value_r", value_r));
+                        double value_k = 0;
+                        properties.Add(new Tuple<string, double>("value_k", value_k));
+                    }
+                    else
+                    {
+                        double value_r = ft.ThermalResistance;
+                        properties.Add(new Tuple<string, double>("value_r", value_r));
+                        double value_k = ft.HeatTransferCoefficient;
+                        properties.Add(new Tuple<string, double>("value_k", value_k));
+                    }
+
+                }
+                else
+                {
+                    double value_r = 0;
+                    properties.Add(new Tuple<string, double>("value_r", value_r));
+                    double value_k = 0;
+                    properties.Add(new Tuple<string, double>("value_k", value_k));
+                }
+                if (!dictDoorplus.Keys.Contains(name))
+                    dictDoorplus.Add(name, properties);
+            }
 
             // prefix the variables that are elements with e-. same rule to the rest
             // get all floors
@@ -95,7 +217,7 @@ namespace Gingerbread
                 if (levels[i].height == 0)
                     levels.RemoveAt(i);
 
-            
+
 
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
@@ -105,79 +227,37 @@ namespace Gingerbread
 
                 // append to dictElevation
                 dictElevation.Add(z, new Tuple<string, double>(
-                    levels[z].name, 
+                    levels[z].name,
                     Math.Round(Util.FootToM(levels[z].elevation), 3)
                     ));
                 dictWall.Add(z, new List<gbSeg>());
                 dictColumn.Add(z, new List<Tuple<gbXYZ, string>>());
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
                 dictCurtain.Add(z, new List<gbSeg>());
+                dictWindow.Add(z, new List<Tuple<gbXYZ, string>>());
 
 
-                //// append to dictColumn
-                //List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
-                //ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
-                //    new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
-                //IList<Element> eColumns = new FilteredElementCollector(doc)
-                //    .OfClass(typeof(FamilyInstance))
-                //    .WherePasses(levelFilter)
-                //    .WherePasses(bothColumnFilter)
-                //    .ToElements();
-                //foreach (Element e in eColumns)
-                //{
-                //    FamilyInstance c = e as FamilyInstance;
-                //    XYZ lp = Util.GetFamilyInstanceLocation(c);
-                //    columnLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), c.Name));
-                //}
-                //dictColumn.Add(z, columnLocs);
 
-
-                // append to dictDoor
-                List<Tuple<gbXYZ, string>> doorLocs = new List<Tuple<gbXYZ, string>>();
-                IList<Element> eDoors = new FilteredElementCollector(doc)
-                    .OfClass(typeof(FamilyInstance))
-                    .OfCategory(BuiltInCategory.OST_Doors)
-                    .WherePasses(levelFilter)
-                    .ToElements();
-                foreach (Element e in eDoors)
-                {
-                    FamilyInstance d = e as FamilyInstance;
-                    FamilySymbol ds = d.Symbol;
-                    double height = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
-                    double width = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
-                    Wall wall = d.Host as Wall;
-                    if (wall.WallType.Kind != WallKind.Curtain)
-                    {
-                        XYZ lp = Util.GetFamilyInstanceLocation(d);
-                        if (lp is null)
-                            continue;
-                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
-                        Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
-                    }
-                }
-                dictDoor.Add(z, doorLocs);
-                
-
-                // append to dictWindow
-                List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
-                IList<Element> eWindows = new FilteredElementCollector(doc)
-                    .OfClass(typeof(FamilyInstance))
-                    .OfCategory(BuiltInCategory.OST_Windows)
-                    .WherePasses(levelFilter)
-                    .ToElements();
-                foreach (Element e in eWindows)
-                {
-                    FamilyInstance w = e as FamilyInstance;
-                    FamilySymbol ws = w.Symbol;
-                    double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
-                    double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
-                    XYZ lp = Util.GetFamilyInstanceLocation(w);
-                    if (lp is null)
-                        continue;
-                    windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
-                }
-                dictWindow.Add(z, windowLocs);
-
+                /* // append to dictWindow
+                 List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
+                 IList<Element> eWindows = new FilteredElementCollector(doc)
+                     .OfClass(typeof(FamilyInstance))
+                     .OfCategory(BuiltInCategory.OST_Windows)
+                     .WherePasses(levelFilter)
+                     .ToElements();
+                 foreach (Element e in eWindows)
+                 {
+                     FamilyInstance w = e as FamilyInstance;
+                     FamilySymbol ws = w.Symbol;
+                     double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                     double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+                     XYZ lp = Util.GetFamilyInstanceLocation(w);
+                     if (lp is null)
+                         continue;
+                     windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                 }
+                 dictWindow.Add(z, windowLocs);
+                */
 
                 // append to dictFloor
                 IList<Element> efloors = new FilteredElementCollector(doc)
@@ -227,14 +307,155 @@ namespace Gingerbread
                     floorSlabs.Add(floorSlab);
                 }
                 dictFloor.Add(z, floorSlabs);
+                /*List<List<List<gbSeg>>> nestedFloor = new List<List<List<gbSeg>>>();
+                IList<Element> efloors = new FilteredElementCollector(doc)
+                 .OfCategory(BuiltInCategory.OST_Floors)
+                 .WherePasses(levelFilter)
+                 .WhereElementIsNotElementType()
+                 .ToElements();
+                foreach (Element e in efloors)
+                {
+                    List<List<gbSeg>> floorloops = new List<List<gbSeg>>();
+                    Options op = e.Document.Application.Create.NewGeometryOptions();
+                    GeometryElement ge = e.get_Geometry(op);
+                    foreach (GeometryObject geomObj in ge)
+                    {
+                        Solid geomSolid = geomObj as Solid;
+                        if (null != geomObj)
+                        {
+                            foreach (Face geomFace in geomSolid.Faces)
+                            {
+                                PlanarFace planar = geomFace as PlanarFace;
+                                Debug.Print($"({geomFace.Area})");
+                                if (planar != null)
+                                {
+                                    Debug.Print("if");
+                                    Debug.Print($"({planar.Origin.X})");
+                                    Debug.Print($"({planar.FaceNormal.Z})");
+
+                                    if (planar.FaceNormal.Z == 1)
+                                    {
+                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
+                                        {
+                                            List<gbSeg> floorloop = new List<gbSeg>();
+                                            foreach (Edge edge in edgeArray)
+                                            {
+                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                                XYZ ptEnd = edge.AsCurve().GetEndPoint(1);
+                                                gbSeg newSeg = new gbSeg(Util.gbXYZConvert(ptStart), Util.gbXYZConvert(ptEnd));
+                                                floorloop.Add(newSeg);
+                                                Debug.Print($"Seg: {newSeg.PointAt(0)} - {newSeg.PointAt(1)}");
+                                            }
+                                            floorloops.Add(floorloop);
+                                            Debug.Print("floorloops " + floorloop.Count);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    nestedFloor.Add(floorloops);
+                    Debug.Print("nestedFloor");
+                }
+                dictFloor.Add(z, nestedFloor);
+                */
+                // append to dictDoor
+                List<Tuple<gbXYZ, string>> doorLocs = new List<Tuple<gbXYZ, string>>();
+                IList<Element> eDoors = new FilteredElementCollector(doc)
+                    .OfClass(typeof(FamilyInstance))
+                    .OfCategory(BuiltInCategory.OST_Doors)
+                    .WherePasses(levelFilter)
+                    .ToElements();
+                foreach (Element e in eDoors)
+                {
+                    FamilyInstance d = e as FamilyInstance;
+                    FamilySymbol ds = d.Symbol;
+                    double height = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                    double width = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+                    Wall wall = d.Host as Wall;
+                    if (wall.WallType.Kind != WallKind.Curtain)
+                    {
+                        XYZ lp = Util.GetFamilyInstanceLocation(d);
+                        if (lp is null)
+                            continue;
+                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                        Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
+                    }
+                }
+                dictDoor.Add(z, doorLocs);
+
+                List<gbSeg> separationlineLocs = new List<gbSeg>();
+                IList<Element> eSeparationlines = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_RoomSeparationLines)
+                    .WherePasses(levelFilter)
+                    .ToElements();
+                foreach (Element e in eSeparationlines)
+                {
+                    LocationCurve lc = e.Location as LocationCurve;
+                    if (lc.Curve is Line)
+                    {
+                        Line gridLine = lc.Curve as Line;
+                        XYZ p1 = gridLine.GetEndPoint(0);
+                        XYZ p2 = gridLine.GetEndPoint(1);
+                        gbXYZ gbP1 = new gbXYZ(Util.FootToM(p1.X), Util.FootToM(p1.Y), Util.FootToM(p1.Z));
+                        gbXYZ gbP2 = new gbXYZ(Util.FootToM(p2.X), Util.FootToM(p2.Y), Util.FootToM(p2.Z));
+                        separationlineLocs.Add(new gbSeg(gbP1, gbP2));
+                    }
+
+                }
+                dictSeparationline.Add(z, separationlineLocs);
+
+                List<gbXYZ> roomlocs = new List<gbXYZ>();
+                IList<Element> eRooms = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Rooms)
+                    .WherePasses(levelFilter)
+                    .ToElements();
+                foreach (Element e in eRooms)
+                {
+                    Debug.Print("have eRooms");
+                    LocationPoint lp = e.Location as LocationPoint;
+                    XYZ pt = lp.Point;
+                    roomlocs.Add(Util.gbXYZConvert(pt));
+                }
+                dictRoom.Add(z, roomlocs);
             }
 
+            using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            {
+                tx.Start();
+                // Util.SketchSegs(doc, lineShatters);
+                Debug.Print("dictGrid " + dictGrid[0].Count);
+                Debug.Print("dictRoom " + dictRoom[0].Count);
+                Debug.Print("dictSeparationline " + dictSeparationline[0].Count);
+                foreach (gbXYZ lp in dictRoom[0])
+                {
+                    Util.SketchMarker(doc, new XYZ(lp.X, lp.Y, 0));
+                    Debug.Print("LP sketched.");
+                }
+                foreach (gbSeg seg in dictGrid[0])
+                {
+                    Util.SketchSegs(doc, new List<gbSeg>() { seg });
+                    Debug.Print("dictGrid sketched.");
+                }
+                foreach (gbSeg line in dictSeparationline[0])
+                {
+                    Curve zline = Line.CreateBound(ProjectZPoint(line.PointAt(0)), ProjectZPoint(line.PointAt(1))) as Curve;
+                    Util.SketchCurves(doc, new List<Curve>() { zline });
+                    Debug.Print("dictSeparationline sketched.");
+                }
+                tx.Commit();
+            }
+
+            XYZ ProjectZPoint(gbXYZ pt)
+            {
+                return new XYZ(pt.X, pt.Y, 0);
+            }
 
             // allocate wall information to each floor
             IList<Element> eWalls = new FilteredElementCollector(doc)
-                .OfClass(typeof(Wall))
-                .OfCategory(BuiltInCategory.OST_Walls)
-                .ToElements();
+            .OfClass(typeof(Wall))
+            .OfCategory(BuiltInCategory.OST_Walls)
+            .ToElements();
 
             foreach (Element e in eWalls)
             {
@@ -336,18 +557,51 @@ namespace Gingerbread
                 double bottom = ge.GetBoundingBox().Min.Z;
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    // add location point if the column lies within the range of this level
-                    // this is irrelevant to its host level
-                    // sometimes the levels from linked file are not corresponding to the current model
-                    if (//fi.LevelId == levels[i].id ||
-                       summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
-                       bottom <= (levels[i].elevation + 0.5 * levels[i].height))
-                    {
-                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), fi.Name));
-                    }
+                    if (summit >= levels[i].elevation && bottom <= levels[i].elevation)
+                        dictColumn[i].AddRange(columnLocs);
+
+                    else if (i < levels.Count - 1 && bottom >= levels[i].elevation && bottom < levels[i + 1].elevation)
+                        dictColumn[i].AddRange(columnLocs);
+
+                    else if ((i == levels.Count - 1) && (bottom >= levels[i].elevation))
+                        dictColumn[i].AddRange(columnLocs);
                 }
             }
 
+            IList<Element> eWindows = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilyInstance))
+                .OfCategory(BuiltInCategory.OST_Windows)
+                .ToElements();
+            foreach (Element e in eWindows)
+            {
+                FamilyInstance w = e as FamilyInstance;
+                XYZ lp = Util.GetFamilyInstanceLocation(w);
+                if (lp == null)
+                    continue;
+                List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
+                windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), w.Name));
+
+                Options op = w.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = w.get_Geometry(op);
+                double summit = ge.GetBoundingBox().Max.Z;
+                double bottom = ge.GetBoundingBox().Min.Z;
+                for (int i = 0; i < levels.Count; i++)
+                {
+                    if (summit >= levels[i].elevation && bottom <= levels[i].elevation)
+                        dictWindow[i].AddRange(windowLocs);
+
+                    else if (i < levels.Count - 1 && bottom >= levels[i].elevation && bottom < levels[i + 1].elevation)
+                        dictWindow[i].AddRange(windowLocs);
+
+                    else if ((i == levels.Count - 1) && (bottom >= levels[i].elevation))
+                        dictWindow[i].AddRange(windowLocs);
+                }
+            }
+
+            for (int i = 0; i < levels.Count; i++)
+            {
+                System.Windows.MessageBox.Show(i.ToString() + "\n" + "Column " + dictColumn[i].Count + "\n" + "Window" + dictWindow[i].Count, "Info");
+            }
 
             // allocate beam information to each floor
             // read data from linked Revit model if necessary
