@@ -17,9 +17,30 @@ namespace Gingerbread
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             UIApplication uiapp = commandData.Application;
+            Document doc = uiapp.ActiveUIDocument.Document;
 
             //Properties.Settings.Default.url_install = UtilGetInstallPath.Execute(app);
-            Properties.Settings.Default.SpiderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Spider\main.html";
+
+            ProjectInfo projectInfo = doc.ProjectInformation;
+            //dictproinfo.Add("OrganizationDescription", projectInfo.OrganizationName);
+            //dictproinfo.Add("OrganizationName", projectInfo.OrganizationName);
+            //dictproinfo.Add("BuildingName", projectInfo.BuildingName);
+            //dictproinfo.Add("Author", projectInfo.Author);
+            //dictproinfo.Add("Number", projectInfo.Number);
+            //dictproinfo.Add("Name", projectInfo.Name);
+            //dictproinfo.Add("Address", projectInfo.Address);
+            //dictproinfo.Add("ClientName", projectInfo.ClientName);
+            //dictproinfo.Add("Status", projectInfo.Status);
+            //dictproinfo.Add("IssueDate", projectInfo.IssueDate);
+
+            Properties.Settings.Default.projName = projectInfo.BuildingName;
+            Properties.Settings.Default.projAddress = projectInfo.Address;
+            Properties.Settings.Default.projDate = projectInfo.IssueDate;
+            Properties.Settings.Default.projAuthor = projectInfo.Author;
+            Properties.Settings.Default.projNumber = projectInfo.Number;
+            Properties.Settings.Default.Save();
+
+            Properties.Settings.Default.spiderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Spider\main.html";
 
             Views.ViewExportXML generator = new Views.ViewExportXML();
 

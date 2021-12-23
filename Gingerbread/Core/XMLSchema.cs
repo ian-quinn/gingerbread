@@ -88,7 +88,7 @@ namespace Gingerbread.Core
         public string id { get; set; }
         [XmlAttribute]
         public buildingTypeEnum buildingType { get; set; }
-        public double Area { get; set; }
+        public string Area { get; set; }
         [XmlElement("BuildingStorey")]
         public BuildingStorey[] bldgStories { get; set; }
         [XmlElement("Space")]
@@ -812,6 +812,7 @@ namespace Gingerbread.Core
         public string Name { get; set; }
         public string Latitude { get; set; }
         public string Longitude { get; set; }
+        public string Elevation { get; set; }
         public double CADModelAzimuth { get; set; }
         public string ZipcodeOrPostalCode { get; set; }
 

@@ -57,9 +57,16 @@ namespace Gingerbread.Views
         {
             Properties.Settings.Default.originX = double.Parse(Xcoord.Text);
             Properties.Settings.Default.originY = double.Parse(Ycoord.Text);
+            Properties.Settings.Default.originZ = double.Parse(Zcoord.Text);
             Properties.Settings.Default.tolGroup = double.Parse(cluster.Text);
             Properties.Settings.Default.tolExpand = double.Parse(expansion.Text);
             Properties.Settings.Default.tolDelta = double.Parse(threshold.Text);
+            Properties.Settings.Default.projName = projName.Text;
+            Properties.Settings.Default.projAddress = projAddress.Text;
+            Properties.Settings.Default.projNumber = projNumber.Text;
+            Properties.Settings.Default.projLatitude = projLatitude.Text;
+            Properties.Settings.Default.projLongitude = projLongitude.Text;
+            Properties.Settings.Default.projElevation = projElevation.Text;
             Properties.Settings.Default.Save();
             txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
             txtState.Visibility = System.Windows.Visibility.Visible;
@@ -70,9 +77,16 @@ namespace Gingerbread.Views
         {
             Properties.Settings.Default.originX = 0;
             Properties.Settings.Default.originY = 0;
+            Properties.Settings.Default.originZ = 0;
             Properties.Settings.Default.tolGroup = 0.1;
             Properties.Settings.Default.tolExpand = 0.5;
-            Properties.Settings.Default.tolDelta = 0.1;
+            Properties.Settings.Default.tolDelta = 0.1; 
+            Properties.Settings.Default.projName = "GingerbreadHouse";
+            Properties.Settings.Default.projAddress = "Shanghai, China";
+            Properties.Settings.Default.projNumber = projNumber.Text;
+            Properties.Settings.Default.projLatitude = "31.4";
+            Properties.Settings.Default.projLongitude = "121.45";
+            Properties.Settings.Default.projElevation = "5.5";
             txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
             txtState.Visibility = System.Windows.Visibility.Visible;
             txtState.Text = "Reset to default value.";

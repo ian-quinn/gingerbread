@@ -57,8 +57,8 @@
                         </DataTemplate>
                     </GroupBox.HeaderTemplate>
                     <StackPanel>
-                        <TextBox Name="InfoBox" Padding="2" 
-                                 Text="{Binding CurrentContext}" 
+                        <TextBox Name="InfoBox" Padding="2" Text="{Binding CurrentContext}" 
+                                 VerticalScrollBarVisibility="Visible" 
                                  Margin="0 2 0 2" Height="128" BorderThickness="0"/>
                     </StackPanel>
                 </GroupBox>

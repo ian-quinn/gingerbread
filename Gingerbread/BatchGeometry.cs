@@ -34,11 +34,11 @@ namespace Gingerbread
             out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
-           out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
+            out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
             out Dictionary<int, List<gbSeg>> dictSeparationline,
             out Dictionary<int, List<gbSeg>> dictGrid,
             out Dictionary<int, List<gbXYZ>> dictRoom,
-             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
+            out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
             out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
             out string checkInfo)
         {
@@ -64,30 +64,6 @@ namespace Gingerbread
             // batch levels for iteration
             List<levelPack> levels = new List<levelPack>();
 
-            ProjectInfo projectInfo = doc.ProjectInformation;
-            Dictionary<string, string> dictproinfo = new Dictionary<string, string>();
-            dictproinfo.Add("OrganizationDescription", projectInfo.OrganizationDescription);
-            dictproinfo.Add("OrganizationName", projectInfo.OrganizationName);
-            dictproinfo.Add("BuildingName", projectInfo.BuildingName);
-            dictproinfo.Add("Author", projectInfo.Author);
-            dictproinfo.Add("Number", projectInfo.Number);
-            dictproinfo.Add("Name", projectInfo.Name);
-            dictproinfo.Add("Address", projectInfo.Address);
-            dictproinfo.Add("ClientName", projectInfo.ClientName);
-            dictproinfo.Add("Status", projectInfo.Status);
-            dictproinfo.Add("IssueDate", projectInfo.IssueDate);
-
-            Properties.Settings.Default.OrganizationDescription = projectInfo.OrganizationDescription;
-            Properties.Settings.Default.OrganizationName = projectInfo.OrganizationName;
-            Properties.Settings.Default.BuildingName = projectInfo.BuildingName;
-            Properties.Settings.Default.Author = projectInfo.Author;
-            Properties.Settings.Default.Number = projectInfo.Number;
-            Properties.Settings.Default.Name = projectInfo.Name;
-            Properties.Settings.Default.Address = projectInfo.Address;
-            Properties.Settings.Default.ClientName = projectInfo.ClientName;
-            Properties.Settings.Default.Status = projectInfo.Status;
-            Properties.Settings.Default.IssueDate = projectInfo.IssueDate;
-            Properties.Settings.Default.Save();
 
             IList<Element> eWindowplus = new FilteredElementCollector(doc)
                     .OfClass(typeof(FamilyInstance))
@@ -307,58 +283,8 @@ namespace Gingerbread
                     floorSlabs.Add(floorSlab);
                 }
                 dictFloor.Add(z, floorSlabs);
-                /*List<List<List<gbSeg>>> nestedFloor = new List<List<List<gbSeg>>>();
-                IList<Element> efloors = new FilteredElementCollector(doc)
-                 .OfCategory(BuiltInCategory.OST_Floors)
-                 .WherePasses(levelFilter)
-                 .WhereElementIsNotElementType()
-                 .ToElements();
-                foreach (Element e in efloors)
-                {
-                    List<List<gbSeg>> floorloops = new List<List<gbSeg>>();
-                    Options op = e.Document.Application.Create.NewGeometryOptions();
-                    GeometryElement ge = e.get_Geometry(op);
-                    foreach (GeometryObject geomObj in ge)
-                    {
-                        Solid geomSolid = geomObj as Solid;
-                        if (null != geomObj)
-                        {
-                            foreach (Face geomFace in geomSolid.Faces)
-                            {
-                                PlanarFace planar = geomFace as PlanarFace;
-                                Debug.Print($"({geomFace.Area})");
-                                if (planar != null)
-                                {
-                                    Debug.Print("if");
-                                    Debug.Print($"({planar.Origin.X})");
-                                    Debug.Print($"({planar.FaceNormal.Z})");
 
-                                    if (planar.FaceNormal.Z == 1)
-                                    {
-                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
-                                        {
-                                            List<gbSeg> floorloop = new List<gbSeg>();
-                                            foreach (Edge edge in edgeArray)
-                                            {
-                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
-                                                XYZ ptEnd = edge.AsCurve().GetEndPoint(1);
-                                                gbSeg newSeg = new gbSeg(Util.gbXYZConvert(ptStart), Util.gbXYZConvert(ptEnd));
-                                                floorloop.Add(newSeg);
-                                                Debug.Print($"Seg: {newSeg.PointAt(0)} - {newSeg.PointAt(1)}");
-                                            }
-                                            floorloops.Add(floorloop);
-                                            Debug.Print("floorloops " + floorloop.Count);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    nestedFloor.Add(floorloops);
-                    Debug.Print("nestedFloor");
-                }
-                dictFloor.Add(z, nestedFloor);
-                */
+
                 // append to dictDoor
                 List<Tuple<gbXYZ, string>> doorLocs = new List<Tuple<gbXYZ, string>>();
                 IList<Element> eDoors = new FilteredElementCollector(doc)
@@ -379,7 +305,7 @@ namespace Gingerbread
                         if (lp is null)
                             continue;
                         doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
-                        Debug.Print($"BatchGeometry:: F{z}: " + lp.ToString());
+                        //Debug.Print($"BatchGeometry:: F{z}: Got door at " + lp.ToString());
                     }
                 }
                 dictDoor.Add(z, doorLocs);
@@ -412,7 +338,6 @@ namespace Gingerbread
                     .ToElements();
                 foreach (Element e in eRooms)
                 {
-                    Debug.Print("have eRooms");
                     LocationPoint lp = e.Location as LocationPoint;
                     XYZ pt = lp.Point;
                     roomlocs.Add(Util.gbXYZConvert(pt));
@@ -420,42 +345,12 @@ namespace Gingerbread
                 dictRoom.Add(z, roomlocs);
             }
 
-            using (Transaction tx = new Transaction(doc, "Sketch locations"))
-            {
-                tx.Start();
-                // Util.SketchSegs(doc, lineShatters);
-                Debug.Print("dictGrid " + dictGrid[0].Count);
-                Debug.Print("dictRoom " + dictRoom[0].Count);
-                Debug.Print("dictSeparationline " + dictSeparationline[0].Count);
-                foreach (gbXYZ lp in dictRoom[0])
-                {
-                    Util.SketchMarker(doc, new XYZ(lp.X, lp.Y, 0));
-                    Debug.Print("LP sketched.");
-                }
-                foreach (gbSeg seg in dictGrid[0])
-                {
-                    Util.SketchSegs(doc, new List<gbSeg>() { seg });
-                    Debug.Print("dictGrid sketched.");
-                }
-                foreach (gbSeg line in dictSeparationline[0])
-                {
-                    Curve zline = Line.CreateBound(ProjectZPoint(line.PointAt(0)), ProjectZPoint(line.PointAt(1))) as Curve;
-                    Util.SketchCurves(doc, new List<Curve>() { zline });
-                    Debug.Print("dictSeparationline sketched.");
-                }
-                tx.Commit();
-            }
-
-            XYZ ProjectZPoint(gbXYZ pt)
-            {
-                return new XYZ(pt.X, pt.Y, 0);
-            }
 
             // allocate wall information to each floor
             IList<Element> eWalls = new FilteredElementCollector(doc)
-            .OfClass(typeof(Wall))
-            .OfCategory(BuiltInCategory.OST_Walls)
-            .ToElements();
+                .OfClass(typeof(Wall))
+                .OfCategory(BuiltInCategory.OST_Walls)
+                .ToElements();
 
             foreach (Element e in eWalls)
             {
@@ -501,10 +396,38 @@ namespace Gingerbread
                 }
             }
 
+            // allocate window information to each floor
+            IList<Element> eWindows = new FilteredElementCollector(doc)
+                .OfClass(typeof(FamilyInstance))
+                .OfCategory(BuiltInCategory.OST_Windows)
+                .ToElements();
+            foreach (Element e in eWindows)
+            {
+                FamilyInstance w = e as FamilyInstance;
+                FamilySymbol ws = w.Symbol;
+                XYZ lp = Util.GetFamilyInstanceLocation(w);
+                if (lp == null)
+                    continue;
 
+                double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+
+                Options op = w.Document.Application.Create.NewGeometryOptions();
+                GeometryElement ge = w.get_Geometry(op);
+                double summit = ge.GetBoundingBox().Max.Z;
+                double bottom = ge.GetBoundingBox().Min.Z;
+                for (int i = 0; i < levels.Count; i++)
+                {
+                    if (summit >= levels[i].elevation && summit <= levels[i].elevation + levels[i].height || 
+                        bottom >= levels[i].elevation && bottom <= levels[i].elevation + levels[i].height)
+                        dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                }
+            }
+
+
+            // ######################### STRUCTURE SECTION #############################
             // allocate column information to each floor
             // also read data from linked Revit model if necessary
-            List<Tuple<gbXYZ, string>> columnLocs = new List<Tuple<gbXYZ, string>>();
             ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
                 new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
 
@@ -551,57 +474,23 @@ namespace Gingerbread
                 // get the height of the column by retrieving its geometry element
                 Options op = fi.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = fi.get_Geometry(op);
-                Debug.Print($"Got geometry");
 
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    if (summit >= levels[i].elevation && bottom <= levels[i].elevation)
-                        dictColumn[i].AddRange(columnLocs);
-
-                    else if (i < levels.Count - 1 && bottom >= levels[i].elevation && bottom < levels[i + 1].elevation)
-                        dictColumn[i].AddRange(columnLocs);
-
-                    else if ((i == levels.Count - 1) && (bottom >= levels[i].elevation))
-                        dictColumn[i].AddRange(columnLocs);
+                    // add location point if the column lies within the range of this level
+                    // this is irrelevant to its host level
+                    // sometimes the levels from linked file are not corresponding to the current model
+                    if (//fi.LevelId == levels[i].id ||
+                       summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
+                       bottom <= (levels[i].elevation + 0.5 * levels[i].height))
+                    {
+                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), fi.Name));
+                    }
                 }
             }
 
-            IList<Element> eWindows = new FilteredElementCollector(doc)
-                .OfClass(typeof(FamilyInstance))
-                .OfCategory(BuiltInCategory.OST_Windows)
-                .ToElements();
-            foreach (Element e in eWindows)
-            {
-                FamilyInstance w = e as FamilyInstance;
-                XYZ lp = Util.GetFamilyInstanceLocation(w);
-                if (lp == null)
-                    continue;
-                List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
-                windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), w.Name));
-
-                Options op = w.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = w.get_Geometry(op);
-                double summit = ge.GetBoundingBox().Max.Z;
-                double bottom = ge.GetBoundingBox().Min.Z;
-                for (int i = 0; i < levels.Count; i++)
-                {
-                    if (summit >= levels[i].elevation && bottom <= levels[i].elevation)
-                        dictWindow[i].AddRange(windowLocs);
-
-                    else if (i < levels.Count - 1 && bottom >= levels[i].elevation && bottom < levels[i + 1].elevation)
-                        dictWindow[i].AddRange(windowLocs);
-
-                    else if ((i == levels.Count - 1) && (bottom >= levels[i].elevation))
-                        dictWindow[i].AddRange(windowLocs);
-                }
-            }
-
-            for (int i = 0; i < levels.Count; i++)
-            {
-                System.Windows.MessageBox.Show(i.ToString() + "\n" + "Column " + dictColumn[i].Count + "\n" + "Window" + dictWindow[i].Count, "Info");
-            }
 
             // allocate beam information to each floor
             // read data from linked Revit model if necessary
@@ -674,8 +563,9 @@ namespace Gingerbread
                 checkInfo += $"    numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count}\n";
                 checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count}\n";
                 checkInfo += $"    numFloorSlab-{dictFloor[i].Count} \n";
+                checkInfo += $"    numRoom-{dictRoom[i].Count} numSeparation-{dictSeparationline[i].Count}\n";
             }
-            checkInfo += "Done model check.";
+            checkInfo += "\nDone model check.";
 
             return;
         }

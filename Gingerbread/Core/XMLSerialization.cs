@@ -19,23 +19,29 @@ namespace Gingerbread.Core
             //the basics
             //constructor to define the basics
             gbXML gbx = new gbXML();
-            gbx.lengthUnit = lengthUnitEnum.Feet;
-            gbx.temperatureUnit = temperatureUnitEnum.F;
+            gbx.lengthUnit = lengthUnitEnum.Meters;
+            gbx.areaUnit = areaUnitEnum.SquareMeters;
+            gbx.volumeUnit = volumeUnitEnum.CubicMeters;
+            gbx.temperatureUnit = temperatureUnitEnum.C;
 
             Campus cmp = CreateCampus("DXI_Conf_Center");
 
-            cmp.Buildings = new Building[10000];
+            cmp.Buildings = new Building[10];
             gbx.Campus = cmp; // backward mapping
 
             //where does this location information from?  it could be smartly inferred somehow, but otherwise specified by the user/programmer
             Location zeloc = new Location();
-            zeloc.Name = "Shanghai, China";
-            zeloc.Latitude = "121.50";
-            zeloc.Longitude = "31.28";
+            zeloc.Name = Properties.Settings.Default.projAddress;
+            zeloc.Latitude = Properties.Settings.Default.projLatitude;
+            zeloc.Longitude = Properties.Settings.Default.projLongitude;
+            zeloc.Elevation = Properties.Settings.Default.projElevation;
             cmp.Location = zeloc; // backward mapping
 
-            // set an array as big as possible, revise here
-            cmp.Buildings[0] = MakeBuilding(10000, "bldg_0", buildingTypeEnum.Office);
+            // set default building area then revise it
+            // by defautl, a building class will allow 100 storeys and 10000 spaces
+            // you may change this setting in the function MakeBuilding()
+            cmp.Buildings[0] = MakeBuilding(10000, Properties.Settings.Default.projName, buildingTypeEnum.Office);
+
 
             // STOREY
             for (int i = 0; i < floors.Count; i++)
@@ -47,6 +53,7 @@ namespace Gingerbread.Core
             // PENDING use another way to generate the label
             int currentLevel = 0;
             int counter = 0;
+            double sumArea = 0;
 
             for (int i = 0; i < zones.Count; i++)
             {
@@ -56,11 +63,15 @@ namespace Gingerbread.Core
                     currentLevel = zones[i].level.id;
                 }
                 cmp.Buildings[0].Spaces[i] = MakeSpace(zones[i], counter);
+                sumArea += zones[i].area;
                 counter++;
 
                 if (zones[i].level.isShadowing == true)
                     spaceRemovableID.Add(zones[i].id);
             }
+            // summarize the total indoor area
+            cmp.Buildings[0].Area = string.Format("{0:0.000000}", sumArea);
+
 
             // SURFACE
             List<gbSurface> uniqueSrfs = new List<gbSurface>();
@@ -149,7 +160,7 @@ namespace Gingerbread.Core
             CultureInfo ci = new CultureInfo(String.Empty);
             string xformat = string.Format(ci, "{0:0.000000}", pt.X - Properties.Settings.Default.originX);
             string yformat = string.Format(ci, "{0:0.000000}", pt.Y - Properties.Settings.Default.originY);
-            string zformat = string.Format(ci, "{0:0.000000}", pt.Z);
+            string zformat = string.Format(ci, "{0:0.000000}", pt.Z - Properties.Settings.Default.originZ);
             cpt.Coordinate[0] = xformat;
             cpt.Coordinate[1] = yformat;
             cpt.Coordinate[2] = zformat;
@@ -179,11 +190,11 @@ namespace Gingerbread.Core
             return cmp;
         }
 
-        public static Building MakeBuilding(double bldarea, string bldgname, buildingTypeEnum bldgType)
+        public static Building MakeBuilding(double bldgArea, string bldgName, buildingTypeEnum bldgType)
         {
             Building zeb = new Building();
-            zeb.Area = bldarea;
-            zeb.id = bldgname;
+            zeb.Area = string.Format("{0:0.000000}", bldgArea);
+            zeb.id = bldgName;
             zeb.buildingType = bldgType;
             //this has been arbitrarily defined and could be changed
             zeb.bldgStories = new BuildingStorey[100];

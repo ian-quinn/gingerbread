@@ -20,9 +20,6 @@
     <Setting Name="tolDouble" Type="System.Double" Scope="User">
       <Value Profile="(Default)">1E-05</Value>
     </Setting>
-    <Setting Name="SpiderPath" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
     <Setting Name="checkInfo" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
@@ -37,6 +34,39 @@
     </Setting>
     <Setting Name="includeRef" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="projInfo" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="spiderPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="projName" Type="System.String" Scope="User">
+      <Value Profile="(Default)">GingerbreadHouse</Value>
+    </Setting>
+    <Setting Name="projAddress" Type="System.String" Scope="User">
+      <Value Profile="(Default)">Shanghai, China</Value>
+    </Setting>
+    <Setting Name="projDate" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="projAuthor" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="projNumber" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="originZ" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+    <Setting Name="projLatitude" Type="System.String" Scope="User">
+      <Value Profile="(Default)">31.4</Value>
+    </Setting>
+    <Setting Name="projLongitude" Type="System.String" Scope="User">
+      <Value Profile="(Default)">121.45</Value>
+    </Setting>
+    <Setting Name="projElevation" Type="System.String" Scope="User">
+      <Value Profile="(Default)">5.5</Value>
     </Setting>
   </Settings>
 </SettingsFile>

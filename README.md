@@ -28,7 +28,7 @@ gingerbread
 - [spider-gbXML-tools](https://github.com/ladybug-tools/spider-gbxml-tools) basic V7  
 
 **Compile**  
-- Revit 2020 - ChefSharp 65.0.1 - Visual Studio 2019
+- Revit 2020 - CefSharp 65.0.1 - Visual Studio 2019
 - Make sure the Build/Debug platform is switched to x64
 - Post-build event settings:
 ```bash

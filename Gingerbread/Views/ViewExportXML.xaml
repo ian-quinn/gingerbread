@@ -36,25 +36,36 @@
 
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="4*"/>
+                            <ColumnDefinition Width="3*"/>
+                            <ColumnDefinition Width="3*"/>
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Column="0" Margin="0 0 5 0">
-                            <TextBlock Text="Address" Margin="0 4 0 5"/>
-                            <TextBlock Text="Lat/Long" Margin="0 4 0 5"/>
-                            <TextBlock Text="Elevation" Margin="0 5 0 5"/>
-                            <TextBlock Text="Building Name" Margin="0 5 0 5"/>
-                            <TextBlock Text="Project No." Margin="0 5 0 5"/>
-                        </StackPanel>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Address" Margin="0 4 0 5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Lat/Long" Margin="0 4 0 5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Elevation" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Name" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>
 
-                        <StackPanel Grid.Column="1" Margin="5 0 0 0">
-                            <TextBox Name="locationName" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="latlong" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="elevation" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="nameBuilding" Padding="2" Text="" Margin="0 2 0 2"/>
-                            <TextBox Name="numProject" Padding="2" Text="" Margin="0 2 0 2"/>
-                        </StackPanel>
+                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="projAddress" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAddress, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Name="projLatitude" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLatitude, Mode=TwoWay}" Margin="0 2 2 2"/>
+                        <TextBox Grid.Row="1" Grid.Column="2" Name="projLongitude" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLongitude, Mode=TwoWay}" Margin="2 2 0 2"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Name="projElevation" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projElevation, Mode=TwoWay}"  Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projName, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projNumber, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 
@@ -67,30 +78,31 @@
 
                     <Grid>
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition />
+                            <ColumnDefinition />
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Column="0" Margin="0 0 5 0">
-                            <TextBlock Text="tolGroup" Margin="0 4 0 5" 
-                                       ToolTip="The tolerance during line segment grouping. The segment will be offset&#x0a;
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="tolGroup" Margin="0 4 0 5" 
+                                    ToolTip="The tolerance during line segment grouping. The segment will be offset&#x0a;
 outwardly with this tolerance, then clustered by their intersection relationship."/>
-                            <TextBlock Text="tolExpand" Margin="0 4 0 5" 
-                                       ToolTip="The tolerance during floorplan patching. All points whose distance to&#x0a;
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="tolExpand" Margin="0 4 0 5" 
+                                    ToolTip="The tolerance during floorplan patching. All points whose distance to&#x0a;
 the boundary within this tolerance will be dragged onto that boundary."/>
-                            <TextBlock Text="tolDelta" Margin="0 4 0 5" 
-                                       ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="tolDelta" Margin="0 4 0 5" 
+                                    ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
-                        </StackPanel>
 
-                        <StackPanel Grid.Column="1" Margin="5 0 0 0">
-                            <TextBox Name="cluster" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
-            Path=tolGroup, Mode=TwoWay}" Margin="0 2 0 2"/>
-                            <TextBox Name="expansion" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
-            Path=tolExpand, Mode=TwoWay}" Margin="0 2 0 2"/>
-                            <TextBox Name="threshold" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
-            Path=tolDelta, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        </StackPanel>
+                        <TextBox Grid.Row="0" Grid.Column="1" Name="cluster" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGroup, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Name="expansion" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolExpand, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Name="threshold" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolDelta, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 
@@ -105,25 +117,25 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="7*"/>
+                            <ColumnDefinition Width="6*"/>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="7*"/>
+                            <ColumnDefinition Width="6*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="6*"/>
                         </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
 
-                        <StackPanel Grid.Column="0" Margin="0">
-                            <TextBlock Text="X" Margin="0 4 0 5"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Margin="5 0 5 0">
-                            <TextBox Name="Xcoord" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
-            Path=originX, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="2" Margin="5 0 0 0">
-                            <TextBlock Text="Y" Margin="0 4 0 5"/>
-                        </StackPanel>
-                        <StackPanel Grid.Column="3" Margin="5 0 0 0">
-                            <TextBox Name="Ycoord" Padding="2" Text="{Binding Source={x:Static p:Settings.Default}, 
-            Path=originY, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        </StackPanel>
+                        <TextBlock Grid.Column="0" Text="X" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="1" Name="Xcoord" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=originX, Mode=TwoWay}" Margin="2"/>
+                        <TextBlock Grid.Column="2" Text="Y" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="3" Name="Ycoord" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=originY, Mode=TwoWay}" Margin="2"/>
+                        <TextBlock Grid.Column="4" Text="Z" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="5" Name="Zcoord" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=originZ, Mode=TwoWay}" Margin="2"/>
                     </Grid>
                     
                 </GroupBox>

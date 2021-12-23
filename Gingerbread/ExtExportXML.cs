@@ -51,8 +51,8 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
                 out Dictionary<int, List<gbSeg>> dictGrid,
                 out Dictionary<int, List<gbXYZ>> dictRoom,
-             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
-            out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
+                out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
+                out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
                 out string checkInfo);
 
 

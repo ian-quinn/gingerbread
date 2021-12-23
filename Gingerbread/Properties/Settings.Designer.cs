@@ -98,18 +98,6 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string SpiderPath {
-            get {
-                return ((string)(this["SpiderPath"]));
-            }
-            set {
-                this["SpiderPath"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
         public string checkInfo {
             get {
                 return ((string)(this["checkInfo"]));
@@ -166,16 +154,137 @@ namespace Gingerbread.Properties {
                 this["includeRef"] = value;
             }
         }
-
-        public string OrganizationDescription { get; internal set; }
-        public string OrganizationName { get; internal set; }
-        public string BuildingName { get; internal set; }
-        public string Author { get; internal set; }
-        public string Number { get; internal set; }
-        public string Address { get; internal set; }
-        public string Name { get; internal set; }
-        public string ClientName { get; internal set; }
-        public string Status { get; internal set; }
-        public string IssueDate { get; internal set; }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string projInfo {
+            get {
+                return ((string)(this["projInfo"]));
+            }
+            set {
+                this["projInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string spiderPath {
+            get {
+                return ((string)(this["spiderPath"]));
+            }
+            set {
+                this["spiderPath"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("GingerbreadHouse")]
+        public string projName {
+            get {
+                return ((string)(this["projName"]));
+            }
+            set {
+                this["projName"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("Shanghai, China")]
+        public string projAddress {
+            get {
+                return ((string)(this["projAddress"]));
+            }
+            set {
+                this["projAddress"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string projDate {
+            get {
+                return ((string)(this["projDate"]));
+            }
+            set {
+                this["projDate"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string projAuthor {
+            get {
+                return ((string)(this["projAuthor"]));
+            }
+            set {
+                this["projAuthor"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string projNumber {
+            get {
+                return ((string)(this["projNumber"]));
+            }
+            set {
+                this["projNumber"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double originZ {
+            get {
+                return ((double)(this["originZ"]));
+            }
+            set {
+                this["originZ"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("31.4")]
+        public string projLatitude {
+            get {
+                return ((string)(this["projLatitude"]));
+            }
+            set {
+                this["projLatitude"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("121.45")]
+        public string projLongitude {
+            get {
+                return ((string)(this["projLongitude"]));
+            }
+            set {
+                this["projLongitude"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("5.5")]
+        public string projElevation {
+            get {
+                return ((string)(this["projElevation"]));
+            }
+            set {
+                this["projElevation"] = value;
+            }
+        }
     }
 }
