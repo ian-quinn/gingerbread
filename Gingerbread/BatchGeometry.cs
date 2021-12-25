@@ -22,6 +22,7 @@ namespace Gingerbread
             public string name;
             public double elevation;
             public double height;
+            // the levelPack caches data in Imperial not Metric
             public levelPack(ElementId id, string name, double elevation)
             { this.id = id; this.name = name; this.elevation = elevation; this.height = 0; }
         };
@@ -30,6 +31,7 @@ namespace Gingerbread
             out Dictionary<int, Tuple<string, double>> dictElevation,
             out Dictionary<int, List<gbSeg>> dictWall,
             out Dictionary<int, List<gbSeg>> dictCurtain,
+            out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
             out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
@@ -46,6 +48,7 @@ namespace Gingerbread
             dictElevation = new Dictionary<int, Tuple<string, double>>();
             dictWall = new Dictionary<int, List<gbSeg>>();
             dictCurtain = new Dictionary<int, List<gbSeg>>();
+            dictCurtaSystem = new Dictionary<int, List<gbSeg>>();
             dictColumn = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictBeam = new Dictionary<int, List<Tuple<gbSeg, string>>>();
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
@@ -153,6 +156,7 @@ namespace Gingerbread
                     dictDoorplus.Add(name, properties);
             }
 
+
             // prefix the variables that are elements with e-. same rule to the rest
             // get all floors
             IList<Element> eFloors = new FilteredElementCollector(doc)
@@ -195,6 +199,39 @@ namespace Gingerbread
 
 
 
+            IList<Element> eCurtaSys = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_CurtaSystem)
+                .ToElements();
+            Debug.Print($"BatchGeometry:: We got {eCurtaSys.Count} curtain system elements");
+
+            List<List<Curve>> gridClusters = new List<List<Curve>>();
+            foreach (Element e in eCurtaSys)
+            {
+                if (e is null)
+                    continue;
+                CurtainSystem cs = e as CurtainSystem;
+                if (cs is null)
+                    continue;
+                List<Curve> gridCluster = new List<Curve>();
+                Debug.Write($"BatchGeometry:: The curtainGridSet- ");
+                foreach (CurtainGrid cg in cs.CurtainGrids)
+                {
+                    Debug.Write($" X ");
+                    //List<ElementId> uIds = cg.GetUGridLineIds().ToList();
+                    List<ElementId> vIds = cg.GetVGridLineIds().ToList();
+                    for (int v = 0; v < vIds.Count; v++)
+                    {
+                        CurtainGridLine cgLine = doc.GetElement(vIds[v]) as CurtainGridLine;
+                        Curve gl = cgLine.FullCurve.Clone();
+                        gridCluster.Add(gl);
+                    }
+                }
+                Debug.Write($"\n");
+                gridClusters.Add(gridCluster);
+            }
+            Debug.Print($"BatchGeometry:: We got {gridClusters.Count} curtainGrids");
+
+
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
             {
@@ -211,6 +248,7 @@ namespace Gingerbread
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
                 dictCurtain.Add(z, new List<gbSeg>());
                 dictWindow.Add(z, new List<Tuple<gbXYZ, string>>());
+                // initiation of the dictCurtaSystem is at the end of the loop
 
 
 
@@ -310,6 +348,8 @@ namespace Gingerbread
                 }
                 dictDoor.Add(z, doorLocs);
 
+
+                // add separation lines
                 List<gbSeg> separationlineLocs = new List<gbSeg>();
                 IList<Element> eSeparationlines = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_RoomSeparationLines)
@@ -327,10 +367,11 @@ namespace Gingerbread
                         gbXYZ gbP2 = new gbXYZ(Util.FootToM(p2.X), Util.FootToM(p2.Y), Util.FootToM(p2.Z));
                         separationlineLocs.Add(new gbSeg(gbP1, gbP2));
                     }
-
                 }
                 dictSeparationline.Add(z, separationlineLocs);
 
+
+                // add room location and label, still PENDING
                 List<gbXYZ> roomlocs = new List<gbXYZ>();
                 IList<Element> eRooms = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_Rooms)
@@ -343,7 +384,55 @@ namespace Gingerbread
                     roomlocs.Add(Util.gbXYZConvert(pt));
                 }
                 dictRoom.Add(z, roomlocs);
+
+
+                // mark intersection point of curtain grid lines with each floor plane
+                // add curtain system boundary to the dictionary
+                Plane floorPlane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, new XYZ(0, 0, levels[z].elevation));
+                
+                List<gbSeg> lcCrvs = new List<gbSeg>();
+                foreach (List<Curve> gridCluster in gridClusters)
+                {
+                    List<gbXYZ> lcPts = new List<gbXYZ>();
+                    foreach (Curve grid in gridCluster)
+                    {
+                        if (grid is null)
+                            continue;
+                        XYZ gridStart = grid.GetEndPoint(0);
+                        XYZ gridEnd = grid.GetEndPoint(1);
+                        //Debug.Print($"BatchGeometry:: girdType- {grid.GetType()}");
+
+                        // by default, the grid line starts from the bottom and ends at the top
+                        // note that the gridStart.Z may be slightly larger than levels[z].elevation due to double precision
+                        // you have to round it to 0 then do the comparison
+                        if (gridEnd.Z > levels[z].elevation + levels[z].height / 2 &&
+                            gridStart.Z < levels[z].elevation || Util.IsZero(gridStart.Z - levels[z].elevation))
+                        {
+                            // when it comes to nurb surface, you may need the following method to calculate
+                            // the intersection between the plane and the curve. as robust as possible
+                            //IntersectionResultArray ir = Basic.PlaneCurveIntersection(floorPlane, grid);
+                            XYZ intersectPt = Basic.LineIntersectPlane(gridStart, gridEnd, levels[z].elevation);
+                            if (intersectPt != null)
+                                lcPts.Add(Util.gbXYZConvert(intersectPt));
+                            //Debug.Print($"BatchGeometry:: Point ({intersectPt.X},{intersectPt.Y},{intersectPt.Z}) added");
+                        }
+                    }
+                    // PENDING the simplify polyline method is buggy
+                    //RegionTessellate.SimplifyPoly(lcPts);
+
+                    if (lcPts.Count > 1)
+                    {
+                        // when it comes to nurb surface, you need a polyline connecting each intersection point
+                        //for (int i = 0; i < lcPts.Count - 1; i++)
+                        //    lcCrvs.Add(new gbSeg(lcPts[i], lcPts[i + 1]));
+
+                        lcCrvs.Add(new gbSeg(lcPts[0], lcPts[lcPts.Count - 1]));
+                    }
+                    Debug.Print($"BatchGeometry:: Gen {lcCrvs.Count} segs from {gridCluster.Count} grids");
+                }
+                dictCurtaSystem.Add(z, lcCrvs);
             }
+
 
 
             // allocate wall information to each floor
@@ -388,10 +477,12 @@ namespace Gingerbread
                        (summit >= levels[i].elevation + 0.8 * levels[i].height &&
                        bottom <= levels[i].elevation + 0.2 * levels[i].height))
                     {
-                        dictWall[i].AddRange(temps);
-                        // additionally, if the walltype is curtainwall, append it to dictCurtain
+                        // if the WallType is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
                             dictCurtain[i].AddRange(temps);
+                        // if the WallType is something else, Basic, Stacked, Unknown, append it to dictWall
+                        else
+                            dictWall[i].AddRange(temps);
                     }
                 }
             }
@@ -558,12 +649,10 @@ namespace Gingerbread
             checkInfo = "";
             for (int i = 0; i < levels.Count; i++)
             {
-                checkInfo += $"#{i} '{dictElevation[i].Item1}' elevation-{dictElevation[i].Item2} geometry summary\n";
-                checkInfo += $"    numCol-{dictColumn[i].Count} numBeam-{dictBeam[i].Count}\n";
-                checkInfo += $"    numWin-{dictWindow[i].Count} numDoor-{dictDoor[i].Count}\n";
-                checkInfo += $"    numWall-{dictWall[i].Count} including curtianwall-{dictCurtain[i].Count}\n";
-                checkInfo += $"    numFloorSlab-{dictFloor[i].Count} \n";
-                checkInfo += $"    numRoom-{dictRoom[i].Count} numSeparation-{dictSeparationline[i].Count}\n";
+                checkInfo += $"#{i} {dictElevation[i].Item2}m <{dictElevation[i].Item1}> geometry summary\n";
+                checkInfo += $"    Wall-{dictWall[i].Count} \tFloorSlab-{dictFloor[i].Count} \t Window-{dictWindow[i].Count} \tColumn-{dictColumn[i].Count}\n";
+                checkInfo += $"    Curtain-{dictCurtain[i].Count} \tRoom-{dictRoom[i].Count}  \t Door-{dictDoor[i].Count}  \tBeam-{dictWindow[i].Count}\n";
+                checkInfo += $"    CurtaSys-{dictCurtaSystem[i].Count} \tSeparation-{dictSeparationline[i].Count}\n";
             }
             checkInfo += "\nDone model check.";
 

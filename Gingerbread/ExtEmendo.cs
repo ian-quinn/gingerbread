@@ -33,6 +33,7 @@ namespace Gingerbread
                 out Dictionary<int, Tuple<string, double>> dictElevation,
                 out Dictionary<int, List<gbSeg>> dictWall,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
+                out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
@@ -85,13 +86,16 @@ namespace Gingerbread
             //}
 
 
-            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
-            //{
-            //    tx.Start();
-            //    foreach (Tuple<gbXYZ, string> door in dictDoor[1])
-            //        Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
-            //    tx.Commit();
-            //}
+            using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            {
+                tx.Start();
+                //foreach (Tuple<gbXYZ, string> door in dictDoor[0])
+                //    Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
+                Util.SketchSegs(doc, dictWall[0]);
+                Util.SketchSegs(doc, dictCurtain[0]);
+                Util.SketchSegs(doc, dictCurtaSystem[0]);
+                tx.Commit();
+            }
         }
 
         public string GetName()

@@ -177,7 +177,7 @@ duplicate components among documents. All documents must share the same&#x0a;Car
                         </DataTemplate>
                     </GroupBox.HeaderTemplate>
                     <Grid Name="ViewPort">
-                        <wpf:ChromiumWebBrowser Address="{Binding Source={x:Static p:Settings.Default}, Path=SpiderPath, Mode=OneWay}"/>
+                        <wpf:ChromiumWebBrowser Address="{Binding Source={x:Static p:Settings.Default}, Path=spiderPath, Mode=OneWay}"/>
                     </Grid>
                 </GroupBox>
             </StackPanel>

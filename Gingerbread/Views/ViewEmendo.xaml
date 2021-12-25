@@ -8,7 +8,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="Manual"
              Background="White"
-             Height="400" Width="577"
+             Height="400" Width="600"
              SizeToContent="Height"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -42,7 +42,7 @@
             </StackPanel>
 
             <StackPanel>
-                <GroupBox Header="Preview" Margin="5 0 0 0" Padding="3" Width="400">
+                <GroupBox Header="Preview" Margin="5 0 0 0" Padding="3" Width="420">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -50,7 +50,7 @@
                     </GroupBox.HeaderTemplate>
                     <Grid Height="200"></Grid>
                 </GroupBox>
-                <GroupBox Header="Info" Margin="5 0 0 0" Padding="0" Width="400">
+                <GroupBox Header="Info" Margin="5 0 0 0" Padding="0" Width="420">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />

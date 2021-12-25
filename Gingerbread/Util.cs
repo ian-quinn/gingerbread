@@ -21,6 +21,8 @@ namespace Gingerbread
 {
     static public class Util
     {
+        public const double _eps = 1.0e-9;
+
         #region Selection
         public static Element SelectSingleElement(UIDocument uidoc, string description)
         {
@@ -883,6 +885,16 @@ namespace Gingerbread
         #endregion // Formatting
 
         #region aux
+        public static bool IsZero(double a, double tolerance = _eps)
+        {
+            return tolerance > Math.Abs(a);
+        }
+
+        public static bool IsEqual(double a, double b, double tolerance = _eps)
+        {
+            return IsZero(b - a, tolerance);
+        }
+
         /// <summary>
         /// Log the debug information
         /// </summary>

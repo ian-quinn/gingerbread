@@ -43,6 +43,7 @@ namespace Gingerbread
                 out Dictionary<int, Tuple<string, double>> dictElevation,
                 out Dictionary<int, List<gbSeg>> dictWall,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
+                out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
@@ -76,7 +77,12 @@ namespace Gingerbread
             {
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
 
-                List<gbSeg> flatLines = GBMethod.FlattenLines(dictWall[z]);
+                List<gbSeg> enclosings = new List<gbSeg>();
+                enclosings.AddRange(dictWall[z]);
+                enclosings.AddRange(dictCurtain[z]);
+                enclosings.AddRange(dictCurtaSystem[z]);
+
+                List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
 
                 List<gbXYZ> pilePts = GBMethod.PilePts(flatLines);
                 List<gbXYZ> boundary = OrthoHull.GetOrthoHull(pilePts);

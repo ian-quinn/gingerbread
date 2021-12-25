@@ -501,6 +501,73 @@ namespace Gingerbread.Core
             return plys;
         }
 
+        /// <summary>
+        /// Compute the intersections of the plane with given curve
+        /// </summary>
+        /// <param name="p">Plane of the intersection</param>
+        /// <param name="c">Curve to intersect with</param>
+        /// <returns></returns>
+        public static IntersectionResultArray PlaneCurveIntersection(this Plane p, Curve c)
+        {
+            // Find the projection point
+            XYZ projection = ProjectOnto(p, c.GetEndPoint(0));
+            // construct two parallel lines l1 and l2 
+            Line l1 = Line.CreateBound(projection + c.Length * (p.XVec + p.YVec),
+                projection + c.Length * (p.XVec - p.YVec));
+            Line l2 = Line.CreateBound(projection + c.Length * (-p.XVec + p.YVec),
+                projection + c.Length * (-p.XVec - p.YVec));
+            // Add lines into single CurveLoop list
+            CurveLoop cl1 = new CurveLoop(); cl1.Append(l1);
+            CurveLoop cl2 = new CurveLoop(); cl2.Append(l2);
+            //Generate Loft surface
+            Solid s = GeometryCreationUtilities.CreateLoftGeometry(
+                new List<CurveLoop>() { cl1, cl2 },
+                new SolidOptions(ElementId.InvalidElementId, ElementId.InvalidElementId)
+                );
+            // intersect the plane with the face (only on face is available)
+            s.Faces.get_Item(0).Intersect(c, out IntersectionResultArray results);
+            return results;
+        }
+
+        /// <summary>
+        /// Project given 3D XYZ point onto plane.
+        /// </summary>
+        public static XYZ ProjectOnto(this Plane plane, XYZ p)
+        {
+            double d = plane.SignedDistanceTo(p);
+
+            //XYZ q = p + d * plane.Normal; // wrong according to Ruslan Hanza and Alexander Pekshev in their comments below
+
+            XYZ q = p - d * plane.Normal;
+
+            Debug.Assert(
+              Util.IsZero(plane.SignedDistanceTo(q)),
+              "expected point on plane to have zero distance to plane");
+
+            return q;
+        }
+        public static double SignedDistanceTo(this Plane plane, XYZ p)
+        {
+            Debug.Assert(
+              Util.IsEqual(plane.Normal.GetLength(), 1),
+              "expected normalised plane normal");
+
+            XYZ v = p - plane.Origin;
+
+            return plane.Normal.DotProduct(v);
+        }
+
+        /// <summary>
+        /// Tempera method. Use this to calculate the intersection between line and a plane.
+        /// The line cannot be on the plane. Be careful
+        /// </summary>
+        public static XYZ LineIntersectPlane(XYZ start, XYZ end, double z)
+        {
+            double x = (end.X - start.X) * (z - start.Z) / (end.Z - start.Z) + start.X;
+            double y = (end.Y - start.Y) * (z - start.Z) / (end.Z - start.Z) + start.Y;
+            return new XYZ(x, y, z);
+        }
+
         #endregion
     }
 }
