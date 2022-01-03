@@ -94,13 +94,17 @@ namespace Gingerbread.Core
                 Surface newSurface = MakeSurface(faces[i], srfCounter);
 
                 // check if its adjacent spaces are all shadowing spaces, and removable
-                if (newSurface.AdjacentSpaceId.Length == 1)
-                    if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef))
-                        newSurface.isShadowing = "true";
-                if (newSurface.AdjacentSpaceId.Length == 2)
-                    if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef) && 
-                        spaceRemovableID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
-                        newSurface.isShadowing = "true";
+                // by null, the surface is shading surface, skip it
+                if (newSurface.AdjacentSpaceId != null)
+                {
+                    if (newSurface.AdjacentSpaceId.Length == 1)
+                        if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef))
+                            newSurface.isShadowing = "true";
+                    if (newSurface.AdjacentSpaceId.Length == 2)
+                        if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef) &&
+                            spaceRemovableID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
+                            newSurface.isShadowing = "true";
+                }
                 cmp.Surface[i] = newSurface;
                 srfCounter++;
             }
@@ -346,7 +350,8 @@ namespace Gingerbread.Core
             surface.Name = "Surface-" + GUID; // false
             surface.surfaceType = face.type;
             if (face.type == surfaceTypeEnum.ExteriorWall ||
-                face.type == surfaceTypeEnum.Roof)
+                face.type == surfaceTypeEnum.Roof || 
+                face.type == surfaceTypeEnum.Shade)
                 surface.exposedToSunField = true;
             else
                 surface.exposedToSunField = false;
@@ -355,22 +360,25 @@ namespace Gingerbread.Core
 
             // there can only be two adjacent spaces for an interior wall
             // this second boudnary split is mandantory for energy simulation
-            AdjacentSpaceId adjspace1 = new AdjacentSpaceId();
-            adjspace1.spaceIdRef = face.parentId;
-            if (face.adjSrfId.Contains("Outside"))
+            if (face.type != surfaceTypeEnum.Shade)
             {
-                AdjacentSpaceId[] adjspaces = { adjspace1 };
-                surface.AdjacentSpaceId = adjspaces;
-            }
-            else
-            {
-                // the adjacent space is decoded from the label of adjacent surface
-                // it is crucial about how you code the name
-                AdjacentSpaceId adjspace2 = new AdjacentSpaceId();
-                Match match = Regex.Match(face.adjSrfId, "(.+)::(.+)");
-                adjspace2.spaceIdRef = match.Groups[1].Value;
-                AdjacentSpaceId[] adjspaces = { adjspace1, adjspace2 };
-                surface.AdjacentSpaceId = adjspaces;
+                AdjacentSpaceId adjspace1 = new AdjacentSpaceId();
+                adjspace1.spaceIdRef = face.parentId;
+                if (face.adjSrfId.Contains("Outside"))
+                {
+                    AdjacentSpaceId[] adjspaces = { adjspace1 };
+                    surface.AdjacentSpaceId = adjspaces;
+                }
+                else
+                {
+                    // the adjacent space is decoded from the label of adjacent surface
+                    // it is crucial about how you code the name
+                    AdjacentSpaceId adjspace2 = new AdjacentSpaceId();
+                    Match match = Regex.Match(face.adjSrfId, "(.+)::(.+)");
+                    adjspace2.spaceIdRef = match.Groups[1].Value;
+                    AdjacentSpaceId[] adjspaces = { adjspace1, adjspace2 };
+                    surface.AdjacentSpaceId = adjspaces;
+                }
             }
 
             RectangularGeometry rg = new RectangularGeometry();

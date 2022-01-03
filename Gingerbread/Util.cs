@@ -328,7 +328,58 @@ namespace Gingerbread
             return ((LocationCurve)fi?.Location)?.Curve;
         }
 
+        public static List<Line> GetCurtainGridVerticalLattice(Document doc, CurtainGrid cg)
+        {
+            List<Line> vCluster = new List<Line>();
+            List<Line> uCluster = new List<Line>();
+            List<XYZ> vStartCluster = new List<XYZ>();
+            List<XYZ> vEndCluster = new List<XYZ>();
+            List<XYZ> uStartCluster = new List<XYZ>();
+            List<XYZ> uEndCluster = new List<XYZ>();
 
+            List<ElementId> vIds = cg.GetVGridLineIds().ToList();
+            List<ElementId> uIds = cg.GetUGridLineIds().ToList();
+            for (int v = 0; v < vIds.Count; v++)
+            {
+                CurtainGridLine cgLine = doc.GetElement(vIds[v]) as CurtainGridLine;
+                Curve gl = cgLine.FullCurve;
+                vCluster.Add(Line.CreateBound(gl.GetEndPoint(0), gl.GetEndPoint(1)));
+                vStartCluster.Add(gl.GetEndPoint(0));
+                vEndCluster.Add(gl.GetEndPoint(1));
+            }
+            for (int u = 0; u < uIds.Count; u++)
+            {
+                CurtainGridLine cgLine = doc.GetElement(uIds[u]) as CurtainGridLine;
+                Curve gl = cgLine.FullCurve;
+                uCluster.Add(Line.CreateBound(gl.GetEndPoint(0), gl.GetEndPoint(1)));
+                uStartCluster.Add(gl.GetEndPoint(0));
+                uEndCluster.Add(gl.GetEndPoint(1));
+            }
+            // get the lower limit
+            vStartCluster = vStartCluster.OrderBy(z => z.Z).ToList();
+            vEndCluster = vEndCluster.OrderBy(z => z.Z).ToList();
+            double upperBound = vEndCluster.Last().Z;
+            double lowerBound = vStartCluster[0].Z;
+            if (vCluster.Count == 0 || uCluster.Count == 0)
+                return vCluster;
+            if (uCluster.Count == 1)
+            {
+                double currentZ = uCluster[0].GetEndPoint(0).Z;
+                XYZ basePt = Basic.LineIntersectPlane(vCluster[0].GetEndPoint(0), vCluster[0].GetEndPoint(1), currentZ);
+                Transform tf1 = Transform.CreateTranslation(uCluster[0].GetEndPoint(0) - basePt);
+                Transform tf2 = Transform.CreateTranslation(uCluster[0].GetEndPoint(1) - basePt);
+                vCluster.Insert(0, vCluster[0].CreateTransformed(tf1) as Line);
+                vCluster.Add(vCluster[0].CreateTransformed(tf2) as Line);
+                return vCluster;
+            }
+            XYZ pt1 = Basic.LineIntersectPlane(uCluster[0].GetEndPoint(0), uCluster.Last().GetEndPoint(0), lowerBound);
+            XYZ pt2 = Basic.LineIntersectPlane(uCluster[0].GetEndPoint(0), uCluster.Last().GetEndPoint(0), upperBound);
+            XYZ pt3 = Basic.LineIntersectPlane(uCluster[0].GetEndPoint(1), uCluster.Last().GetEndPoint(1), lowerBound);
+            XYZ pt4 = Basic.LineIntersectPlane(uCluster[0].GetEndPoint(1), uCluster.Last().GetEndPoint(1), upperBound);
+            vCluster.Insert(0, Line.CreateBound(pt1, pt2));
+            vCluster.Add(Line.CreateBound(pt3, pt4));
+            return vCluster;
+        }
 
 
         // Detailed line methods

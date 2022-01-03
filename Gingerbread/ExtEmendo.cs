@@ -39,6 +39,7 @@ namespace Gingerbread
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
                 out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
+                out Dictionary<int, List<List<gbXYZ>>> dictShade, 
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
                 out Dictionary<int, List<gbSeg>> dictGrid,
                 out Dictionary<int, List<gbXYZ>> dictRoom,
@@ -86,16 +87,47 @@ namespace Gingerbread
             //}
 
 
-            using (Transaction tx = new Transaction(doc, "Sketch locations"))
-            {
-                tx.Start();
-                //foreach (Tuple<gbXYZ, string> door in dictDoor[0])
-                //    Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
-                Util.SketchSegs(doc, dictWall[0]);
-                Util.SketchSegs(doc, dictCurtain[0]);
-                Util.SketchSegs(doc, dictCurtaSystem[0]);
-                tx.Commit();
-            }
+            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //{
+            //    tx.Start();
+            //    //foreach (Tuple<gbXYZ, string> door in dictDoor[0])
+            //    //    Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
+            //    Util.SketchSegs(doc, dictWall[0]);
+            //    Util.SketchSegs(doc, dictCurtain[0]);
+            //    Util.SketchSegs(doc, dictCurtaSystem[0]);
+            //    tx.Commit();
+            //}
+
+            //int levelNum = dictElevation.Count - 1;
+            //for (int z = 0; z < 1; z++)
+            //{
+            //    using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //    {
+            //        tx.Start();
+            //        foreach (Tuple<gbXYZ, string> door in dictDoor[0])
+            //            Util.SketchMarker(doc, Util.gbXYZConvert(door.Item1));
+            //        Util.SketchSegs(doc, dictWall[z]);
+            //        Util.SketchSegs(doc, dictCurtain[z]);
+            //        Util.SketchSegs(doc, dictCurtaSystem[z]);
+            //        tx.Commit();
+            //    }
+            //}
+
+            //List<List<gbXYZ>> slabShells = new List<List<gbXYZ>>();
+            //foreach (List<List<gbXYZ>> slabs in dictFloor[1])
+            //    if (slabs.Count > 0)
+            //        slabShells.Add(slabs[0]);
+            //using (Transaction tx = new Transaction(doc, "Sketch locations"))
+            //{
+            //    tx.Start();
+            //    List<gbSeg> slabEdges = new List<gbSeg>();
+            //    foreach (List<gbXYZ> slabShell in slabShells)
+            //        for (int i = 0; i < slabShell.Count - 1; i++)
+            //            slabEdges.Add(new gbSeg(slabShell[i], slabShell[i + 1]));
+            //    Util.SketchSegs(doc, slabEdges);
+            //    tx.Commit();
+            //}
+
         }
 
         public string GetName()

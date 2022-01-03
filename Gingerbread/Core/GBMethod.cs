@@ -20,12 +20,25 @@ namespace Gingerbread.Core
         ColineJoint,
         ColineAContainB,
         ColineBContainA,
-        Parallel
+        Parallel,
+        Intersect, 
+        Coincident
+    }
+    public enum polyIntersectEnum
+    {
+        Intersect,
+        Overlap,
+        AContainB,
+        BContainA,
+        Coincide,
+        Isolate
     }
     // Seg - Segment, not line
     // Poly - Polyline, including polygon, represented by a loop of points
     public class GBMethod
     {
+        public const double _eps = 1.0e-9;
+
         public static gbXYZ GetPendicularVec(gbXYZ vec, bool isClockwise)
         {
             if (isClockwise)
@@ -33,6 +46,9 @@ namespace Gingerbread.Core
             return new gbXYZ(-vec.Y, vec.X, 0);
         }
 
+        /// <summary>
+        /// Return the angle (0~360) of two vector by calculating arctangent
+        /// </summary>
         public static double VectorAngle(gbXYZ vec1, gbXYZ vec2)
         {
             //double x1 = endPt1[0] - connectingPt[0]; //Vector 1 - x
@@ -51,6 +67,9 @@ namespace Gingerbread.Core
             return angle;
         }
 
+        /// <summary>
+        /// Return the angle (0~180) of two vector by calculating arccosin
+        /// </summary>
         public static double VectorAngle2D(gbXYZ vec1, gbXYZ vec2)
         {
             double value = Math.Round(vec1.DotProduct(vec2) / vec1.Norm() / vec2.Norm(), 6);
@@ -336,6 +355,79 @@ namespace Gingerbread.Core
             intersection = new gbXYZ();
             return SegIntersection(p1, p2, p3, p4, tol, out intersection, out t1, out t2);
         }
+        public static segIntersectEnum SegFusion(gbSeg a, gbSeg b, double tol, out gbSeg fusion)
+        {
+            gbXYZ p1 = a.Start;
+            gbXYZ p2 = a.End;
+            gbXYZ p3 = b.Start;
+            gbXYZ p4 = b.End;
+            // represents stretch vector of seg1 vec1 = (dx12, dy12)
+            double dx12 = p2.X - p1.X;
+            double dy12 = p2.Y - p1.Y;
+            // represents stretch vector of seg2 vec2 = (dx34, dy34)
+            double dx34 = p4.X - p3.X;
+            double dy34 = p4.Y - p3.Y;
+
+            fusion = null;
+
+            // checker as cross product of vec1 and vec2
+            double denominator = dy12 * dx34 - dx12 * dy34;
+            // co-line checker as cross product of (p3 - p1) and vec1/vec
+            double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
+
+            if (Math.Abs(denominator) < tol && Math.Abs(stretch) > tol)
+                return segIntersectEnum.Parallel;
+            if (Math.Abs(denominator) < tol && Math.Abs(stretch) < tol)
+            {
+                Debug.Print($"GBMethod:: Seg fused {a} {b}");
+                // express endpoints of seg2 in terms of seg1 parameter
+                double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
+                double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
+                if (s1 > s2)
+                {
+                    Util.Swap(ref s1, ref s2);
+                    Util.Swap(ref p3, ref p4);
+                }
+                if ((s1 > 0 - tol && s1 < 1 + tol) || (s2 > 0 - tol && s2 < 1 + tol))
+                    if ((s1 > 0 - tol && s1 < 1 + tol) && (s2 > 0 - tol && s2 < 1 + tol))
+                    {
+                        fusion = new gbSeg(p1, p2);
+                        return segIntersectEnum.ColineAContainB;
+                    }
+                    else
+                    {
+                        if (s1 > 0 - tol && s1 < 1 + tol)
+                        {
+                            fusion = new gbSeg(p1, p4);
+                            return segIntersectEnum.ColineOverlap;
+                        }
+                        if (s2 > 0 - tol && s2 < 1 + tol)
+                        {
+                            fusion = new gbSeg(p3, p2);
+                            return segIntersectEnum.ColineOverlap;
+                        }
+                    }
+                if (s1 < 0 + tol && s2 > 1 - tol)
+                {
+                    fusion = new gbSeg(p3, p4);
+                    return segIntersectEnum.ColineBContainA;
+                }
+                if (s1 > 1 - tol  || s2 < 0 + tol)
+                    return segIntersectEnum.ColineDisjoint;
+                if (s1 > 1 - tol && s1 < 1 + tol)
+                {
+                    fusion = new gbSeg(p1, p4);
+                    return segIntersectEnum.ColineJoint;
+                }
+                if (s2 > 0 - tol && s2 < 0 + tol)
+                {
+                    fusion = new gbSeg(p3, p2);
+                    return segIntersectEnum.ColineJoint;
+                }
+            }
+
+            return segIntersectEnum.Intersect;
+        }
         public static bool IsSegPolyIntersected(gbSeg a, List<gbXYZ> poly, double tol)
         {
             for (int i = 0; i < poly.Count - 1; i++)
@@ -451,7 +543,118 @@ namespace Gingerbread.Core
             //return subj.Copy();
         }
 
+        public static List<gbSeg> SegsAlignment(List<gbSeg> segs, double threshold)
+        {
+            List<gbSeg> _segs = new List<gbSeg>();
+            foreach (gbSeg seg in segs)
+                _segs.Add(new gbSeg(seg.Start, seg.End));
+            List<List<gbSeg>> segGroups = new List<List<gbSeg>>();
+            while (_segs.Count > 0)
+            {
+                List<gbSeg> segGroup = new List<gbSeg>() { _segs[0] };
+                _segs.RemoveAt(0);
+                for (int i = 0; i < segGroup.Count; i++)
+                {
+                    for (int j = _segs.Count - 1; j >= 0; j--)
+                    {
+                        if (segGroup[i] != _segs[j])
+                        {
+                            segIntersectEnum result = SegIntersection(_segs[j], segGroup[i], _eps,
+                                out gbXYZ intersection, out double t1, out double t2);
+                            double d1 = PtDistanceToSeg(_segs[j].Start, segGroup[i], out gbXYZ start, out double s1);
+                            double d2 = PtDistanceToSeg(_segs[j].Start, segGroup[i], out gbXYZ end, out double s2);
+                            double gap = d1 <= d2 ? d1 : d2;
+                            if (result == segIntersectEnum.Parallel && gap < threshold)
+                            {
+                                segGroup.Add(_segs[j]);
+                                _segs.RemoveAt(j);
+                            }
+                        }
+                    }
+                }
+                segGroups.Add(segGroup);
+                Debug.Print($"GBMethod:: cluster with {segGroup.Count} added.");
+            }
+            List<gbSeg> collapse = new List<gbSeg>();
+            foreach (List<gbSeg> segGroup in segGroups)
+            {
+                if (segGroup.Count == 0)
+                    continue;
+                if (segGroup.Count == 1)
+                {
+                    //int checker = 0;
+                    //foreach (gbSeg axis in blueprint)
+                    //{
+                    //    checker++;
+                    //    double gap = SegDistanceToSeg(segGroup[0], axis, out double overlap, out gbSeg proj);
+                    //    if (gap < 0.2 && overlap > 0)
+                    //    {
+                    //        double d1 = PtDistanceToSeg(segGroup[0].Start, axis, out gbXYZ start, out double t1);
+                    //        double d2 = PtDistanceToSeg(segGroup[0].End, axis, out gbXYZ end, out double t2);
+                    //        gbSeg aligned = new gbSeg(start, end);
+                    //        if (aligned.length > 0.1)
+                    //        {
+                    //            collapse.Add(aligned);
+                    //            break;
+                    //        }
+                    //    }
+                    //}
+                    collapse.Add(segGroup[0]);
+                    continue;
+                }
+                gbXYZ refPt = segGroup[0].Start;
+                for (int i = 1; i < segGroup.Count; i++)
+                {
+                    double d1 = PtDistanceToSeg(refPt, segGroup[i], out gbXYZ plummet, out double t);
+                    refPt += plummet;
+                }
+                refPt = refPt / segGroup.Count;
+                gbSeg baseLine = new gbSeg(refPt, refPt + segGroup[0].direction);
+                foreach (gbSeg seg in segGroup)
+                {
+                    double d1 = PtDistanceToSeg(seg.Start, baseLine, out gbXYZ start, out double t1);
+                    double d2 = PtDistanceToSeg(seg.End, baseLine, out gbXYZ end, out double t2);
+                    gbSeg aligned = new gbSeg(start, end);
+                    if (aligned.length > 0.1)
+                    {
+                        collapse.Add(aligned);
+                        Debug.Print($"GBMethod:: aligned line added {aligned}");
+                    }
+                }
+            }
+            return collapse;
+        }
 
+        public static List<gbSeg> SegsFusion(List<gbSeg> segs, double threshold)
+        {
+            List<gbSeg> _segs = new List<gbSeg>();
+            // 0 length segment that happens to be an intersection point
+            // will be colined with two joining segments not parallel
+            foreach (gbSeg seg in segs)
+                if (seg.length > _eps)
+                    _segs.Add(new gbSeg(seg.Start, seg.End));
+                
+            for (int i = _segs.Count - 1; i >= 1; i--)
+            {
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    segIntersectEnum result = SegFusion(_segs[i], _segs[j], _eps, out gbSeg fusion);
+                    if (result == segIntersectEnum.ColineAContainB ||
+                        result == segIntersectEnum.ColineBContainA ||
+                        result == segIntersectEnum.ColineJoint ||
+                        result == segIntersectEnum.ColineOverlap)
+                    {
+                        if (fusion != null)
+                        {
+                            _segs[j] = fusion;
+                            _segs.RemoveAt(i);
+                            break;
+                        }
+                    }
+                }
+            }
+            return _segs;
+        }
 
         public static double PtDistanceToSeg(gbXYZ pt, gbSeg line,
           out gbXYZ plummet, out double stretch)
@@ -543,6 +746,14 @@ namespace Gingerbread.Core
 
             return new gbSeg(startPt, endPt);
         }
+        //public static gbXYZ PtProjection(gbXYZ pt, gbSeg seg, gbXYZ vec)
+        //{
+        //    gbSeg sample = new gbSeg(pt, pt + vec);
+        //    segIntersectEnum result = SegIntersection(sample, seg, 0.000001, out gbXYZ intersection, out double t1, out double t2);
+        //    if (result == segIntersectEnum.IntersectOnB || t1 > 0)
+        //        return intersection;
+        //    return null;
+        //}
 
         public static gbSeg SegMerge(gbSeg a, gbSeg b, double tol)
         {
@@ -626,6 +837,25 @@ namespace Gingerbread.Core
             gbXYZ p2 = a.PointAt(1);
             return SegExpansionBox(p1, p2, expansion);
         }
+
+        /// <summary>
+        /// Extend line segment at two ends by a specific length
+        /// </summary>
+        public static gbSeg ExtendSeg(gbSeg seg, double length)
+        {
+            double ratio = length / seg.Length;
+            gbXYZ startPt = seg.PointAt(-ratio);
+            gbXYZ endPt = seg.PointAt(1 + ratio);
+            return new gbSeg(startPt, endPt);
+        }
+        public static List<gbSeg> ExtendSegs(List<gbSeg> segs, double length)
+        {
+            List<gbSeg> extSegs = new List<gbSeg>();
+            foreach (gbSeg seg in segs)
+                extSegs.Add(ExtendSeg(seg, length));
+            return extSegs;
+        }
+
 
         // switch to more robust polygon offset function in future
         // note that this is not a closed vertice loop
@@ -738,7 +968,7 @@ namespace Gingerbread.Core
 
 
         /// <summary>
-        /// Algorithm to test if a point is inside a polygon. Borrowed from Jeremy Tammik
+        /// Point on the edge of a poly returns true. The poly includes the boundary
         /// </summary>
         public static bool IsPtInPoly(gbXYZ pt, List<gbXYZ> poly)
         {
@@ -782,6 +1012,42 @@ namespace Gingerbread.Core
             }
             return (angle == 4) || (angle == -4);
         }
+        public static bool IsPtOnPoly(gbXYZ pt, List<gbXYZ> poly)
+        {
+            for (int i = 0; i < poly.Count - 1; i++)
+                if (Math.Abs(PtDistanceToSeg(pt, new gbSeg(poly[i], poly[i + 1]), out gbXYZ plummet, out double stretch)) < 0.000001)
+                    return true;
+            return false;
+        }
+        public static bool IsSegInPoly(gbSeg seg, List<gbXYZ> poly)
+        {
+            gbXYZ start = seg.Start;
+            gbXYZ end = seg.End;
+            //for (int i = 0; i < poly.Count - 1; i++)
+            //{
+            //    segIntersectEnum result = SegIntersection(seg, new gbSeg(poly[i], poly[i + 1]), 0.000001,
+            //        out gbXYZ intersection, out double t1, out double t2);
+            //    if ()
+            //}
+            //if (IsOn)
+            //{
+                if (IsPtInPoly(start, poly) || IsPtOnPoly(start, poly) && 
+                (IsPtInPoly(end, poly) || IsPtOnPoly(end, poly)))
+                //!IsSegPolyIntersected(seg, poly, 0.000001))
+                    return true;
+                else
+                    return false;
+            //}
+            //else
+            //{
+            //    if (IsPtInPoly(start, poly) && IsPtInPoly(end, poly) &&
+            //        !(IsPtOnPoly(start, poly) && IsPtOnPoly(end, poly)) &&
+            //        !IsSegPolyIntersected(seg, poly, 0.000001))
+            //        return true;
+            //    else
+            //        return false;
+            //}
+        }
         public static bool IsPolyInPoly(List<gbXYZ> polyA, List<gbXYZ> polyB)
         {
             foreach (gbXYZ pt in polyA)
@@ -802,6 +1068,21 @@ namespace Gingerbread.Core
                 return false;
             else
                 return true;
+        }
+        public static bool IsPolyIntersect(List<gbXYZ> polyA, List<gbXYZ> polyB)
+        {
+            int boolCounterA = 0;
+            int boolCounterB = 0;
+            foreach (gbXYZ pt in polyA)
+                if (IsPtInPoly(pt, polyB))
+                    boolCounterA++;
+            foreach (gbXYZ pt in polyB)
+                if (IsPtInPoly(pt, polyA))
+                    boolCounterB++;
+            if ((boolCounterA > 0 && boolCounterA < polyA.Count) || (boolCounterB > 0 && boolCounterB < polyB.Count))
+                return true;
+            else
+                return false;
         }
         public static List<List<List<gbXYZ>>> PolyClusterByOverlap(List<List<gbXYZ>> loops)
         {
@@ -950,6 +1231,55 @@ namespace Gingerbread.Core
             Clipper c = new Clipper();
             c.AddPaths(subj, PolyType.ptSubject, true);
             c.AddPath(clip, PolyType.ptClip, true);
+            c.Execute(operation, solutions);
+
+            List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();
+            foreach (List<IntPoint> solution in solutions)
+            {
+                List<gbXYZ> sectLoop = new List<gbXYZ>();
+                foreach (IntPoint pt in solution)
+                    sectLoop.Add(IntPtToPt(pt));
+                sectLoops.Add(sectLoop);
+            }
+            return sectLoops;
+        }
+
+        public static List<List<gbXYZ>> ClipPoly(List<List<gbXYZ>> subjLoops, List<List<gbXYZ>> clipLoops, ClipType operation)
+        {
+            //double zbase = subjLoop[0].Z;
+
+            IntPoint PtToIntPt(gbXYZ pt)
+            {
+                //Util.LogPrint("PRECISION: " + Math.Round(pt.X * 10000000) + " / " + Math.Round(pt.Y * 10000000));
+                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
+            }
+            gbXYZ IntPtToPt(IntPoint pt)
+            {
+                //Util.LogPrint("PRECISION: " + (pt.X * 0.0000001).ToString() + " / " + (pt.Y * 0.0000001).ToString());
+                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
+            }
+
+            List<List<IntPoint>> subj = new List<List<IntPoint>>();
+            List<List<IntPoint>> clip = new List<List<IntPoint>>();
+            foreach (List<gbXYZ> subjLoop in subjLoops)
+            {
+                List<IntPoint> _subj = new List<IntPoint>();
+                foreach (gbXYZ pt in subjLoop)
+                    _subj.Add(PtToIntPt(pt));
+                subj.Add(_subj);
+            }
+            foreach (List<gbXYZ> clipLoop in clipLoops)
+            {
+                List<IntPoint> _clip = new List<IntPoint>();
+                foreach (gbXYZ pt in clipLoop)
+                    _clip.Add(PtToIntPt(pt));
+                clip.Add(_clip);
+            }
+
+            List<List<IntPoint>> solutions = new List<List<IntPoint>>();
+            Clipper c = new Clipper();
+            c.AddPaths(subj, PolyType.ptSubject, true);
+            c.AddPaths(clip, PolyType.ptClip, true);
             c.Execute(operation, solutions);
 
             List<List<gbXYZ>> sectLoops = new List<List<gbXYZ>>();

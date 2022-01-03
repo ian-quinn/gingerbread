@@ -6,7 +6,7 @@
       <Value Profile="(Default)">0.0025602645573</Value>
     </Setting>
     <Setting Name="tolGroup" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.1</Value>
+      <Value Profile="(Default)">0.5</Value>
     </Setting>
     <Setting Name="tolExpand" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.5</Value>
@@ -15,7 +15,7 @@
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="tolDelta" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.1</Value>
+      <Value Profile="(Default)">0.15</Value>
     </Setting>
     <Setting Name="tolDouble" Type="System.Double" Scope="User">
       <Value Profile="(Default)">1E-05</Value>

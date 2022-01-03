@@ -37,7 +37,7 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
         public double tolGroup {
             get {
                 return ((double)(this["tolGroup"]));
@@ -73,7 +73,7 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.1")]
+        [global::System.Configuration.DefaultSettingValueAttribute("0.15")]
         public double tolDelta {
             get {
                 return ((double)(this["tolDelta"]));

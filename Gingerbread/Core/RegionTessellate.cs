@@ -175,6 +175,12 @@ namespace Gingerbread.Core
         /// </summary>
         public static void SimplifyPoly(List<gbXYZ> poly)
         {
+            if (poly[poly.Count - 1].Equals(poly[0]))
+            {
+                poly.RemoveAt(poly.Count - 1);
+                Debug.Print("RegionTesselate:: Prune the tail of a polyloop");
+            }
+
             for (int i = poly.Count - 1; i >= 0; i--)
             {
                 gbXYZ vec1, vec2;
@@ -187,7 +193,7 @@ namespace Gingerbread.Core
                 else
                     vec2 = poly[i] - poly[i - 1];
                 // The function VectorAngle will not check the minor value
-                // must make sure the input vectors are not residues extremely small
+                // must make sure the input vectors are not residules extremely small
                 if (vec1.Norm() < 0.001 || vec2.Norm() < 0.001)
                 {
                     //Rhino.RhinoApp.WriteLine("Zero norm: " + vec1.Norm().ToString() + " | " + vec2.Norm().ToString());
@@ -197,7 +203,7 @@ namespace Gingerbread.Core
                 double angle = GBMethod.VectorAngle(vec1, vec2);
                 //Rhino.RhinoApp.WriteLine("Check the redundant point: " + angle.ToString());
 
-                if (Math.Abs(180 - angle) < 0.001 || Math.Abs(0 - angle) < 0.001)
+                if (Math.Abs(180 - angle) < 0.001 || Math.Abs(0 - angle) < 0.001 || Math.Abs(360 - angle) < 0.001)
                 {
                     //Rhino.RhinoApp.WriteLine("Remove point: " + poly[i].ToString());
                     poly.RemoveAt(i);
