@@ -6,7 +6,7 @@
              xmlns:src="clr-namespace:Gingerbread.Views"
              xmlns:p="clr-namespace:Gingerbread.Properties"
              mc:Ignorable="d"
-             WindowStartupLocation="Manual"
+             WindowStartupLocation="CenterScreen"
              Background="White"
              Height="400" Width="600"
              SizeToContent="Height"

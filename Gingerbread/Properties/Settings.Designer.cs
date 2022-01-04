@@ -286,5 +286,17 @@ namespace Gingerbread.Properties {
                 this["projElevation"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool shadowPrev {
+            get {
+                return ((bool)(this["shadowPrev"]));
+            }
+            set {
+                this["shadowPrev"] = value;
+            }
+        }
     }
 }

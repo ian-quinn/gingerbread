@@ -68,5 +68,8 @@
     <Setting Name="projElevation" Type="System.String" Scope="User">
       <Value Profile="(Default)">5.5</Value>
     </Setting>
+    <Setting Name="shadowPrev" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
   </Settings>
 </SettingsFile>

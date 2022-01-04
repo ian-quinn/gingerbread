@@ -40,7 +40,7 @@ copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVI
 
 **Demo**  
 Still buggy right now but it works with the Revit sample file `Technical_school-current_m.rvt`  
-![Snapshot](https://i.postimg.cc/KvZ04tGG/interface.jpg)
+![Snapshot](https://i.postimg.cc/RVZkCKFy/interface.jpg)
 
 **Note**  
 There is something I though might be useful for beginners with the Revit addin development. I'll leave the notes here.

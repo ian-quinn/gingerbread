@@ -7,7 +7,7 @@
              xmlns:src="clr-namespace:Gingerbread.Views"
              xmlns:p="clr-namespace:Gingerbread.Properties"
              mc:Ignorable="d"
-             WindowStartupLocation="Manual"
+             WindowStartupLocation="CenterScreen"
              Background="White"
              Height="540" Width="930"
              SizeToContent="WidthAndHeight"
@@ -147,10 +147,15 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
 locations of columns and beams, floor multipliers for model simplification, &#x0a; extra simulation settings...">
                         Export additional info</CheckBox>
                     <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
-                              Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked" 
-                              ToolTip="Retrieve geometry from all linked .rvt files. There should not be&#x0a;
-duplicate components among documents. All documents must share the same&#x0a;Cartesian coordinate globally. This could be time-consuming...">
+                              Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked"  Margin="0 0 0 5" 
+                              ToolTip="Retrieve geometry from all linked .rvt files. There should not be any component&#x0a;
+duplicated among documents. All documents must share the same&#x0a;Cartesian coordinate globally.">
                         Include linked Revit model</CheckBox>
+                    <CheckBox x:Name="ShadowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=shadowPrev, Mode=TwoWay}"
+                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" 
+                              ToolTip="Align the floorplan boundary shadowing the previous floorplan. This could&#x0a;
+reduce the surface debris but may cause space or surface matching failures.">
+                        Use floorplan shadowing</CheckBox>
                 </StackPanel>
 
                 <Grid Margin="0 10 0 0">
@@ -170,7 +175,7 @@ duplicate components among documents. All documents must share the same&#x0a;Car
             </StackPanel>
 
 
-            <GroupBox Header="Preview" Margin="5 0 0 0" Padding="3" Width="600">
+            <GroupBox Header="Preview" Margin="5 0 0 0" Padding="3" Width="700">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />

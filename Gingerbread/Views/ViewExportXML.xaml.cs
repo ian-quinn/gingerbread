@@ -107,6 +107,16 @@ namespace Gingerbread.Views
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.includeRef = true;
         }
+        private void ShadowPrev_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.shadowPrev = false;
+        }
+        private void ShadowPrev_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.shadowPrev = true;
+        }
         private void IncludeRef_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;

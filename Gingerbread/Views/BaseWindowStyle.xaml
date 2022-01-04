@@ -23,6 +23,22 @@
             </Setter.Value>
         </Setter>
     </Style>
+    <!--<Style TargetType="Button" x:Key="FontAwesomeStyle">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="refreshBTN" Background="Transparent" Height="30" Width="30">
+                        <Path x:Name="refreshPath" Fill="#303030" Data="{TemplateBinding Content}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="refreshBTN" Property="Background" Value="#E5E5E5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>-->
     <!--Title bar buttons-->
     <Style x:Key="InfoButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
         <Setter Property="Content" Value="&#xE897;" />
@@ -42,6 +58,70 @@
     <Style x:Key="QuitButtonStyle" TargetType="Button">
         <Setter Property="Width" Value="60"/>
         <Setter Property="Height" Value="20"/>
+    </Style>
+    <!--<Style x:Key="CloseButtonStyle_" TargetType="Button" BasedOn="{StaticResource FontAwesomeStyle}">
+        <Setter Property="Content" Value="M14.56,12.44c0.59,0.59,0.59,1.54,0,2.12C14.27,14.85,13.88,15,13.5,15c-0.38,0-0.77-0.15-1.06-0.44L7.5,9.62l-4.94,4.94 C2.27,14.85,1.88,15,1.5,15s-0.77-0.15-1.06-0.44c-0.59-0.59-0.59-1.54,0-2.12L5.38,7.5L0.44,2.56c-0.59-0.59-0.59-1.54,0-2.12 s1.54-0.59,2.12,0L7.5,5.38l4.94-4.94c0.59-0.59,1.54-0.59,2.12,0s0.59,1.54,0,2.12L9.62,7.5L14.56,12.44z"/>
+    </Style>
+    <Style x:Key="InfoButtonStyle_" TargetType="Button" BasedOn="{StaticResource FontAwesomeStyle}">
+        <Setter Property="Content" Value="M9.21,0H5.58C3.8,0,2.36,1.44,2.36,3.22c0,0.59,0.48,1.04,1.07,1.04S4.5,3.78,4.5,3.22c0-0.59,0.48-1.07,1.07-1.07h3.63c0.96,0,1.73,0.78,1.73,1.74c0,0.66-0.37,1.26-1.02,1.59L6.65,7.39C6.29,7.59,6.12,7.94,6.12,8.32v1.34c0,0.59,0.48,1.07,1.07,1.07s1.07-0.48,1.07-1.07V8.93l2.68-1.58c1.32-0.66,2.15-1.99,2.15-3.47C13.09,1.74,11.35,0,9.21,0z M7.19,12.35c-0.74,0-1.34,0.6-1.34,1.34c0,0.74,0.6,1.31,1.34,1.31s1.34-0.6,1.34-1.31S7.93,12.35,7.19,12.35z"/>
+    </Style>
+    <Style x:Key="MinimizeButtonStyle_" TargetType="Button" BasedOn="{StaticResource FontAwesomeStyle}">
+        <Setter Property="Content" Value="M 0 13.125 C 0 12.605469 0.417969 12.1875 0.9375 12.1875 L 14.0625 12.1875 C 14.582031 12.1875 15 12.605469 15 13.125 C 15 13.644531 14.582031 14.0625 14.0625 14.0625 L 0.9375 14.0625 C 0.417969 14.0625 0 13.644531 0 13.125 Z M 0 13.125 "/>
+    </Style>-->
+    <Style TargetType="Button" x:Key="MinimizeButtonStyle_">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="minGrid" Background="Transparent" Height="30" Width="32">
+                        <Path x:Name="minPath" Fill="#303030" Data="M0,8.32c0-0.35,0.28-0.62,0.62-0.62h8.75C9.72,7.69,10,7.97,10,8.32c0,0.35-0.28,0.62-0.62,0.62H0.62
+        C0.28,8.94,0,8.66,0,8.32z" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="minGrid" Property="Background" Value="#E5E5E5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Button" x:Key="InfoButtonStyle_">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="infoGrid" Background="Transparent" Height="30" Width="32">
+                        <Path x:Name="infoPath" Fill="#303030" Data="M6.24,0H3.58c-1.3,0-2.36,1.06-2.36,2.36c0,0.43,0.35,0.77,0.79,0.77s0.79-0.35,0.79-0.77c0-0.43,0.35-0.79,0.79-0.79h2.66
+    c0.7,0,1.27,0.57,1.27,1.27c0,0.49-0.27,0.92-0.75,1.16l-2.4,1.41C4.1,5.57,3.97,5.82,3.97,6.1v0.98c0,0.43,0.35,0.79,0.79,0.79
+    s0.79-0.35,0.79-0.79V6.55L7.52,5.4c0.97-0.49,1.57-1.46,1.57-2.55C9.09,1.28,7.81,0,6.24,0z M4.76,9.05
+    c-0.54,0-0.98,0.44-0.98,0.98S4.22,11,4.76,11s0.98-0.44,0.98-0.96C5.74,9.52,5.3,9.05,4.76,9.05z" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="infoGrid" Property="Background" Value="#E5E5E5" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+    <Style TargetType="Button" x:Key="CloseButtonStyle_">
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="Button">
+                    <Grid x:Name="closeGrid" Background="Transparent" Height="30" Width="32">
+                        <Path x:Name="closePath" Fill="#303030" Data="M1.27,9.79L5,6.06l3.73,3.73c0.28,0.28,0.78,0.28,1.05,0c0.29-0.29,0.29-0.76,0-1.05L6.06,5.01l3.73-3.73
+        c0.29-0.29,0.29-0.76,0-1.05c-0.29-0.29-0.76-0.29-1.05,0L5,3.95L1.27,0.22c-0.29-0.29-0.76-0.29-1.05,0C0.08,0.36,0,0.55,0,0.75
+        s0.08,0.39,0.22,0.53L3.95,5L0.22,8.73c-0.29,0.29-0.29,0.76,0,1.05C0.5,10.07,0.99,10.07,1.27,9.79z" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="closeGrid" Property="Background" Value="#E5E5E5" />
+                            <Setter TargetName="closePath" Property="Fill" Value="#ca3352" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 
     <!-- ############### -->
@@ -93,14 +173,14 @@
 
                         <!--Caption buttons-->
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
-                            <Button x:Name="InfoButton" Style="{StaticResource InfoButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
-                            
-                            <Button x:Name="MinimizeButton" Style="{StaticResource MinimizeButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
-                            
+                            <Button x:Name="InfoButton" Style="{StaticResource InfoButtonStyle_}" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
+                            <Button x:Name="MinimizeButton" Style="{StaticResource MinimizeButtonStyle_}" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
                             <!--<Button x:Name="RestoreButton" Visibility="Collapsed" Style="{StaticResource RestoreButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
                             <Button x:Name="MaximizeButton" Visibility="Visible" Style="{StaticResource MaximizeButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>-->
-                            
-                            <Button x:Name="CloseButton" Style="{StaticResource CloseButtonStyle}" WindowChrome.IsHitTestVisibleInChrome="True"/>
+
+                            <Button x:Name="CloseButton" Style="{StaticResource CloseButtonStyle_}" WindowChrome.IsHitTestVisibleInChrome="True"/>
                         </StackPanel>
                     </Grid>
 
