@@ -81,11 +81,13 @@ namespace Gingerbread.Core
             int srfCounter = 0;
             for (int i = 0; i < faces.Count; i++)
             {
-                if (faces[i].loop.Count < 4)
+                if (faces[i].loop.Count < 3)
                 {
+                    // the degenearte surface exludes triangles
                     Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
                     continue;
                 }
+
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
                 if (IsDuplicateSrf(faces[i], uniqueSrfs))
                     continue;

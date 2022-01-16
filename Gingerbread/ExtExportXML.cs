@@ -186,15 +186,24 @@ namespace Gingerbread
 
 
                 // check ortho-hull enclosement then add enclosing segments to the relevant cluster
+                List<int> redundantBlockIds = new List<int>();
                 for (int i = hullGroups.Count - 1; i >= 0; i--)
                 {
                     for (int j = hullGroups.Count - 1; j >= 0; j--)
                     {
                         if (i != j)
                             if (GBMethod.IsPolyInPoly(hullGroups[i], hullGroups[j]))
+                            {
                                 lineBlocks[j].Add(lineGroups[i]);
+                                redundantBlockIds.Add(i);
+                            }
                     }
                 }
+                // another choice is to keep the redundant block but skip it during the iteration
+                //for (int i = redundantBlockIds.Count - 1; i >= 0; i--)
+                //{
+                //    lineBlocks.RemoveAt(i);
+                //}
 
                 /*
                 // pile the points of the line groups and get the ortho-hull
@@ -255,6 +264,10 @@ namespace Gingerbread
 
                 for (int b = 0; b < lineBlocks.Count; b++)
                 {
+                    //PENDING
+                    if (redundantBlockIds.Contains(b))
+                        continue;
+
                     // enter point alignment and space detection of each segment group
                     List<List<gbRegion>> nestedRegion = new List<List<gbRegion>>();
 
@@ -292,11 +305,10 @@ namespace Gingerbread
 
                                 gbXYZ start = lineBlocks[b][g][i].Start;
                                 gbXYZ end = lineBlocks[b][g][i].End;
-                                if ((GBMethod.IsPtInPoly(start, hullGroups[b]) || GBMethod.IsPtOnPoly(start, hullGroups[b])) &&
-                                    (GBMethod.IsPtInPoly(end, hullGroups[b]) || GBMethod.IsPtOnPoly(end, hullGroups[b])))
+                                if (GBMethod.IsPtInPoly(start, hullGroups[b], true) || GBMethod.IsPtInPoly(end, hullGroups[b], true))
                                 {
                                     if (!GBMethod.IsSegPolyIntersected(lineBlocks[b][g][i], offset, 0.000001) && 
-                                        !(GBMethod.IsPtInPoly(start, offset) || GBMethod.IsPtInPoly(end, offset)))
+                                        !(GBMethod.IsPtInPoly(start, offset, false) || GBMethod.IsPtInPoly(end, offset, false)))
                                     {
                                         //lineBlocks[b][g].RemoveAt(i);
                                         for (int j = 0; j < hullGroups[b].Count - 1; j++)
@@ -308,9 +320,9 @@ namespace Gingerbread
                                             //    0.000001, out gbXYZ intersection, out double t1, out double t2);
                                             double gap = GBMethod.SegDistanceToSeg(lineBlocks[b][g][i], hullEdge,
                                                 out double overlap, out gbSeg proj);
-                                            if (proj != null && gap < 0.5 && proj.Length > 0.5)
+                                            if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0.5)
                                             {
-                                                Debug.Print($"ExtExportXML:: Original seg del {lineBlocks[b][g][i]} gap-{gap} shadow-{proj.Length}");
+                                                Debug.Print($"ExtExportXML:: Original inside seg removed {lineBlocks[b][g][i]} gap-{gap} shadow-{proj.Length}");
                                                 //lineBlocks[b][g][i] = proj;
                                                 lineBlocks[b][g].RemoveAt(i);
                                                 break;
@@ -329,6 +341,7 @@ namespace Gingerbread
                                 else if (!GBMethod.IsSegPolyIntersected(lineBlocks[b][g][i], hullGroups[b], 0.000001))
                                 {
                                     lineBlocks[b][g].RemoveAt(i);
+                                    Debug.Print($"ExtExportXML:: Original outside seg removed {lineBlocks[b][g][i]}");
                                 }
                             }
 
@@ -491,7 +504,7 @@ namespace Gingerbread
                         for (int i = 0; i < regions.Count; i++)
                         {
                             if (regions[i].innerLoops != null) // check MCR
-                                Debug.Print($"ExtExportXML:: Got MCR with {regions[i].innerLoops.Count} holes");
+                                Debug.Print($"ExtExportXML:: Got MCR with {regions[i].innerLoops.Count} holes {regions[i].tiles.Count} tiles");
                             if (regions[i].isShell == true) // check shell
                                 thisBlockShell = regions[i].loop;
                             if (i != 0) // check space region

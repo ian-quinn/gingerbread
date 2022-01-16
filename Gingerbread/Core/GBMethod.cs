@@ -293,38 +293,46 @@ namespace Gingerbread.Core
             t1 = 0;
             t2 = 0;
 
-            if (denominator == 0 && stretch != 0)
+            if (Math.Abs(denominator) < _eps && Math.Abs(stretch) > _eps)
                 return segIntersectEnum.Parallel;
-            if (denominator == 0 && stretch == 0)
+            if (Math.Abs(denominator) < _eps && Math.Abs(stretch) < _eps)
             {
                 // express endpoints of seg2 in terms of seg1 parameter
                 double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
                 double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
-                double swap;
                 if (s1 > s2)
                 {
-                    swap = s2;
-                    s2 = s1;
-                    s1 = swap;
+                    Util.Swap(ref s1, ref s2);
+                    Util.Swap(ref p3, ref p4);
                 }
-                if ((s1 > 0 && s1 < 1) || (s2 > 0 && s2 < 1))
-                    if ((s1 > 0 && s1 < 1) && (s2 > 0 && s2 < 1))
-                        return segIntersectEnum.ColineAContainB;
-                    else
-                        return segIntersectEnum.ColineOverlap;
-                if (s1 < 0 && s2 > 1)
-                    return segIntersectEnum.ColineBContainA;
+
+                if (Math.Abs(s1) < tol) s1 = 0;
+                if (Math.Abs(s2) < tol) s2 = 0;
+                if (Math.Abs(s1 - 1) < tol) s1 = 1;
+                if (Math.Abs(s2 - 1) < tol) s2 = 1;
+
+                if (s1 == 0 && s2 == 1)
+                    return segIntersectEnum.Coincident;
                 if (s1 > 1 || s2 < 0)
                     return segIntersectEnum.ColineDisjoint;
-                if (s1 == 1)
+                if ((s1 >= 0 && s1 <= 1) || (s2 >= 0 && s2 <= 1))
+                    if ((s1 >= 0 && s1 <= 1) && (s2 >= 0 && s2 <= 1))
+                        return segIntersectEnum.ColineAContainB;
+                    else
+                    {
+                        if (s1 == 1)
+                            return segIntersectEnum.ColineJoint;
+                        if (s1 == 0)
+                            return segIntersectEnum.ColineBContainA;
+                        if (s2 == 0)
+                            return segIntersectEnum.ColineJoint;
+                        if (s2 == 1)
+                            return segIntersectEnum.ColineBContainA;
+                        return segIntersectEnum.ColineOverlap;
+                    } 
+                else
                 {
-                    intersection = p2;
-                    return segIntersectEnum.ColineJoint;
-                }
-                if (s2 == 0)
-                {
-                    intersection = p1;
-                    return segIntersectEnum.ColineJoint;
+                    return segIntersectEnum.ColineBContainA;
                 }
             }
 
@@ -375,9 +383,9 @@ namespace Gingerbread.Core
             // co-line checker as cross product of (p3 - p1) and vec1/vec
             double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
 
-            if (Math.Abs(denominator) < tol && Math.Abs(stretch) > tol)
+            if (Math.Abs(denominator) < _eps && Math.Abs(stretch) > _eps)
                 return segIntersectEnum.Parallel;
-            if (Math.Abs(denominator) < tol && Math.Abs(stretch) < tol)
+            if (Math.Abs(denominator) < _eps && Math.Abs(stretch) < _eps)
             {
                 Debug.Print($"GBMethod:: Seg fused {a} {b}");
                 // express endpoints of seg2 in terms of seg1 parameter
@@ -388,41 +396,64 @@ namespace Gingerbread.Core
                     Util.Swap(ref s1, ref s2);
                     Util.Swap(ref p3, ref p4);
                 }
-                if ((s1 > 0 - tol && s1 < 1 + tol) || (s2 > 0 - tol && s2 < 1 + tol))
-                    if ((s1 > 0 - tol && s1 < 1 + tol) && (s2 > 0 - tol && s2 < 1 + tol))
+
+                if (Math.Abs(s1) < tol) s1 = 0;
+                if (Math.Abs(s2) < tol) s2 = 0;
+                if (Math.Abs(s1 - 1) < tol) s1 = 1;
+                if (Math.Abs(s2 - 1) < tol) s2 = 1;
+
+                if (s1 == 0 && s2 == 1)
+                {
+                    fusion = new gbSeg(p1, p2);
+                    return segIntersectEnum.Coincident;
+                }
+
+                if (s1 > 1 || s2 < 0)
+                    return segIntersectEnum.ColineDisjoint;
+
+                if ((s1 >= 0 && s1 <= 1) || (s2 >= 0 && s2 <= 1))
+                    if ((s1 >= 0 && s1 <= 1) && (s2 >= 0 && s2 <= 1))
                     {
                         fusion = new gbSeg(p1, p2);
                         return segIntersectEnum.ColineAContainB;
                     }
                     else
                     {
-                        if (s1 > 0 - tol && s1 < 1 + tol)
+                        if (s1 == 1)
+                        {
+                            fusion = new gbSeg(p1, p4);
+                            return segIntersectEnum.ColineJoint;
+                        }
+                        if (s1 == 0)
+                        {
+                            fusion = new gbSeg(p3, p4);
+                            return segIntersectEnum.ColineBContainA;
+                        }
+                        if (s2 == 0)
+                        {
+                            fusion = new gbSeg(p3, p2);
+                            return segIntersectEnum.ColineJoint;
+                        }
+                        if (s2 == 1)
+                        {
+                            fusion = new gbSeg(p3, p4);
+                            return segIntersectEnum.ColineBContainA;
+                        }
+                        if (s1 > 0 && s1 < 1)
                         {
                             fusion = new gbSeg(p1, p4);
                             return segIntersectEnum.ColineOverlap;
                         }
-                        if (s2 > 0 - tol && s2 < 1 + tol)
+                        if (s2 > 0 && s2 < 1)
                         {
                             fusion = new gbSeg(p3, p2);
                             return segIntersectEnum.ColineOverlap;
                         }
                     }
-                if (s1 < 0 + tol && s2 > 1 - tol)
+                else
                 {
                     fusion = new gbSeg(p3, p4);
                     return segIntersectEnum.ColineBContainA;
-                }
-                if (s1 > 1 - tol  || s2 < 0 + tol)
-                    return segIntersectEnum.ColineDisjoint;
-                if (s1 > 1 - tol && s1 < 1 + tol)
-                {
-                    fusion = new gbSeg(p1, p4);
-                    return segIntersectEnum.ColineJoint;
-                }
-                if (s2 > 0 - tol && s2 < 0 + tol)
-                {
-                    fusion = new gbSeg(p3, p2);
-                    return segIntersectEnum.ColineJoint;
                 }
             }
 
@@ -929,8 +960,8 @@ namespace Gingerbread.Core
                     expansionBox[i], expansionBox[i + 1], 0, out intersection, out t1, out t2)
                     == segIntersectEnum.IntersectOnBoth)
                     return true;
-            if (IsPtInPoly(a.PointAt(0), expansionBox)
-                || IsPtInPoly(a.PointAt(1), expansionBox))
+            if (IsPtInPoly(a.PointAt(0), expansionBox, true)
+                || IsPtInPoly(a.PointAt(1), expansionBox, true))
                 return true;
             return false;
         }
@@ -970,7 +1001,7 @@ namespace Gingerbread.Core
         /// <summary>
         /// Point on the edge of a poly returns true. The poly includes the boundary
         /// </summary>
-        public static bool IsPtInPoly(gbXYZ pt, List<gbXYZ> poly)
+        public static bool IsPtInPoly(gbXYZ pt, List<gbXYZ> poly, bool includeOn)
         {
             int GetQuadrant(gbXYZ v, gbXYZ _pt)
             {
@@ -998,6 +1029,7 @@ namespace Gingerbread.Core
 
             int quad = GetQuadrant(poly[0], pt);
             int angle = 0;
+            int onEdgeCounter = 0;
             int next_quad, delta;
             for (int i = 0; i < poly.Count; i++)
             {
@@ -1009,8 +1041,15 @@ namespace Gingerbread.Core
                 AdjustDelta(ref delta, v, next_v, pt);
                 angle = angle + delta;
                 quad = next_quad;
+
+                if (Math.Abs(X_intercept(v, next_v, pt.Y) - pt.X) < _eps)
+                    onEdgeCounter++;
             }
-            return (angle == 4) || (angle == -4);
+            if (includeOn)
+                return onEdgeCounter > 0 || (angle == 4) || (angle == -4);
+            else if (onEdgeCounter > 0)
+                return false;
+            else return (angle == 4) || (angle == -4);
         }
         public static bool IsPtOnPoly(gbXYZ pt, List<gbXYZ> poly)
         {
@@ -1031,8 +1070,7 @@ namespace Gingerbread.Core
             //}
             //if (IsOn)
             //{
-                if (IsPtInPoly(start, poly) || IsPtOnPoly(start, poly) && 
-                (IsPtInPoly(end, poly) || IsPtOnPoly(end, poly)))
+                if (IsPtInPoly(start, poly, true) && IsPtInPoly(end, poly, true))
                 //!IsSegPolyIntersected(seg, poly, 0.000001))
                     return true;
                 else
@@ -1051,18 +1089,22 @@ namespace Gingerbread.Core
         public static bool IsPolyInPoly(List<gbXYZ> polyA, List<gbXYZ> polyB)
         {
             foreach (gbXYZ pt in polyA)
-                if (!IsPtInPoly(pt, polyB))
+                if (!IsPtInPoly(pt, polyB, false))
                     return false;
             return true;
         }
-        public static bool IsPolyOverlap(List<gbXYZ> polyA, List<gbXYZ> polyB)
+        // 
+        /// <summary>
+        /// Should this method include situation that two polys are adjacent on edge?
+        /// </summary>
+        public static bool IsPolyOverlap(List<gbXYZ> polyA, List<gbXYZ> polyB, bool includeOn)
         {
             int boolCounter = 0;
             foreach (gbXYZ pt in polyA)
-                if (IsPtInPoly(pt, polyB))
+                if (IsPtInPoly(pt, polyB, includeOn))
                     boolCounter++;
             foreach (gbXYZ pt in polyB)
-                if (IsPtInPoly(pt, polyA))
+                if (IsPtInPoly(pt, polyA, includeOn))
                     boolCounter++;
             if (boolCounter == 0)
                 return false;
@@ -1074,17 +1116,17 @@ namespace Gingerbread.Core
             int boolCounterA = 0;
             int boolCounterB = 0;
             foreach (gbXYZ pt in polyA)
-                if (IsPtInPoly(pt, polyB))
+                if (IsPtInPoly(pt, polyB, false))
                     boolCounterA++;
             foreach (gbXYZ pt in polyB)
-                if (IsPtInPoly(pt, polyA))
+                if (IsPtInPoly(pt, polyA, false))
                     boolCounterB++;
             if ((boolCounterA > 0 && boolCounterA < polyA.Count) || (boolCounterB > 0 && boolCounterB < polyB.Count))
                 return true;
             else
                 return false;
         }
-        public static List<List<List<gbXYZ>>> PolyClusterByOverlap(List<List<gbXYZ>> loops)
+        public static List<List<List<gbXYZ>>> PolyClusterByOverlap(List<List<gbXYZ>> loops, bool includeOn)
         {
             List<List<gbXYZ>> loopPool = new List<List<gbXYZ>>();
             foreach (List<gbXYZ> loop in loops)
@@ -1102,7 +1144,7 @@ namespace Gingerbread.Core
                     {
                         if (loopGroup[i] != loopPool[j])
                         {
-                            if (IsPolyOverlap(loopGroup[i], loopPool[j]))
+                            if (IsPolyOverlap(loopGroup[i], loopPool[j], includeOn))
                             {
                                 loopGroup.Add(loopPool[j]);
                                 loopPool.RemoveAt(j);
@@ -1322,6 +1364,19 @@ namespace Gingerbread.Core
                 offsetLoops.Add(offsetLoop);
             }
             return offsetLoops;
+        }
+
+        #endregion
+
+        #region Misc.
+
+        static public List<gbXYZ> GetReversedLoop(List<gbXYZ> loop)
+        {
+            List<gbXYZ> revLoop = new List<gbXYZ>();
+            foreach (gbXYZ vertex in loop)
+                revLoop.Add(vertex);
+            revLoop.Reverse();
+            return revLoop;
         }
 
         #endregion

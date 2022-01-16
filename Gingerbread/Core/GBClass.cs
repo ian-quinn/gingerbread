@@ -127,7 +127,7 @@ namespace Gingerbread.Core
         // Define function to display a point
         public override string ToString()
         {
-            return string.Format("({0:F4}, {1:F4}, {2:F4})", X, Y, Z);
+            return string.Format("{0:F4}, {1:F4}, {2:F4}", X, Y, Z);
         }
     }
     
@@ -265,7 +265,7 @@ namespace Gingerbread.Core
         }
         public override string ToString()
         {
-            return string.Format("Line: {0} - {1}", Start.ToString(), End.ToString());
+            return string.Format("{0}}}#{{{1}", Start.ToString(), End.ToString());
         }
     }
 

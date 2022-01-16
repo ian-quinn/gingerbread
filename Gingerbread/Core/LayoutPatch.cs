@@ -39,7 +39,7 @@ namespace Gingerbread.Core
                 for (int ptIndex = 0; ptIndex < 2; ptIndex++)
                 {
                     gbXYZ ptMove = walls[i].PointAt(ptIndex);
-                    if (GBMethod.IsPtInPoly(ptMove, boundary) && !GBMethod.IsPtInPoly(ptMove, offsetBoundary))
+                    if (GBMethod.IsPtInPoly(ptMove, boundary, true) && !GBMethod.IsPtInPoly(ptMove, offsetBoundary, true))
                     {
                         foreach (gbSeg edge in edges)
                         {

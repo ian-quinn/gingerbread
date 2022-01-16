@@ -95,7 +95,7 @@ namespace Gingerbread.Core
                     newZone.function = "Office";
 
                     foreach (Tuple<gbXYZ, double> hollow in hollows)
-                        if (GBMethod.IsPtInPoly(hollow.Item1, region.loop))
+                        if (GBMethod.IsPtInPoly(hollow.Item1, region.loop, false))
                         {
                             double areaRatio = hollow.Item2 / newZone.area;
                             if (areaRatio > 0.5 && areaRatio < 1)
@@ -193,7 +193,7 @@ namespace Gingerbread.Core
                 // convert 2D openings hosted by a surface to 3D coords
                 foreach (gbSurface srf in thisSurface)
                 {
-                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops);
+                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops, true);
                     foreach (List<List<gbXYZ>> loopCluster in loopClusters)
                     {
                         List<gbXYZ> scatterPts = Util.FlattenList(loopCluster);
@@ -313,7 +313,7 @@ namespace Gingerbread.Core
                 // convert 2D openings hosted by a surface to 3D coords
                 foreach (gbSurface srf in thisSurface)
                 {
-                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops);
+                    List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops, true);
                     foreach (List<List<gbXYZ>> loopCluster in loopClusters)
                     {
                         List<gbXYZ> scatterPts = Util.FlattenList(loopCluster);
@@ -432,6 +432,10 @@ namespace Gingerbread.Core
                     // translate zone tiles to surfaces
                     if (level.isBottom)
                     {
+                        surfaceTypeEnum surfaceTypeDef = surfaceTypeEnum.SlabOnGrade;
+                        if (zone.level.elevation - 0 > 0.1)
+                            surfaceTypeDef = surfaceTypeEnum.ExposedFloor;
+
                         // to prevent empty tesselaltion
                         if (zone.tiles == null)
                         {
@@ -441,13 +445,10 @@ namespace Gingerbread.Core
                         {
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
-                            List<gbXYZ> revLoop = zone.loop;
-                            revLoop.Reverse();
+                            List<gbXYZ> revLoop = GBMethod.GetReversedLoop(zone.loop);
+                            //revLoop.Reverse();
                             gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, revLoop, 180);
-                            if (zone.level.elevation - 0 > 0.1)
-                                floor.type = surfaceTypeEnum.ExposedFloor;
-                            else
-                                floor.type = surfaceTypeEnum.SlabOnGrade;
+                            floor.type = surfaceTypeDef;
                             floor.adjSrfId = "Outside";
                             zone.floors.Add(floor);
                         }
@@ -468,7 +469,7 @@ namespace Gingerbread.Core
                                     revTile.Add(pt);
                                 revTile.Reverse();
                                 gbSurface floorTile = new gbSurface(zone.id + "::Floor_" + counter, zone.id, revTile, 180);
-                                floorTile.type = surfaceTypeEnum.SlabOnGrade;
+                                floorTile.type = surfaceTypeDef;
                                 floorTile.adjSrfId = "Outside";
                                 zone.floors.Add(floorTile);
                                 counter++;
@@ -797,6 +798,7 @@ namespace Gingerbread.Core
                 int counter = 0;
                 foreach (Tuple<gbSeg, string> label in kvp.Value)
                 {
+                    Debug.Print($"XMLGeometry:: Checking beam existance... {label.Item2}");
                     List<double> sizes = new List<double>();
                     foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
                     {
@@ -804,11 +806,15 @@ namespace Gingerbread.Core
                         sizes.Add(size);
                     }
                     if (sizes.Count == 0)
+                    {
+                        Debug.Print("XMLGeometry:: Skip current beam...");
                         continue;
+                    }
                     double width = sizes[0];
                     double height = sizes[0];
                     if (sizes.Count == 2)
                         height = sizes[1];
+
                     List<gbXYZ> loop = new List<gbXYZ>();
                     gbXYZ startPt = label.Item1.PointAt(0);
                     gbXYZ endPt = label.Item1.PointAt(1);
@@ -853,7 +859,7 @@ namespace Gingerbread.Core
             foreach (gbOpening opening in openings)
             {
                 List<gbXYZ> opening2d = GBMethod.PolyToPoly2D(opening.loop);
-                if (GBMethod.IsPolyOverlap(loop2d, opening2d))
+                if (GBMethod.IsPolyOverlap(loop2d, opening2d, true))
                     return true;
             }
             return false; 

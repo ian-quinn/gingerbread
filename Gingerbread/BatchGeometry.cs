@@ -560,56 +560,12 @@ namespace Gingerbread
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
 
-                if (wall.WallType.Kind == WallKind.Curtain)
-                {
-                    CurtainGrid cg = wall.CurtainGrid;
-
-                    if (cg != null)
-                    {
-                        List<XYZ> boundaryPts = new List<XYZ>();
-                        Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
-                        cwOpt.IncludeNonVisibleObjects = true;
-                        GeometryElement geomElem = wall.get_Geometry(cwOpt);
-
-                        foreach (GeometryObject go in geomElem)
-                        {
-                            Curve anyCrv = go as Curve;
-                            if (anyCrv != null)
-                            {
-                                XYZ start = anyCrv.GetEndPoint(0);
-                                XYZ end = anyCrv.GetEndPoint(1);
-                                // the curtain wall my span over multiple levels
-                                // only taking the bottom line is not an ideal choice
-                                if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - bottom) < 0.00001)
-                                {
-                                    boundaryPts.Add(anyCrv.GetEndPoint(0));
-                                    boundaryPts.Add(anyCrv.GetEndPoint(1));
-                                }
-                            }
-                        }
-
-                        //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
-                        if (boundaryPts.Count >= 2)
-                        {
-                            boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
-                            boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
-                            temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
-                            //Debug.Print($"BatchGeometry:: new baseline updated");
-                        }
-                        else
-                        {
-                            //Debug.Print("BatchGeometry:: empty panelPts");
-                            temps = new List<gbSeg>();
-                        }
-                    }
-                }
-
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location lines if the wall lies within the range of this level
                     //Debug.Print($"summit {summit} bottom {bottom} vs. lv^ " +
                     //    $"{levels[i].elevation + 0.8 * levels[i].height} lv_ {levels[i].elevation + 0.2 * levels[i].height}");
-                    
+
                     // mark the hosting level of a wall only by its geometry irrelevant to its level attribute
                     // this could be dangerous. PENDING for updates
                     if (//wall.LevelId == levels[i].id || 
@@ -618,8 +574,53 @@ namespace Gingerbread
                     {
                         // if the WallType is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
+                        {
+                            if (wall.WallType.Kind == WallKind.Curtain)
+                            {
+                                CurtainGrid cg = wall.CurtainGrid;
+
+                                if (cg != null)
+                                {
+                                    List<XYZ> boundaryPts = new List<XYZ>();
+                                    Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
+                                    cwOpt.IncludeNonVisibleObjects = true;
+                                    GeometryElement geomElem = wall.get_Geometry(cwOpt);
+
+                                    foreach (GeometryObject go in geomElem)
+                                    {
+                                        Curve anyCrv = go as Curve;
+                                        if (anyCrv != null)
+                                        {
+                                            XYZ start = anyCrv.GetEndPoint(0);
+                                            XYZ end = anyCrv.GetEndPoint(1);
+                                            // the curtain wall my span over multiple levels
+                                            // only taking the bottom line is not an ideal choice
+                                            if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
+                                            {
+                                                boundaryPts.Add(anyCrv.GetEndPoint(0));
+                                                boundaryPts.Add(anyCrv.GetEndPoint(1));
+                                            }
+                                        }
+                                    }
+
+                                    //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
+                                    if (boundaryPts.Count >= 2)
+                                    {
+                                        boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
+                                        boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
+                                        temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
+                                        //Debug.Print($"BatchGeometry:: new baseline updated");
+                                    }
+                                    else
+                                    {
+                                        //Debug.Print("BatchGeometry:: empty panelPts");
+                                        temps = new List<gbSeg>();
+                                    }
+                                }
+                            }
                             dictCurtain[i].AddRange(temps);
-                            
+                        }
+
                         // if the WallType is something else, Basic, Stacked, Unknown, append it to dictWall
                         else
                             dictWall[i].AddRange(temps);
@@ -756,6 +757,7 @@ namespace Gingerbread
                 }
             }
 
+            Debug.Print($"BatchGeometry:: beams in total - {fiBeams.Count}");
             foreach (FamilyInstance fi in fiBeams)
             {
                 // is it dangerous not considering the curve might not be a line?
@@ -768,11 +770,11 @@ namespace Gingerbread
                 GeometryElement ge = fi.get_Geometry(op);
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
-                //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
+                Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
 
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
+                    Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
                     // compare the upper limit and the level elevation
                     // assume a tolerance of 0.2m
                     if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
@@ -794,7 +796,7 @@ namespace Gingerbread
             {
                 checkInfo += $"#{i} {dictElevation[i].Item2}m <{dictElevation[i].Item1}> geometry summary\n";
                 checkInfo += $"    Wall-{dictWall[i].Count} \tFloorSlab-{dictFloor[i].Count} \t Window-{dictWindow[i].Count} \tColumn-{dictColumn[i].Count}\n";
-                checkInfo += $"    Curtain-{dictCurtain[i].Count} \tRoom-{dictRoom[i].Count}  \t Door-{dictDoor[i].Count}  \tBeam-{dictWindow[i].Count}\n";
+                checkInfo += $"    Curtain-{dictCurtain[i].Count} \tRoom-{dictRoom[i].Count}  \t Door-{dictDoor[i].Count}  \tBeam-{dictBeam[i].Count}\n";
                 checkInfo += $"    CurtaSys-{dictCurtaSystem[i].Count} \tSeparation-{dictSeparationline[i].Count}\n";
             }
             checkInfo += "\nDone model check.";

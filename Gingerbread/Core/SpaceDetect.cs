@@ -175,12 +175,14 @@ namespace Gingerbread.Core
             {
                 // if the face edges are not enclosed, regard them as orphans
                 segIntersectEnum intersectionCheck = GBMethod.SegIntersection(
-                    kvp.Value[0], kvp.Value.Last(), 0, out gbXYZ intersection, out double t1, out double t2);
+                    kvp.Value[0], kvp.Value.Last(), 0.0001, out gbXYZ intersection, out double t1, out double t2);
                 if (!(intersectionCheck == segIntersectEnum.IntersectOnBoth ||
                     intersectionCheck == segIntersectEnum.ColineJoint))
+                //if (IsSegJoined(kvp.Value[0], kvp.Value.Last(), 0.00001))
                 {
                     orphanId.Add(kvp.Key);
-                    //Debug.Print($"Log #{orphanId.Count} orphan for not enclosed. at {kvp.Key}");
+                    Debug.Print($"Log #{orphanId.Count} orphan for {intersectionCheck}. at {kvp.Key}");
+                    //Debug.Print($"Log #{orphanId.Count} orphan for not joined. at {kvp.Key}");
                     continue;
                 }
                 // if the loop is clockwise, regard it as outer shell
@@ -254,6 +256,7 @@ namespace Gingerbread.Core
 
                 // mark the shell region. make it the first element in the list: regions
                 // this could mandate every nested regions to have its outer shell
+                Debug.Print($"Log preparing for region F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key} with {ptLoop.Count} edges");
                 gbRegion newRegion = new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop);
                 if (shellId.Contains(kvp.Key))
                 {
@@ -477,14 +480,14 @@ namespace Gingerbread.Core
                     continue;
                 for (int j = i + 1; j < nestedRegion.Count; j++)
                 {
-                    if (GBMethod.IsPtInPoly(nestedRegion[i][0].loop[0], nestedRegion[j][0].loop) == true)
+                    if (GBMethod.IsPtInPoly(nestedRegion[i][0].loop[0], nestedRegion[j][0].loop, false) == true)
                     {
                         containRef.Add(Tuple.Create(j, i));
                         if (!branches.Contains(i))
                             branches.Add(i);
                         continue;
                     }
-                    if (GBMethod.IsPtInPoly(nestedRegion[j][0].loop[0], nestedRegion[i][0].loop) == true)
+                    if (GBMethod.IsPtInPoly(nestedRegion[j][0].loop[0], nestedRegion[i][0].loop, false) == true)
                     {
                         containRef.Add(Tuple.Create(i, j));
                         if (!branches.Contains(j))
@@ -619,7 +622,7 @@ namespace Gingerbread.Core
                                 continue;
                             // check if the shell at this level is enclosed by any loop of the parent level
                             // if ture, generate MCR and switch the current shell's isShell attribute to false
-                            if (GBMethod.IsPtInPoly(nestedRegion[chain[i]][0].loop[0], region.loop))
+                            if (GBMethod.IsPtInPoly(nestedRegion[chain[i]][0].loop[0], region.loop, false))
                             {
                                 // mcr.Add(region.loop); // add the parent loop
                                 if (region.innerLoops == null)
@@ -715,6 +718,18 @@ namespace Gingerbread.Core
                     ptLoop.Add(lines[i].PointAt(0));
 
             return ptLoop;
+        }
+
+        private static bool IsSegJoined(gbSeg a, gbSeg b, double tol)
+        {
+            if (
+                (a.Start - b.Start).Norm() < tol || 
+                (a.End - b.Start).Norm() < tol || 
+                (a.Start - b.End).Norm() < tol || 
+                (a.End - b.End).Norm() < tol
+                )
+                return true;
+            else return false;
         }
 
         /// <summary>

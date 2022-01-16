@@ -23,19 +23,29 @@ namespace Gingerbread.Core
             List<List<List<gbXYZ>>> remains = new List<List<List<gbXYZ>>>();
             if (mcr.Count == 0)
                 return tiles;
-            if (mcr[0].Count <= 5)
+            //if (mcr[0].Count <= 5)
+            if (mcr.Count == 1 && mcr[0].Count <= 5)
                 return tiles;
 
             // a safe lock
             int counter = 0;
             while (counter < 50)
             {
-                //Rhino.RhinoApp.WriteLine("Tesselation initializing.. MCR with {0} loops", mcr.Count);
+                Debug.Print("RegionTessellate:: Tesselation initializing.. MCR with {0} loops", mcr.Count);
+
+                if (counter == 0)
+                {
+                    foreach (gbXYZ pt in mcr[0])
+                        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
+                    Debug.Print("Now is the other");
+                    foreach (gbXYZ pt in mcr[1])
+                        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
+                }
 
                 Tessellate(mcr, out List<List<gbXYZ>> panel, out List<gbXYZ> tile);
                 tiles.Add(tile);
                 remains.Add(panel);
-                //Rhino.RhinoApp.WriteLine("Tile generated: " + tiles.Count);
+                Debug.Print("RegionTessellate:: Tile generated: " + tiles.Count);
                 counter += 1;
                 if (panel.Count == 1 && panel[0].Count <= 5)
                 {
@@ -54,7 +64,8 @@ namespace Gingerbread.Core
             panel = new List<List<gbXYZ>>();
             if (mcr.Count == 0)
                 return;
-            if (mcr[0].Count <= 5)
+            //if (mcr[0].Count <= 5)
+            if (mcr.Count == 1 && mcr[0].Count <= 5)
                 return;
 
             // find out which loop is the outer shell
@@ -81,11 +92,11 @@ namespace Gingerbread.Core
             }
 
             double minLength = double.PositiveInfinity;
-            double offset = 0;
-            //int verticeId = -1;
             int counter = 0;
             LinkedListNode<gbXYZ> currentNode = shell.First;
             LinkedListNode<gbXYZ> targetNode = shell.First;
+            gbXYZ cutPt = shell.NextOrFirst(currentNode).Value;
+
             while (counter < shell.Count)
             {
                 gbXYZ left, mid, right;
@@ -101,9 +112,10 @@ namespace Gingerbread.Core
                 if (thisLength < minLength && angleLeft > 180 && angleRight > 180)
                 {
                     minLength = thisLength;
-                    offset = left.Norm() < right.Norm() ? left.Norm() : right.Norm();
-                    //verticeId = i;
                     targetNode = currentNode;
+                    cutPt = left.Norm() < right.Norm() ?
+                        shell.PreviousOrLast(currentNode).Value :
+                        shell.NextOrFirst(shell.NextOrFirst(currentNode)).Value;
                 }
 
                 // tick the pointer to the next
@@ -112,47 +124,55 @@ namespace Gingerbread.Core
                 //Rhino.RhinoApp.WriteLine("Tick to the next: " + counter);
             }
 
-            gbXYZ movePt1 = targetNode.Value.Copy();
-            gbXYZ movePt2 = shell.NextOrFirst(targetNode).Value.Copy();
-            gbXYZ moveVec = offset * GBMethod.GetPendicularVec(new gbSeg(movePt1, movePt2).Direction, false);
-            gbXYZ cutPt1 = movePt1 + moveVec;
-            gbXYZ cutPt2 = movePt2 + moveVec;
+            List<gbXYZ> vertices = new List<gbXYZ>()
+            {
+                targetNode.Value,
+                shell.NextOrFirst(targetNode).Value,
+                cutPt
+            };
 
-            gbSeg cut = new gbSeg(cutPt1, cutPt2);
-            //Rhino.RhinoApp.WriteLine("Cut: " + cut.ToString());
-            List<gbXYZ> clipper = new List<gbXYZ>() { movePt1, movePt2, cutPt2, cutPt1, movePt1 };
+            List<gbXYZ> clipper = OrthoHull.GetRectHull(vertices);
+            int cutterId = 0;
+            for (int i = 0; i < clipper.Count - 1; i++)
+            {
+                gbXYZ midChecker = (clipper[i] + clipper[i + 1]) / 2;
+                if (GBMethod.IsPtInPoly(midChecker, mcr[shellId], false))
+                    cutterId = i;
+            }
+            gbXYZ basePt1 = clipper[cutterId - 2 > 0 ? cutterId - 2 : cutterId + 2];
+            gbXYZ basePt2 = clipper[cutterId - 1 > 0 ? cutterId - 1 : cutterId + 3];
 
             //Rhino.RhinoApp.WriteLine("Movable index: " + verticeId.ToString());
             double minDistance = double.PositiveInfinity;
+            gbXYZ nearestPt = null;
             for (int i = 0; i < mcr.Count; i++)
             {
                 if (i == shellId)
                     continue;
-                if (GBMethod.IsSegPolyIntersected(cut, mcr[i], 0.000001))
+                // make sure an intersection calculation is necessary
+                if (GBMethod.IsPolyOverlap(mcr[i], clipper, false) || GBMethod.IsPolyInPoly(mcr[i], clipper))
                 {
                     List<List<gbXYZ>> debris = GBMethod.ClipPoly(mcr[i], clipper, ClipperLib.ClipType.ctIntersection);
                     foreach (List<gbXYZ> loop in debris)
                     {
                         for (int j = 0; j < loop.Count - 1; j++)
                         {
-                            double thisDistance = GBMethod.PtDistanceToSeg(loop[j], new gbSeg(movePt1, movePt2),
+                            double thisDistance = GBMethod.PtDistanceToSeg(loop[j], new gbSeg(basePt1, basePt2),
                                 out gbXYZ plummet, out double stretch);
                             if (thisDistance < minDistance)
+                            {
+                                nearestPt = loop[j];
                                 minDistance = thisDistance;
+                            }
                         }
                     }
                 }
             }
 
             //Rhino.RhinoApp.WriteLine($"Offset check {offset} vs. {minDistance}");
-            if (offset > minDistance)
+            if (minDistance < 1000)
             {
-                // in case that the clipper has a collision with the inner loop
-                // adjust the position of the cut and generate the clipper
-                moveVec = minDistance * GBMethod.GetPendicularVec(new gbSeg(movePt1, movePt2).Direction, false);
-                cutPt1 = movePt1 + moveVec;
-                cutPt2 = movePt2 + moveVec;
-                clipper = new List<gbXYZ>() { movePt1, movePt2, cutPt2, cutPt1, movePt1 };
+                clipper = OrthoHull.GetRectHull(new List<gbXYZ>() { basePt1, basePt2, nearestPt });
             }
 
             List<List<gbXYZ>> clipResult = GBMethod.ClipPoly(mcr, clipper, ClipperLib.ClipType.ctDifference);
@@ -164,7 +184,7 @@ namespace Gingerbread.Core
             }
 
             panel = clipResult;
-            tile = clipper;
+            tile = GBMethod.ClipPoly(mcr[shellId], clipper, ClipperLib.ClipType.ctIntersection)[0];
             return;
         }
 
