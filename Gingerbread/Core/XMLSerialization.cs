@@ -87,6 +87,11 @@ namespace Gingerbread.Core
                     Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
                     continue;
                 }
+                if (faces[i].area < 0.001)
+                {
+                    Debug.Print("XMLSerialization:: 0 area warning at surface: " + i);
+                    //continue;
+                }
 
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
                 if (IsDuplicateSrf(faces[i], uniqueSrfs))

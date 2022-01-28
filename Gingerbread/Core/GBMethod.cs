@@ -342,6 +342,11 @@ namespace Gingerbread.Core
             t2 = ((p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12) / -denominator;
             //fractile = t1;
 
+            if (t1 > 10000 || t2 > 10000)
+            {
+                Debug.Print($"GBMethod:: Wrong at intersection checking");
+            }
+
             if ((t1 >= 0 - tol) && (t1 <= 1 + tol))
                 intersect = segIntersectEnum.IntersectOnA;
             if ((t2 >= 0 - tol) && (t2 <= 1 + tol))
@@ -952,17 +957,21 @@ namespace Gingerbread.Core
         public static bool IsSegFuzzyIntersected(gbSeg a, gbSeg b, double tolerance)
         {
             gbXYZ intersection; double t1, t2;
-            if (SegIntersection(a, b, 0, out intersection, out t1, out t2) == segIntersectEnum.IntersectOnBoth)
+            if (SegIntersection(a, b, _eps, out intersection, out t1, out t2) == segIntersectEnum.IntersectOnBoth)
                 return true;
             List<gbXYZ> expansionBox = SegExpansionBox(b, tolerance);
             for (int i = 0; i < expansionBox.Count - 1; i++)
                 if (SegIntersection(a.PointAt(0), a.PointAt(1), 
-                    expansionBox[i], expansionBox[i + 1], 0, out intersection, out t1, out t2)
+                    expansionBox[i], expansionBox[i + 1], _eps, out intersection, out t1, out t2)
                     == segIntersectEnum.IntersectOnBoth)
                     return true;
             if (IsPtInPoly(a.PointAt(0), expansionBox, true)
                 || IsPtInPoly(a.PointAt(1), expansionBox, true))
+            {
+                Debug.Print($"GBMethod:: Containment intersection {a} in {b}");
                 return true;
+            }
+                
             return false;
         }
 
@@ -1042,14 +1051,20 @@ namespace Gingerbread.Core
                 angle = angle + delta;
                 quad = next_quad;
 
-                if (Math.Abs(X_intercept(v, next_v, pt.Y) - pt.X) < _eps)
+                // this is wrong when dealing with vertical edge, which will return 0 all the time
+                //if (Math.Abs(X_intercept(v, next_v, pt.Y) - pt.X) < _eps)
+
+                // more efficent methods are needed, do not be afraid of duplication
+                double distance = PtDistanceToSeg(pt, new gbSeg(v, next_v), out gbXYZ plummet, out double stretch);
+                if (distance < _eps && stretch >= 0 && stretch <= 1)
                     onEdgeCounter++;
             }
             if (includeOn)
                 return onEdgeCounter > 0 || (angle == 4) || (angle == -4);
             else if (onEdgeCounter > 0)
                 return false;
-            else return (angle == 4) || (angle == -4);
+            else
+                return (angle == 4) || (angle == -4);
         }
         public static bool IsPtOnPoly(gbXYZ pt, List<gbXYZ> poly)
         {

@@ -29,7 +29,7 @@
     <Setting Name="originY" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="extraInfo" Type="System.Boolean" Scope="User">
+    <Setting Name="exportStruct" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="includeRef" Type="System.Boolean" Scope="User">
@@ -69,6 +69,9 @@
       <Value Profile="(Default)">5.5</Value>
     </Setting>
     <Setting Name="shadowPrev" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="exportShade" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>

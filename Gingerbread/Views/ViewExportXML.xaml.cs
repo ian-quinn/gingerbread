@@ -92,15 +92,25 @@ namespace Gingerbread.Views
             txtState.Text = "Reset to default value.";
         }
 
-        private void ExtraInfo_Checked(object sender, RoutedEventArgs e)
+        private void ExportStruct_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.extraInfo = true;
+            Properties.Settings.Default.exportStruct = true;
         }
-        private void ExtraInfo_Unchecked(object sender, RoutedEventArgs e)
+        private void ExportStruct_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.extraInfo = false;
+            Properties.Settings.Default.exportStruct = false;
+        }
+        private void ExportShade_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.exportShade = true;
+        }
+        private void ExportShade_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.exportShade = false;
         }
         private void IncludeRef_Checked(object sender, RoutedEventArgs e)
         {

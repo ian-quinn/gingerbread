@@ -676,84 +676,95 @@ namespace Gingerbread.Core
                 }
             }
 
-            // third loop for floor slab clipping and shading surface
-            foreach (gbLevel level in levels)
+            if (Properties.Settings.Default.exportShade == true)
             {
-                int shadeCounter = 0;
-                // suits for all levels
-                if (dictShade.ContainsKey(level.id))
+                // third loop for floor slab clipping and shading surface
+                foreach (gbLevel level in levels)
                 {
-                    foreach (List<gbXYZ> shade in dictShade[level.id])
+                    // shadings are from dictShade (orphan floor slab or roof) and dictFloor
+                    List<List<gbXYZ>> shellClippers = new List<List<gbXYZ>>();
+                    if (dictShell.ContainsKey(level.id))
+                        shellClippers = dictShell[level.id];
+                    else if (level.isTop && dictShell.ContainsKey(level.prevId))
+                        shellClippers = dictShell[level.prevId];
+                    else
+                        continue;
+
+                    int shadeCounter = 0;
+                    // suits for all levels
+                    if (dictShade.ContainsKey(level.id))
                     {
-                        if (dictShell.ContainsKey(level.id))
+                        if (dictShade[level.id].Count != 0)
+                        {
+                            foreach (List<gbXYZ> shade in dictShade[level.id])
+                            {
+                                int containmentCounter = 0;
+                                foreach (List<gbXYZ> clipper in shellClippers)
+                                    if (GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(shade, 0), clipper))
+                                        containmentCounter++;
+                                // if the shade is within any blockShell, it will not be regarded as shading surface
+                                if (containmentCounter > 0)
+                                    continue;
+                                else
+                                {
+                                    List<List<gbXYZ>> results = GBMethod.ClipPoly(
+                                        new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(shade, 0) },
+                                        shellClippers, ClipType.ctDifference);
+                                    foreach (List<gbXYZ> result in results)
+                                    {
+                                        gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
+                                            "Void", GBMethod.ElevatePtsLoop(result, shade[0].Z), 0);
+                                        shading.type = surfaceTypeEnum.Shade;
+                                        surfaces.Add(shading);
+                                        shadeCounter++;
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!level.isBottom && !level.isTop &&
+                        dictFloor.ContainsKey(level.id) && dictShell.ContainsKey(level.prevId))
+                    {
+                        //shellClippers.AddRange(dictShell[level.prevId]);
+                        shellClippers = GBMethod.ClipPoly(shellClippers, dictShell[level.prevId], ClipType.ctUnion);
+
+                        List<List<gbXYZ>> slabShells = new List<List<gbXYZ>>();
+                        foreach (List<List<gbXYZ>> slabs in dictFloor[level.id])
+                            foreach (List<gbXYZ> slab in slabs)
+                                if (!GBMethod.IsClockwise(slab))
+                                    slabShells.Add(slab);
+
+                        foreach (List<gbXYZ> slabShell in slabShells)
                         {
                             int containmentCounter = 0;
-                            foreach (List<gbXYZ> blockShell in dictShell[level.id])
-                                if (GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(shade, 0), blockShell))
+                            foreach (List<gbXYZ> clipper in shellClippers)
+                                if (GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(slabShell, 0), clipper))
                                     containmentCounter++;
-                            // if the shade is within any blockShell, it will not be regarded as shading surface
-                            if (containmentCounter > 0)
-                                continue;
-                            else
+                            if (containmentCounter == 0)
                             {
                                 List<List<gbXYZ>> results = GBMethod.ClipPoly(
-                                    new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(shade, 0) },
-                                    dictShell[level.id], ClipType.ctDifference);
+                                    new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(slabShell, 0) },
+                                    shellClippers, ClipType.ctDifference);
                                 foreach (List<gbXYZ> result in results)
                                 {
+                                    Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
+                                    if (GBMethod.GetPolyArea(result) < 1)
+                                    {
+                                        continue;
+                                    }
                                     gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                                        "Void", GBMethod.ElevatePtsLoop(result, shade[0].Z), 0);
+                                    "Void", GBMethod.ElevatePtsLoop(result, level.elevation), 0);
                                     shading.type = surfaceTypeEnum.Shade;
                                     surfaces.Add(shading);
                                     shadeCounter++;
                                 }
                             }
                         }
-                        // no shell, no shading created
-                        else
-                        {
-                            //gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                            //    "Void", shade, 0);
-                            //shading.type = surfaceTypeEnum.Shade;
-                            //surfaces.Add(shading);
-                            //shadeCounter++;
-                        }
                     }
+
+                    Debug.Print($"XMLGeometry:: shadings piled to {shadeCounter}");
                 }
-                    
-
-                // only the middle floor suits for the clipping
-                if (level.isTop || level.isBottom || !dictFloor.ContainsKey(level.id) || !dictShell.ContainsKey(level.id))
-                    continue;
-                List<List<gbXYZ>> slabShells = new List<List<gbXYZ>>();
-                foreach (List<List<gbXYZ>> slabs in dictFloor[level.id])
-                    foreach (List<gbXYZ> slab in slabs)
-                        if (!GBMethod.IsClockwise(slab))
-                            slabShells.Add(slab);
-
-
-                foreach (List<gbXYZ> slabShell in slabShells)
-                {
-                    int containmentCounter = 0;
-                    foreach (List<gbXYZ> blockShell in dictShell[level.id])
-                        if (GBMethod.IsPolyInPoly(GBMethod.ElevatePtsLoop(slabShell, 0), blockShell))
-                            containmentCounter++;
-                    if (containmentCounter == 0)
-                    {
-                        List<List<gbXYZ>> results = GBMethod.ClipPoly(
-                            new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(slabShell, 0) },
-                            dictShell[level.id], ClipType.ctDifference);
-                        foreach (List<gbXYZ> result in results)
-                        {
-                            gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                                "Void", GBMethod.ElevatePtsLoop(result, level.elevation), 0);
-                            shading.type = surfaceTypeEnum.Shade;
-                            surfaces.Add(shading);
-                            shadeCounter++;
-                        }
-                    }
-                }
-                Debug.Print($"XMLGeometry:: shadings piled to {shadeCounter}");
             }
 
 

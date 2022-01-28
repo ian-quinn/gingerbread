@@ -161,7 +161,10 @@ namespace Gingerbread.Core
                         // emergency exit prevents infinite loops
                         emExit += 1;
                         if (emExit == lines.Count - 1)
+                        {
+                            orphanId.Add(faceIdx);
                             break;
+                        }
                     }
                     while (true);
                     // exit once the starting half-curve is reached again
@@ -182,6 +185,8 @@ namespace Gingerbread.Core
                 {
                     orphanId.Add(kvp.Key);
                     Debug.Print($"Log #{orphanId.Count} orphan for {intersectionCheck}. at {kvp.Key}");
+                    foreach (gbSeg edge in kvp.Value)
+                        Debug.Print($"{{{edge}}}");
                     //Debug.Print($"Log #{orphanId.Count} orphan for not joined. at {kvp.Key}");
                     continue;
                 }
@@ -226,23 +231,38 @@ namespace Gingerbread.Core
                 for (int j = 0; j < kvp.Value.Count; j++)
                 {
                     int adjCrvIdx = GetMatchIdx(FIdx[kvp.Key][j]);
-                    FIdx.TryGetValue(HCF[adjCrvIdx], out List<int> adjFace);
+                    //FIdx.TryGetValue(HCF[adjCrvIdx], out List<int> adjFace);
+                    List<int> banned = new List<int>();
+                    banned.AddRange(orphanId);
+                    banned.AddRange(shellId);
+                    int faceIdx = GetMatchFIdx(FIdx, adjCrvIdx, banned);
 
                     string boundaryCondition;
                     // the naming convention should follow the XML serialization
-                    if (orphanId.Contains(HCF[adjCrvIdx]) || shellId.Contains(HCF[adjCrvIdx])) //orphanId.Contains(HCF[adjCrvIdx]) || 
+                    //if (orphanId.Contains(HCF[adjCrvIdx]) || shellId.Contains(HCF[adjCrvIdx]))
+                    //{
+                    //    boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
+                    //        "::Outside_" + adjFace.IndexOf(adjCrvIdx).ToString();
+                    //}
+                    // the HCF[adjCrvIdx] is wrong. This only returns the first belonging space which probably could be the orphan space
+                    if (faceIdx == -1)
+                    {
                         //boundaryCondition = "Outside";
                         // record the matching relations between shell and inner zone boundaries
-                        boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
-                            "::Outside_" + adjFace.IndexOf(adjCrvIdx).ToString();
-                    //else if (orphanId.Contains(HCF[adjCrvIdx]))
-                    //    boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
-                    //        "::Void_" + adjFace.IndexOf(adjCrvIdx).ToString();
+                        int shellIdx = GetMatchFIdx(FIdx, adjCrvIdx, orphanId);
+                        if (shellIdx == -1)
+                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + shellIdx.ToString() +
+                                "::Outside_X";
+                        else
+                            // at this stage, HCF[adjCrvIdx] only indicates to the orphan space
+                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
+                                "::Outside_" + FIdx[shellIdx].IndexOf(adjCrvIdx).ToString();
+                    }
                     else
                         //boundaryCondition = "Level_" + levelId + "::Zone_" + (HCF[adjCrvIdx] - renumberOffset).ToString() +
                         //    "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
-                        boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() + 
-                            "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
+                        boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + faceIdx.ToString() + 
+                            "::Wall_" + FIdx[faceIdx].IndexOf(adjCrvIdx).ToString();
 
                     edgeLoop.Add(kvp.Value[j]);
                     infoLoop.Add(boundaryCondition);
@@ -746,6 +766,21 @@ namespace Gingerbread.Core
                 return idx + 1;
             else
                 return idx - 1;
+        }
+
+        private static int GetMatchFIdx(Dictionary<int, List<int>> FIdx, int idx, List<int> banned)
+        {
+            foreach (KeyValuePair<int, List<int>> kvp in FIdx)
+            {
+                if (banned.Contains(kvp.Key))
+                    continue;
+                for (int i = 0; i < kvp.Value.Count; i++)
+                {
+                    if (kvp.Value[i] == idx)
+                        return kvp.Key;
+                }
+            }
+            return -1;
         }
 
     }

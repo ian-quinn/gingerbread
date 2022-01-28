@@ -87,13 +87,13 @@
                             <RowDefinition />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="tolGroup" Margin="0 4 0 5" 
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="tolGrouping" Margin="0 4 0 5" 
                                     ToolTip="The tolerance during line segment grouping. The segment will be offset&#x0a;
 outwardly with this tolerance, then clustered by their intersection relationship."/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="tolExpand" Margin="0 4 0 5" 
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="tolPerimeter" Margin="0 4 0 5" 
                                     ToolTip="The tolerance during floorplan patching. All points whose distance to&#x0a;
 the boundary within this tolerance will be dragged onto that boundary."/>
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="tolDelta" Margin="0 4 0 5" 
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignment" Margin="0 4 0 5" 
                                     ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
 
@@ -141,11 +141,15 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
                 </GroupBox>
 
                 <StackPanel Margin="0 10 5 5">
-                    <CheckBox x:Name="ExtraInfo" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=extraInfo, Mode=TwoWay}"
-                              Checked ="ExtraInfo_Checked" Unchecked ="ExtraInfo_Unchecked" Margin="0 0 0 5" 
+                    <CheckBox x:Name="ExportStruct" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=exportStruct, Mode=TwoWay}"
+                              Checked ="ExportStruct_Checked" Unchecked ="ExportStruct_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Export additional information for HVAC automatic design. Including: &#x0a;
 locations of columns and beams, floor multipliers for model simplification, &#x0a; extra simulation settings...">
-                        Export additional info</CheckBox>
+                        Export structural info</CheckBox>
+                    <CheckBox x:Name="ExportShade" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=exportShade, Mode=TwoWay}"
+                              Checked ="ExportShade_Checked" Unchecked ="ExportShade_Unchecked" Margin="0 0 0 5" 
+                              ToolTip="Export shading surface modeled as walls or floor slabs.">
+                        Export shading surface</CheckBox>
                     <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
                               Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked"  Margin="0 0 0 5" 
                               ToolTip="Retrieve geometry from all linked .rvt files. There should not be any component&#x0a;
@@ -155,7 +159,7 @@ duplicated among documents. All documents must share the same&#x0a;Cartesian coo
                               Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" 
                               ToolTip="Align the floorplan boundary shadowing the previous floorplan. This could&#x0a;
 reduce the surface debris but may cause space or surface matching failures.">
-                        Use floorplan shadowing</CheckBox>
+                        Shadow previous floorplan</CheckBox>
                 </StackPanel>
 
                 <Grid Margin="0 10 0 0">

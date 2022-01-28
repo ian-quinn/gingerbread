@@ -23,7 +23,7 @@ namespace Gingerbread
             ////////////
             // 0 Panel
             RibbonPanel modelReduction = ribbonPanel(a, "Gingerbread", "Preprocess");
-            PushButton prefix = modelReduction.AddItem(new PushButtonData("mesh", "Model\n  Emendo!  ",
+            PushButton prefix = modelReduction.AddItem(new PushButtonData("mesh", "Model\n  Emendo  ",
                 thisAssemblyPath, "Gingerbread.CmdEmendo")) as PushButton;
             prefix.ToolTip = "Check and grab the information from revit model";
             BitmapImage prefixImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/Prefix.ico", UriKind.Absolute));
@@ -79,9 +79,12 @@ namespace Gingerbread
             runMaterial.Image = runExtrusionImg;
 
             IList<RibbonItem> stackedPreRun = modelExport.AddStackedItems(runShading, runViewer, runMaterial);
+            stackedPreRun[0].Enabled = false;
+            stackedPreRun[1].Enabled = false;
+            stackedPreRun[2].Enabled = false;
 
 
-            PushButton runExport = modelExport.AddItem(new PushButtonData("runExport", "gbXML\n  Export!  ",
+            PushButton runExport = modelExport.AddItem(new PushButtonData("runExport", "gbXML\n  Export  ",
                 thisAssemblyPath, "Gingerbread.CmdExportXML")) as PushButton;
             runExport.ToolTip = "Export a lightweight gbXML model for energy analysis";
             BitmapImage runExportImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunExport.ico", UriKind.Absolute));
@@ -113,12 +116,13 @@ namespace Gingerbread
             runReport.Image = runReportImg;
 
             IList<RibbonItem> stackedServer = modelServer.AddStackedItems(runServer, runSimulation, runReport);
+            stackedServer[0].Enabled = false;
             stackedServer[1].Enabled = false;
             stackedServer[2].Enabled = false;
 
             modelServer.Enabled = true;
 
-
+            
             a.ApplicationClosing += a_ApplicationClosing;
 
             // backup buttons

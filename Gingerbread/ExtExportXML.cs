@@ -441,13 +441,19 @@ namespace Gingerbread
 
 
                         // VISUALIZATION
-                        //using (Transaction tx = new Transaction(doc, "Sketch grids"))
+                        //if (z == 2)
                         //{
-                        //    tx.Start();
-                        //    Util.SketchSegs(doc, lattice);
-                        //    Debug.Print("Gridline sketched");
-                        //    tx.Commit();
+                        //    using (Transaction tx = new Transaction(doc, "Sketch grids"))
+                        //    {
+                        //        tx.Start();
+                        //        Util.SketchSegs(doc, lattice);
+                        //        Debug.Print("Gridline sketched");
+                        //        tx.Commit();
+                        //    }
+                        //    foreach (gbSeg line in lattice)
+                        //        Debug.Print($"{{{line}}}");
                         //}
+                            
 
 
                         List<gbRegion> regions;
