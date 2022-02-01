@@ -665,12 +665,16 @@ namespace Gingerbread
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
 
+                if (summit < bottom)
+                    continue;
                 // the window may be misplaced to other levels
                 // set a tolerance to check whether the window is misplaced by modeling precision issue
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    if (summit >= levels[i].elevation + Util.MToFoot(0.1) && summit <= levels[i].elevation + levels[i].height || 
-                        bottom >= levels[i].elevation && bottom <= levels[i].elevation + levels[i].height - Util.MToFoot(0.1))
+                    if (levels[i].elevation - bottom >= 0 && 
+                        summit - levels[i].elevation >= Util.MToFoot(0.1) ||
+                        levels[i].elevation + levels[i].height - bottom >= Util.MToFoot(0.1) &&
+                        summit - levels[i].elevation - levels[i].height >= 0)
                         dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
                 }
             }
