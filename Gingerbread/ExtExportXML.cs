@@ -52,7 +52,7 @@ namespace Gingerbread
                 out Dictionary<int, List<List<gbXYZ>>> dictShade,
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
                 out Dictionary<int, List<gbSeg>> dictGrid,
-                out Dictionary<int, List<gbXYZ>> dictRoom,
+                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictRoom,
                 out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
                 out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
                 out string checkInfo);
@@ -67,10 +67,14 @@ namespace Gingerbread
             //    dictCurtain.Count != levelNum)
             //    return;
 
+
+            // ###################### LEVEL ########################
+
             // process wall lines at each level
             // process space boundary and matching relation at each level
             Dictionary<int, List<gbRegion>> dictRegion = new Dictionary<int, List<gbRegion>>();
             Dictionary<int, List<List<gbXYZ>>> dictShell = new Dictionary<int, List<List<gbXYZ>>>();
+            Dictionary<int, List<gbSeg>> dictGlazing = new Dictionary<int, List<gbSeg>>();
             List<gbSeg> preBlueprint = new List<gbSeg>();
             List<gbSeg> nextBlueprint = new List<gbSeg>();
             //List<gbSeg> shellBlueprint = new List<gbSeg>();
@@ -80,6 +84,7 @@ namespace Gingerbread
                 // initiate dictionary
                 dictRegion.Add(z, new List<gbRegion>());
                 dictShell.Add(z, new List<List<gbXYZ>>());
+                dictGlazing.Add(z, new List<gbSeg>());
 
 
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
@@ -112,7 +117,8 @@ namespace Gingerbread
                 // patch the column
 
 
-                // ###################### Sort out region blocks ########################
+
+                // Sort out building blocks. Usually there is only one block for each level
 
                 // this will cluster parallel segments with minor gaps < tolGroup
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
@@ -147,7 +153,6 @@ namespace Gingerbread
                 }
 
                 List<List<gbXYZ>> hullGroups = new List<List<gbXYZ>>();
-                //List<gbSeg> hullEdges = new List<gbSeg>();
                 foreach (List<gbSeg> lineGroup in lineGroups)
                 {
                     List<gbXYZ> orthoHull;
@@ -168,20 +173,6 @@ namespace Gingerbread
                     hullGroups.Add(orthoHull);
                     foreach (gbXYZ vertice in orthoHull)
                         Debug.Print($"ExtExportXML:: Hull loop {vertice}");
-
-                    //for (int i = 0; i < orthoHull.Count - 1; i++)
-                    //    hullEdges.Add(new gbSeg(orthoHull[i], orthoHull[i + 1]));
-
-                    // VISUALIZATION
-                    //List<gbSeg> hullEdges = new List<gbSeg>();
-                    //for (int i = 0; i < orthoHull.Count - 1; i++)
-                    //    hullEdges.Add(new gbSeg(orthoHull[i], orthoHull[i + 1]));
-                    //using (Transaction tx = new Transaction(doc, "Sketch orthohull"))
-                    //{
-                    //    tx.Start();
-                    //    Util.SketchSegs(doc, lineGroup);
-                    //    tx.Commit();
-                    //}
                 }
 
 
@@ -205,62 +196,11 @@ namespace Gingerbread
                 //    lineBlocks.RemoveAt(i);
                 //}
 
-                /*
-                // pile the points of the line groups and get the ortho-hull
-                List<List<gbXYZ>> orthoHulls = new List<List<gbXYZ>>();
-                bool[] isBlock = new bool[orthoHulls.Count];
+                //Debug.Print($"ExtExportXML:: lineBlocks-{lineBlocks.Count}");
 
-                foreach (List<gbSeg> lineGroup in lineGroups)
-                    orthoHulls.Add(OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup)));
 
-                for (int i = 0; i < orthoHulls.Count; i++)
-                {
-                    int counter = 0;
-                    for (int j = 0; j < orthoHulls.Count; j++)
-                    {
-                        if (i != j)
-                            if (GBMethod.IsPtInPoly(orthoHulls[i][0], orthoHulls[j]))
-                                counter++;
-                    }
-                    if (counter > 0)
-                        isBlock[i] = false;
-                    else
-                        isBlock[i] = true;
-                }
-                // usually there will be only one block per floor
-                // floor panel that is not enclosed by a wall block will be regarded as shading surface
-                // floor panel that is enclosed will be nested for boolean union operation
-                List<List<gbXYZ>> shadings = new List<List<gbXYZ>>();
-                //List<List<gbXYZ>> blocks = new List<List<gbXYZ>>();
-                Dictionary<int, List<List<gbXYZ>>> nestedPanel = new Dictionary<int, List<List<gbXYZ>>>();
-                foreach (List<List<gbXYZ>> panel in dictFloor[z])
-                {
-                    gbXYZ centroid = GBMethod.GetPolyCentroid(panel[0]); // sort the outer shell to the first
-                    for (int i = 0; i < orthoHulls.Count; i++)
-                    {
-                        if (isBlock[i])
-                        {
-                            if (GBMethod.IsPtInPoly(centroid, orthoHulls[i]))
-                            {
-                                if (nestedPanel.ContainsKey(i))
-                                    nestedPanel[i].Add(panel[0]);
-                                else
-                                    nestedPanel.Add(i, new List<List<gbXYZ>>() { panel[0] });
-                            }
-                            else
-                                shadings.Add(panel[0]);
-                        }
-                    }
-                }
 
-                // boolean union within each nestedPanel, e.g. the block
-
-                // boolean operation: floor - wall = void & wall - floor = shading
-                */
-
-                Debug.Print($"ExtExportXML:: lineBlocks-{lineBlocks.Count}");
-                // ###################### Loop each lineBlock ########################
-                // usually there is only one lineBlock except for the skirt building
+                // ###################### BLOCK ########################
 
                 for (int b = 0; b < lineBlocks.Count; b++)
                 {
@@ -271,130 +211,38 @@ namespace Gingerbread
                     // enter point alignment and space detection of each segment group
                     List<List<gbRegion>> nestedRegion = new List<List<gbRegion>>();
 
-                    int groupIdx = 0;
+
+                    // ###################### GROUP ########################
+
                     // enter point alignment and space detection of each segment group
                     for (int g = 0; g < lineBlocks[b].Count; g++)
                     {
-                        groupIdx += 1;
-
-
                         // if loop to the first group within the lineBlocks[b]
                         // add the ortho-hull of this block
                         // PENDING encounter with minor block, like a square shaft, just skip it
+                        // prevent the block dimension smaller than the offset distance
                         // need more cunning way to do this
                         if (g == 0 && lineBlocks[b][g].Count > 10)
                         {
-                            // ###################### Align the boundary ########################
+                            lineBlocks[b][g] = LayoutPatch.PerimeterPatch(lineBlocks[b][g], hullGroups[b],
+                                dictWall[z], dictWindow[z], dictDoor[z], dictFloor[z], 
+                                Properties.Settings.Default.tolExpand, Properties.Settings.Default.tolGroup, z == 0 ? false : true, 
+                                out List<gbSeg> glazings, out List<gbXYZ> voidLabels);
 
-                            List<gbXYZ> offset = GBMethod.OffsetPoly(hullGroups[b], -Properties.Settings.Default.tolExpand)[0];
-                            RegionTessellate.SimplifyPoly(offset);
-                            offset.Add(offset[0]);
-
-
-                            // VISUALIZATION
-                            //using (Transaction tx = new Transaction(doc, "Sketch extended lines"))
-                            //{
-                            //    tx.Start();
-                            //    for (int j = 0; j < offset.Count - 1; j++)
-                            //        Util.SketchSegs(doc, new List<gbSeg>() { new gbSeg(offset[j], offset[j + 1]) });
-                            //    tx.Commit();
-                            //}
-
-                            for (int i = lineBlocks[b][g].Count - 1; i >= 0; i--)
+                            dictGlazing[z].AddRange(glazings);
+                            foreach (gbXYZ label in voidLabels)
                             {
-
-                                gbXYZ start = lineBlocks[b][g][i].Start;
-                                gbXYZ end = lineBlocks[b][g][i].End;
-                                if (GBMethod.IsPtInPoly(start, hullGroups[b], true) || GBMethod.IsPtInPoly(end, hullGroups[b], true))
-                                {
-                                    if (!GBMethod.IsSegPolyIntersected(lineBlocks[b][g][i], offset, 0.000001) && 
-                                        !(GBMethod.IsPtInPoly(start, offset, false) || GBMethod.IsPtInPoly(end, offset, false)))
-                                    {
-                                        //lineBlocks[b][g].RemoveAt(i);
-                                        for (int j = 0; j < hullGroups[b].Count - 1; j++)
-                                        {
-                                            gbSeg hullEdge = new gbSeg(hullGroups[b][j], hullGroups[b][j + 1]);
-                                            if (hullEdge.Length < 0.0001)
-                                                continue;
-                                            //segIntersectEnum result = GBMethod.SegIntersection(hullEdge, lineBlocks[b][g][i], 
-                                            //    0.000001, out gbXYZ intersection, out double t1, out double t2);
-                                            double gap = GBMethod.SegDistanceToSeg(lineBlocks[b][g][i], hullEdge,
-                                                out double overlap, out gbSeg proj);
-                                            if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0.5)
-                                            {
-                                                Debug.Print($"ExtExportXML:: Original inside seg removed {lineBlocks[b][g][i]} gap-{gap} shadow-{proj.Length}");
-                                                //lineBlocks[b][g][i] = proj;
-                                                lineBlocks[b][g].RemoveAt(i);
-                                                break;
-                                            }
-                                        }
-                                    }
-                                    else
-                                    {
-                                        for (int j = 0; j < hullGroups[b].Count - 1; j++)
-                                        {
-                                            GBMethod.SegExtension2(lineBlocks[b][g][i], new gbSeg(hullGroups[b][j], hullGroups[b][j + 1]),
-                                                Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
-                                        }
-                                    }
-                                }
-                                else if (!GBMethod.IsSegPolyIntersected(lineBlocks[b][g][i], hullGroups[b], 0.000001))
-                                {
-                                    lineBlocks[b][g].RemoveAt(i);
-                                    Debug.Print($"ExtExportXML:: Original outside seg removed {lineBlocks[b][g][i]}");
-                                }
+                                dictRoom[z].Add(new Tuple<gbXYZ, string>(label, "void"));
                             }
-
-                            // patch the hull to the lineBlock to ensure there is no leakage
-                            // remember to fuse all the lines
-                            for (int i = 0; i < hullGroups[b].Count - 1; i++)
-                                lineBlocks[b][g].Add(new gbSeg(hullGroups[b][i], hullGroups[b][i + 1]));
-
-                            //for (int i = 0; i < lineBlocks[b][g].Count; i++)
-                            //    for (int j = 0; j < lineBlocks[b][g].Count; j++)
-                            //        if (i != j)
-                            //            lineBlocks[b][g][i] = GBMethod.SegExtension(lineBlocks[b][g][i], lineBlocks[b][g][j],
-                            //                Properties.Settings.Default.tolExpand);
-
-                            lineBlocks[b][g] = GBMethod.SegsFusion(lineBlocks[b][g], 0.01);
                         }
+                        
+
                         //List<gbSeg> lineExtended = GBMethod.ExtendSegs(lineBlocks[b][g], 0.5);
                         List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineBlocks[b][g]), 0.01);
-
-                        //VISUALIZATION
-                        //using (Transaction tx = new Transaction(doc, "Sketch shatters"))
-                        //{
-                        //    tx.Start();
-                        //    Util.SketchSegs(doc, lineShatters);
-                        //    Debug.Print("Gridline sketched");
-                        //    tx.Commit();
-                        //}
 
 
                         List<gbXYZ> joints = PointAlign.GetJoints(lineShatters,
                             Properties.Settings.Default.tolDouble, out List<List<gbXYZ>> hands);
-
-
-                        // deepcopy hands for debugging
-                        //List<List<gbXYZ>> handsCopy = new List<List<gbXYZ>>();
-                        //foreach (List<gbXYZ> hand in hands)
-                        //{
-                        //    List<gbXYZ> handCopy = new List<gbXYZ>();
-                        //    foreach (gbXYZ h in hand)
-                        //        handCopy.Add(h);
-                        //    handsCopy.Add(handCopy);
-                        //}
-
-
-                        // VISUALIZATION
-                        //if (z == 1)
-                        //    using (Transaction tx = new Transaction(doc, "Sketch blueprint"))
-                        //    {
-                        //        tx.Start();
-                        //        Util.SketchSegs(doc, preBlueprint);
-                        //        Debug.Print("Gridline sketched");
-                        //        tx.Commit();
-                        //    }
 
 
                         List<List<gbXYZ>> anchorInfo_temp, anchorInfo;
@@ -440,22 +288,6 @@ namespace Gingerbread
                         strays.AddRange(latticeDebries);
 
 
-                        // VISUALIZATION
-                        //if (z == 2)
-                        //{
-                        //    using (Transaction tx = new Transaction(doc, "Sketch grids"))
-                        //    {
-                        //        tx.Start();
-                        //        Util.SketchSegs(doc, lattice);
-                        //        Debug.Print("Gridline sketched");
-                        //        tx.Commit();
-                        //    }
-                        //    foreach (gbSeg line in lattice)
-                        //        Debug.Print($"{{{line}}}");
-                        //}
-                            
-
-
                         List<gbRegion> regions;
                         // shell is merged into regions as the first list element
                         //List<gbXYZ> regionShell;
@@ -467,26 +299,6 @@ namespace Gingerbread
                         strays.AddRange(Util.FlattenList(regionDebris));
 
                         Debug.Print($"At level-{z} block-{b} group-{g} with {regions.Count} regions");
-
-
-                        // VISUALIZATION
-                        //List<List<gbSeg>> loops = new List<List<gbSeg>>();
-                        //foreach (gbRegion region in regions)
-                        //{
-                        //    List<gbSeg> loop = new List<gbSeg>();
-                        //    for (int k = 0; k < region.loop.Count - 1; k++)
-                        //        loop.Add(new gbSeg(region.loop[k], region.loop[k + 1]));
-                        //    loops.Add(loop);
-                        //}
-                        //using (Transaction tx = new Transaction(doc, "Sketch ortho-hull"))
-                        //{
-                        //    tx.Start();
-                        //    foreach (List<gbSeg> loop in loops)
-                        //        Util.SketchSegs(doc, loop);
-                        //    tx.Commit();
-                        //}
-                        //Util.DrawDetailLines(doc, Util.gbSegsConvert(loops[0]));
-                        //Debug.Print("Region sketched");
 
 
                         //nestedShell.Add(regionShell);
@@ -522,23 +334,6 @@ namespace Gingerbread
                     if (thisBlockShell.Count > 0)
                         dictShell[z].Add(thisBlockShell);
 
-                    // VISUALIZATION
-                    //List<List<gbSeg>> loops = new List<List<gbSeg>>();
-                    //foreach (gbRegion region in thisLevelRegions)
-                    //{
-                    //    List<gbSeg> loop = new List<gbSeg>();
-                    //    for (int k = 0; k < region.loop.Count - 1; k++)
-                    //        loop.Add(new gbSeg(region.loop[k], region.loop[k + 1]));
-                    //    loops.Add(loop);
-                    //}
-                    //using (Transaction tx = new Transaction(doc, "Sketch shell"))
-                    //{
-                    //    tx.Start();
-                    //    foreach (List<gbSeg> loop in loops)
-                    //        Util.SketchSegs(doc, loop);
-                    //    tx.Commit();
-                    //}
-
                     //List<gbSeg> shell = new List<gbSeg>();
                     //foreach (List<gbXYZ> blockShell in dictShell[z])
                     //    for (int i = 0; i < blockShell.Count - 1; i++)
@@ -549,7 +344,9 @@ namespace Gingerbread
                     // the above process is stand-alone among all lineBlocks
                     // the label convention 
 
+
                 } // end of the block loop
+
 
             }// end of the level loop
 
@@ -566,7 +363,7 @@ namespace Gingerbread
 
             XMLGeometry.Generate(dictElevation,
                 dictRegion, dictShell,
-                dictWindow, dictDoor, dictColumn, dictBeam, dictCurtain, dictFloor, dictShade, 
+                dictWindow, dictDoor, dictColumn, dictBeam, dictGlazing, dictFloor, dictShade, dictRoom, 
                 out List<gbZone> zones,
                 out List<gbLoop> floors,
                 out List<gbSurface> surfaces,

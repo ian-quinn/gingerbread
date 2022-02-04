@@ -40,7 +40,7 @@ namespace Gingerbread
             out Dictionary<int, List<List<gbXYZ>>> dictShade, 
             out Dictionary<int, List<gbSeg>> dictSeparationline,
             out Dictionary<int, List<gbSeg>> dictGrid,
-            out Dictionary<int, List<gbXYZ>> dictRoom,
+            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictRoom,
             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
             out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
             out string checkInfo)
@@ -58,7 +58,7 @@ namespace Gingerbread
             dictShade = new Dictionary<int, List<List<gbXYZ>>>();
             dictSeparationline = new Dictionary<int, List<gbSeg>>();
             dictGrid = new Dictionary<int, List<gbSeg>>();
-            dictRoom = new Dictionary<int, List<gbXYZ>>();
+            dictRoom = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictWindowplus = new Dictionary<string, List<Tuple<string, double>>>();
             dictDoorplus = new Dictionary<string, List<Tuple<string, double>>>();
             // retrieve all linked documents
@@ -344,7 +344,7 @@ namespace Gingerbread
 
 
                 // add room location and label, still PENDING
-                List<gbXYZ> roomlocs = new List<gbXYZ>();
+                List<Tuple<gbXYZ, string>> roomlocs = new List<Tuple<gbXYZ, string>>();
                 IList<Element> eRooms = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_Rooms)
                     .WherePasses(levelFilter)
@@ -353,7 +353,7 @@ namespace Gingerbread
                 {
                     LocationPoint lp = e.Location as LocationPoint;
                     XYZ pt = lp.Point;
-                    roomlocs.Add(Util.gbXYZConvert(pt));
+                    roomlocs.Add(new Tuple<gbXYZ, string> (Util.gbXYZConvert(pt), "office"));
                 }
                 dictRoom.Add(z, roomlocs);
 
@@ -674,7 +674,9 @@ namespace Gingerbread
                     if (levels[i].elevation - bottom >= 0 && 
                         summit - levels[i].elevation >= Util.MToFoot(0.1) ||
                         levels[i].elevation + levels[i].height - bottom >= Util.MToFoot(0.1) &&
-                        summit - levels[i].elevation - levels[i].height >= 0)
+                        summit - levels[i].elevation - levels[i].height >= 0 || 
+                        levels[i].elevation < bottom && 
+                        levels[i].elevation + levels[i].height > summit)
                         dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
                 }
             }

@@ -21,6 +21,7 @@ namespace Gingerbread.Core
             Dictionary<int, List<gbSeg>> dictCurtain,
             Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
             Dictionary<int, List<List<gbXYZ>>> dictShade,
+            Dictionary<int, List<Tuple<gbXYZ, string>>> dictRoom, 
             out List<gbZone> zones,
             out List<gbLoop> floors,
             out List<gbSurface> surfaces,
@@ -107,6 +108,17 @@ namespace Gingerbread.Core
                             }
                         }
 
+                    if (dictRoom.ContainsKey(level.id))
+                    {
+                        foreach (Tuple<gbXYZ, string> voidLabel in dictRoom[level.id])
+                        {
+                            if (GBMethod.IsPtInPoly(voidLabel.Item1, region.loop, false))
+                            {
+                                newZone.function = "Void";
+                                break;
+                            }
+                        }
+                    }
 
                     thisZone.Add(newZone);
                     //List<string> srfId = new List<string>();

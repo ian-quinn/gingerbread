@@ -13,51 +13,211 @@ namespace Gingerbread.Core
     {
         /// <summary>
         /// </summary>
-        public static void PerimeterPatch(List<gbSeg> walls, List<gbXYZ> boundary, double threshold)
+        public static List<gbSeg> PerimeterPatch(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall,
+            List<Tuple<gbXYZ, string>> thisWindow, List<Tuple<gbXYZ, string>> thisDoor, List<List<List<gbXYZ>>> thisFloor, 
+            double offsetIn, double offsetExt, bool patchVoid, 
+            out List<gbSeg> glazings, out List<gbXYZ> voidLabels)
         {
-            // the input boundary must be cleaned and simplified
-            List<gbSeg> edges = new List<gbSeg>();
-            for (int i = 0; i < boundary.Count - 1; i++)
+            glazings = new List<gbSeg>();
+            voidLabels = new List<gbXYZ>();
+
+            List<gbXYZ> contourIn = GBMethod.OffsetPoly(hull, -offsetIn)[0];
+            RegionTessellate.SimplifyPoly(contourIn);
+            contourIn.Add(contourIn[0]);
+            List<gbXYZ> contourExt = GBMethod.OffsetPoly(hull, offsetExt)[0];
+            RegionTessellate.SimplifyPoly(contourExt);
+            contourExt.Add(contourExt[0]);
+
+            List<gbSeg> hullEdges = new List<gbSeg>();
+            for (int i = 0; i < hull.Count - 1; i++)
             {
-                gbSeg edge = new gbSeg(boundary[i], boundary[i + 1]);
-                if (edge.Length != 0)
-                    edges.Add(edge);
+                hullEdges.Add(new gbSeg(hull[i], hull[i + 1]));
             }
 
-            List<gbXYZ> offsetBoundary = GBMethod.OffsetPoly(boundary, threshold)[0];
-            for (int i = walls.Count - 1; i >= 0; i--)
+            List<gbSeg> wallLines = GBMethod.FlattenLines(thisWall);
+
+            // back projection to hull
+            List<gbSeg> chisels = new List<gbSeg>();
+
+            for (int i = wallLines.Count - 1; i >= 0; i--)
             {
-                //gbXYZ start = walls[i].PointAt(0);
-                //gbXYZ end = walls[i].PointAt(1);
-                //if (GBMethod.IsPtInPoly(start, boundary) &&
-                //    GBMethod.IsPtInPoly(end, boundary) &&
-                //    !GBMethod.IsPtInPoly(start, offsetBoundary) &&
-                //    !GBMethod.IsPtInPoly(end, offsetBoundary))
-                //{
-                //    walls.RemoveAt(i);
-                //}
-                for (int ptIndex = 0; ptIndex < 2; ptIndex++)
+                gbXYZ start = wallLines[i].Start;
+                gbXYZ end = wallLines[i].End;
+                if (!GBMethod.IsPtInPoly(start, contourIn, true) &&
+                    !GBMethod.IsPtInPoly(end, contourIn, true) &&
+                    GBMethod.IsPtInPoly(start, contourExt, false) &&
+                    GBMethod.IsPtInPoly(end, contourExt, false))
                 {
-                    gbXYZ ptMove = walls[i].PointAt(ptIndex);
-                    if (GBMethod.IsPtInPoly(ptMove, boundary, true) && !GBMethod.IsPtInPoly(ptMove, offsetBoundary, true))
+                    foreach (gbSeg hullEdge in hullEdges)
                     {
-                        foreach (gbSeg edge in edges)
+                        wallLines[i] = GBMethod.SegExtension(wallLines[i], hullEdge,
+                            Properties.Settings.Default.tolExpand);
+                    }
+                    foreach (gbSeg hullEdge in hullEdges)
+                    {
+                        double gap = GBMethod.SegDistanceToSeg(wallLines[i], hullEdge,
+                            out double overlap, out gbSeg proj);
+                        if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0)
                         {
-                            if (edge.Length == 0) // be cautious if the input edge is of zero length
-                                continue;
-                            double distance = GBMethod.PtDistanceToSeg(ptMove, edge, out gbXYZ plummet, out double stretch);
-                            if (distance < Math.Abs(threshold))
-                            {
-                                Debug.Print($"LayoutPatch:: baseline: {edges.IndexOf(edge)}");
-                                Debug.Print($"LayoutPatch:: {ptMove} -> {plummet}");
-                                walls[i].AdjustEndPt(ptIndex, plummet);
-                                Debug.Print($"LayoutPatch:: {walls[i].PointAt(ptIndex)}");
-                            }
+                            //projected to all hull edges
+                            gbSeg newProj = GBMethod.SegProjection(wallLines[i], hullEdge, out double inDistance);
+                            chisels.Add(newProj);
                         }
                     }
                 }
             }
-            return;
+
+            // etching the glazing area
+            foreach (gbSeg hullEdge in hullEdges)
+                glazings.Add(hullEdge);
+            foreach (gbSeg chisel in chisels)
+            {
+                glazings = GBMethod.EtchSegs(glazings, chisel, 0.01);
+            }
+
+            // pull windows to the hull
+            for (int i = thisWindow.Count - 1; i >= 0; i--)
+            {
+                gbXYZ ptSurrogate = GBMethod.FlattenPt(thisWindow[i].Item1);
+                if (!GBMethod.IsPtInPoly(ptSurrogate, contourIn, true) &&
+                    GBMethod.IsPtInPoly(ptSurrogate, hull, false))
+                {
+                    gbXYZ translation = new gbXYZ();
+                    foreach (gbSeg hullEdge in hullEdges)
+                    {
+                        double distance = GBMethod.PtDistanceToSeg(ptSurrogate, hullEdge, out gbXYZ p, out double s);
+                        if (distance < Properties.Settings.Default.tolExpand)
+                        {
+                            translation = p - ptSurrogate;
+                            break;
+                        }
+                    }
+                    thisWindow[i] = new Tuple<gbXYZ, string>(
+                        thisWindow[i].Item1 + translation, thisWindow[i].Item2);
+                }
+            }
+
+            // pull floors to the hull
+            List<gbSeg> voidBoundary = new List<gbSeg>();
+            // general collection
+            List<List<gbXYZ>> allPanels = new List<List<gbXYZ>>();
+            List<List<gbXYZ>> inPanels = new List<List<gbXYZ>>();
+            foreach (List<List<gbXYZ>> slabs in thisFloor)
+            {
+                foreach (List<gbXYZ> loop in slabs)
+                {
+                    if (!GBMethod.IsClockwise(loop))
+                        allPanels.Add(loop);
+                }
+            }
+
+            if (allPanels.Count > 0)
+            {
+                foreach (List<gbXYZ> panel in allPanels)
+                {
+                    List<List<gbXYZ>> inPanel = GBMethod.ClipPoly(panel, hull, ClipperLib.ClipType.ctIntersection);
+                    if (inPanel.Count > 0)
+                        if (inPanel[0].Count > 0)
+                            inPanels = GBMethod.ClipPoly(inPanels, inPanel[0], ClipperLib.ClipType.ctUnion);
+                }
+
+                for (int i = 0; i < inPanels.Count; i++)
+                {
+                    for (int j = 0; j < inPanels[i].Count; j++)
+                    {
+                        if (GBMethod.IsPtInPoly(inPanels[i][j], hull, true))
+                        {
+                            foreach (gbSeg hullEdge in hullEdges)
+                            {
+                                double distance = GBMethod.PtDistanceToSeg(inPanels[i][j], hullEdge, out gbXYZ p, out double s);
+                                if (distance < Properties.Settings.Default.tolExpand)
+                                {
+                                    inPanels[i][j] = p;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                List<List<gbXYZ>> outBand = GBMethod.ClipPoly(contourExt, hull, ClipperLib.ClipType.ctDifference);
+                List<List<gbXYZ>> mergedPanel = GBMethod.ClipPoly(inPanels, outBand, ClipperLib.ClipType.ctUnion);
+                foreach (List<gbXYZ> loop in mergedPanel)
+                {
+                    if (GBMethod.IsClockwise(loop))
+                    {
+                        double area = GBMethod.GetPolyArea(loop);
+                        double perimeter = GBMethod.GetPolyPerimeter(loop);
+                        if (area > 10 && perimeter / Math.Sqrt(area) < 6 || area > 100)
+                        {
+                            voidBoundary.AddRange(GBMethod.GetPolyBoundary(loop));
+                            gbXYZ voidCentroid = GBMethod.GetPolyCentroid(loop);
+                            voidLabels.Add(voidCentroid);
+                        }
+                    }
+                }
+            }
+
+
+            for (int i = lines.Count - 1; i >= 0; i--)
+            {
+                gbXYZ start = lines[i].Start;
+                gbXYZ end = lines[i].End;
+                if (GBMethod.IsPtInPoly(start, hull, true) || GBMethod.IsPtInPoly(end, hull, true))
+                {
+                    if (!GBMethod.IsSegPolyIntersected(lines[i], contourIn, 0.000001) &&
+                        !(GBMethod.IsPtInPoly(start, contourIn, false) || GBMethod.IsPtInPoly(end, contourIn, false)))
+                    {
+                        //lineBlocks[b][g].RemoveAt(i);
+                        for (int j = 0; j < hull.Count - 1; j++)
+                        {
+                            gbSeg hullEdge = new gbSeg(hull[j], hull[j + 1]);
+                            if (hullEdge.Length < 0.0001)
+                                continue;
+                            //segIntersectEnum result = GBMethod.SegIntersection(hullEdge, lineBlocks[b][g][i], 
+                            //    0.000001, out gbXYZ intersection, out double t1, out double t2);
+                            double gap = GBMethod.SegDistanceToSeg(lines[i], hullEdge,
+                                out double overlap, out gbSeg proj);
+                            if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0.5)
+                            {
+                                Debug.Print($"LayoutPatch:: Original inside seg removed {lines[i]} gap-{gap} shadow-{proj.Length}");
+                                //lineBlocks[b][g][i] = proj;
+                                lines.RemoveAt(i);
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int j = 0; j < hull.Count - 1; j++)
+                        {
+                            GBMethod.SegExtension2(lines[i], new gbSeg(hull[j], hull[j + 1]),
+                                Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
+                        }
+                    }
+                }
+                else if (!GBMethod.IsSegPolyIntersected(lines[i], hull, 0.000001))
+                {
+                    lines.RemoveAt(i);
+                    Debug.Print($"LayoutPatch:: Original outside seg removed {lines[i]}");
+                }
+            }
+
+            // patch the hull to the lineBlock to ensure there is no leakage
+            // remember to fuse all the lines
+            lines.AddRange(hullEdges);
+
+            //for (int i = 0; i < lineBlocks[b][g].Count; i++)
+            //    for (int j = 0; j < lineBlocks[b][g].Count; j++)
+            //        if (i != j)
+            //            lineBlocks[b][g][i] = GBMethod.SegExtension(lineBlocks[b][g][i], lineBlocks[b][g][j],
+            //                Properties.Settings.Default.tolExpand);
+
+            // patch the void boundary
+            if (patchVoid)
+                lines.AddRange(voidBoundary);
+
+            // fuse the center lines
+            return GBMethod.SegsFusion(lines, 0.01);
         }
 
         private static List<gbXYZ> SortPtLoop(List<gbSeg> lines)

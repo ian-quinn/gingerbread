@@ -69,6 +69,7 @@ namespace Gingerbread.Core
 
         /// <summary>
         /// Return the angle (0~180) of two vector by calculating arccosin
+        /// The two vector must be on the same plane.
         /// </summary>
         public static double VectorAngle2D(gbXYZ vec1, gbXYZ vec2)
         {
@@ -242,6 +243,30 @@ namespace Gingerbread.Core
             gbXYZ centroid = new gbXYZ(ans[0] / (6 * signedArea),
               ans[1] / (6 * signedArea), 0);
             return centroid;
+        }
+
+        public static double GetPolyPerimeter(List<gbXYZ> poly)
+        {
+            double length = 0;
+            for (int i = 0; i < poly.Count - 1; i++)
+            {
+                length += poly[i].DistanceTo(poly[i + 1]);
+            }
+            length += poly[poly.Count - 1].DistanceTo(poly[0]);
+            return length;
+        }
+
+        public static List<gbSeg> GetPolyBoundary(List<gbXYZ> poly)
+        {
+            List<gbSeg> boundary = new List<gbSeg>();
+            for (int i = 0; i < poly.Count - 1; i++)
+            {
+                boundary.Add(new gbSeg(poly[i], poly[i + 1]));
+            }
+            gbSeg tail = new gbSeg(poly[poly.Count - 1], poly[0]);
+            if (tail.Length > _eps)
+                boundary.Add(tail);
+            return boundary;
         }
 
         public gbXYZ GetLabelCentroid()
@@ -713,6 +738,7 @@ namespace Gingerbread.Core
               (dx * dx + dy * dy);
 
             plummet = new gbXYZ(origin.X + stretch * dx, origin.Y + stretch * dy, 0);
+            //plummert = new line.PointAt(stretch);
             dx = pt.X - plummet.X;
             dy = pt.Y - plummet.Y;
 
@@ -724,6 +750,7 @@ namespace Gingerbread.Core
             gbXYZ start = subj.Start;
             gbXYZ end = subj.End;
             double angle = VectorAngle2D(subj.direction, obj.direction);
+            //Debug.Print($"GBMethod::SegDistanceToSeg check angle {angle}");
             if (Math.Abs(angle - 90) > 89)
             {
                 double d1 = PtDistanceToSeg(start, obj, out gbXYZ plummet1, out double t1);
@@ -782,6 +809,16 @@ namespace Gingerbread.Core
 
             return new gbSeg(startPt, endPt);
         }
+
+        public static gbSeg SegProjection2(gbSeg subj, gbSeg obj, out double distance)
+        {
+            double d1 = PtDistanceToSeg(subj.PointAt(0), obj, out gbXYZ p1, out double s1);
+            double d2 = PtDistanceToSeg(subj.PointAt(1), obj, out gbXYZ p2, out double s2);
+            distance = (d1 + d2) / 2;
+
+            return new gbSeg(p1, p2);
+        }
+
         //public static gbXYZ PtProjection(gbXYZ pt, gbSeg seg, gbXYZ vec)
         //{
         //    gbSeg sample = new gbSeg(pt, pt + vec);
@@ -1215,6 +1252,131 @@ namespace Gingerbread.Core
             }
             return flattenPts;
         }
+
+        public static List<gbSeg> EtchSeg(gbSeg seg, gbSeg clip, double tol)
+        {
+            List<gbSeg> debris = new List<gbSeg>();
+            double tolRatio = tol / seg.Length;
+            
+            double d1 = PtDistanceToSeg(clip.Start, seg, out gbXYZ p1, out double s1);
+            double d2 = PtDistanceToSeg(clip.End, seg, out gbXYZ p2, out double s2);
+            double mod = clip.Direction.CrossProduct(seg.Direction).Norm();
+            if (d1 < _eps && d2 < _eps && Math.Abs(mod) < _eps)
+            {
+                if (Math.Abs(s1 - s2) < _eps)
+                {
+                    debris.Add(seg);
+                    return debris;
+                }
+                if (s1 > s2)
+                {
+                    Util.Swap(ref s1, ref s2);
+                    Util.Swap(ref p1, ref p2);
+                }
+
+                if (Math.Abs(s1) < tolRatio) s1 = 0;
+                if (Math.Abs(s2) < tolRatio) s2 = 0;
+                if (Math.Abs(s1 - 1) < tolRatio) s1 = 1;
+                if (Math.Abs(s2 - 1) < tolRatio) s2 = 1;
+
+                if (s1 <= 0 && s2 >= 1) { }
+                else if (s1 < 0)
+                    debris.Add(new gbSeg(p2, seg.End));
+                else if (s2 > 1)
+                    debris.Add(new gbSeg(seg.Start, p1));
+                else
+                {
+                    debris.Add(new gbSeg(seg.Start, p1));
+                    debris.Add(new gbSeg(p2, seg.End));
+                }
+            }
+            else
+            {
+                debris.Add(seg);
+            }
+            return debris;
+        }
+
+        public static List<gbSeg> EtchSegs(List<gbSeg> segs, gbSeg clip, double tol)
+        {
+            List<gbSeg> debris = new List<gbSeg>();
+            foreach (gbSeg seg in segs)
+                debris.Add(seg);
+
+            int counter = 0;
+
+            while (counter < debris.Count)
+            {
+                gbSeg seg = debris[counter];
+                if (seg.Length < tol)
+                {
+                    debris.RemoveAt(counter);
+                    continue;
+                }
+                double tolRatio = tol / seg.Length;
+
+                double d1 = PtDistanceToSeg(clip.Start, seg, out gbXYZ p1, out double s1);
+                double d2 = PtDistanceToSeg(clip.End, seg, out gbXYZ p2, out double s2);
+                double mod = clip.Direction.CrossProduct(seg.Direction).Norm();
+                if (d1 < _eps && d2 < _eps && Math.Abs(mod) < _eps)
+                {
+                    if (Math.Abs(s1 - s2) < _eps)
+                    {
+                        counter++;
+                        continue;
+                    }
+                    if (s1 > s2)
+                    {
+                        Util.Swap(ref s1, ref s2);
+                        Util.Swap(ref p1, ref p2);
+                    }
+
+                    if (Math.Abs(s1) < tolRatio) s1 = 0;
+                    if (Math.Abs(s2) < tolRatio) s2 = 0;
+                    if (Math.Abs(s1 - 1) < tolRatio) s1 = 1;
+                    if (Math.Abs(s2 - 1) < tolRatio) s2 = 1;
+
+                    if (s1 <= 0 && s2 >= 1)
+                    {
+                        debris.RemoveAt(counter);
+                    }
+                    else if (s1 < 0)
+                    {
+                        if (s2 <= 0)
+                            counter++;
+                        else
+                        {
+                            debris.Add(new gbSeg(p2, seg.End));
+                            debris.RemoveAt(counter);
+                        }
+                            
+                    }
+                    else if (s2 > 1)
+                    {
+                        if (s1 >= 1)
+                            counter++;
+                        else
+                        {
+                            debris.Add(new gbSeg(seg.Start, p1));
+                            debris.RemoveAt(counter);
+                        }
+                    }
+                    else
+                    {
+                        debris.Add(new gbSeg(seg.Start, p1));
+                        debris.Add(new gbSeg(p2, seg.End));
+                        debris.RemoveAt(counter);
+                    }
+                }
+                else
+                {
+                    counter++;
+                }
+            }
+
+            return debris;
+        }
+
 
         /// <summary>
         /// Do polygon boolean operation. Algorithm depends on Clipper.cs
