@@ -38,24 +38,24 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
-        public double tolGroup {
+        public double tolGrouping {
             get {
-                return ((double)(this["tolGroup"]));
+                return ((double)(this["tolGrouping"]));
             }
             set {
-                this["tolGroup"] = value;
+                this["tolGrouping"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
-        public double tolExpand {
+        public double tolPerimeter {
             get {
-                return ((double)(this["tolExpand"]));
+                return ((double)(this["tolPerimeter"]));
             }
             set {
-                this["tolExpand"] = value;
+                this["tolPerimeter"] = value;
             }
         }
         
@@ -73,13 +73,13 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0.15")]
-        public double tolDelta {
+        [global::System.Configuration.DefaultSettingValueAttribute("0.11")]
+        public double tolAlignment {
             get {
-                return ((double)(this["tolDelta"]));
+                return ((double)(this["tolAlignment"]));
             }
             set {
-                this["tolDelta"] = value;
+                this["tolAlignment"] = value;
             }
         }
         
@@ -181,7 +181,7 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("GingerbreadHouse")]
+        [global::System.Configuration.DefaultSettingValueAttribute("Gingerbread")]
         public string projName {
             get {
                 return ((string)(this["projName"]));

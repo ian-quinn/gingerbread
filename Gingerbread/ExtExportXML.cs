@@ -38,6 +38,8 @@ namespace Gingerbread
             CurrentUI.Show();
 
             Report(0, "Filter geometry information ...");
+            Util.LogInitiate();
+            Util.LogPrint("Start baking a new gingerbread house...");
 
             BatchGeometry.Execute(doc,
                 out Dictionary<int, Tuple<string, double>> dictElevation,
@@ -52,21 +54,16 @@ namespace Gingerbread
                 out Dictionary<int, List<List<gbXYZ>>> dictShade,
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
                 out Dictionary<int, List<gbSeg>> dictGrid,
-                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictRoom,
+                out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictRoom,
                 out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
                 out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
                 out string checkInfo);
 
+            Util.LogPrint("----------------------------------------------------------------------------------------\n" +
+                "           Ingredients are ready. Start blending...\n" +
+                "           Hierarchical structure: Level - Block - Group - Region (L0B1G2R3)\n");
 
             int levelNum = dictElevation.Count - 1;
-
-            // info check
-            //if (dictWall.Count != levelNum ||
-            //    dictWindow.Count != levelNum ||
-            //    dictDoor.Count != levelNum ||
-            //    dictCurtain.Count != levelNum)
-            //    return;
-
 
             // ###################### LEVEL ########################
 
@@ -75,16 +72,20 @@ namespace Gingerbread
             Dictionary<int, List<gbRegion>> dictRegion = new Dictionary<int, List<gbRegion>>();
             Dictionary<int, List<List<gbXYZ>>> dictShell = new Dictionary<int, List<List<gbXYZ>>>();
             Dictionary<int, List<gbSeg>> dictGlazing = new Dictionary<int, List<gbSeg>>();
+            Dictionary<int, List<gbSeg>> dictAirwall = new Dictionary<int, List<gbSeg>>();
             List<gbSeg> preBlueprint = new List<gbSeg>();
             List<gbSeg> nextBlueprint = new List<gbSeg>();
             //List<gbSeg> shellBlueprint = new List<gbSeg>();
 
             for (int z = 0; z < levelNum; z++)
             {
+                Util.LogPrint($"----------------Knead the dough on Level-{z}----------------");
+
                 // initiate dictionary
                 dictRegion.Add(z, new List<gbRegion>());
                 dictShell.Add(z, new List<List<gbXYZ>>());
                 dictGlazing.Add(z, new List<gbSeg>());
+                dictAirwall.Add(z, new List<gbSeg>());
 
 
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
@@ -93,14 +94,6 @@ namespace Gingerbread
                 enclosings.AddRange(dictWall[z]);
                 enclosings.AddRange(dictCurtain[z]);
                 enclosings.AddRange(dictCurtaSystem[z]);
-
-                //using (Transaction tx = new Transaction(doc, "Sketch orthohull"))
-                //{
-                //    tx.Start();
-                //    Util.SketchSegs(doc, enclosings);
-                //    tx.Commit();
-                //}
-
                 List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
 
                 // the extension copies all segments to another list
@@ -108,8 +101,8 @@ namespace Gingerbread
                 for (int i = 0; i < flatLines.Count; i++)
                     for (int j = 0; j < flatLines.Count; j++)
                         if (i != j)
-                            flatLines[i] = GBMethod.SegExtension(flatLines[i], flatLines[j],
-                                Properties.Settings.Default.tolExpand);
+                            flatLines[i] = GBMethod.SegExtensionToSeg(flatLines[i], flatLines[j],
+                                Properties.Settings.Default.tolPerimeter);
                 //GBMethod.SegExtension2(flatLines[i], flatLines[j],
                 //    Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
 
@@ -117,12 +110,10 @@ namespace Gingerbread
                 // patch the column
 
 
-
                 // Sort out building blocks. Usually there is only one block for each level
-
                 // this will cluster parallel segments with minor gaps < tolGroup
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
-                    Properties.Settings.Default.tolGroup);
+                    Properties.Settings.Default.tolGrouping);
 
                 // a trush bin for stray lines that are processed after space detection
                 // three steps are dumping debris to this trush bin
@@ -145,7 +136,7 @@ namespace Gingerbread
                     }
                 }
 
-                Debug.Print($"ExtExportXML:: {lineGroups.Count} cluster detected");
+                //Debug.Print($"ExtExportXML:: {lineGroups.Count} cluster detected");
                 List<List<List<gbSeg>>> lineBlocks = new List<List<List<gbSeg>>>();
                 foreach (List<gbSeg> lineGroup in lineGroups)
                 {
@@ -157,22 +148,20 @@ namespace Gingerbread
                 {
                     List<gbXYZ> orthoHull;
                     // try to get the block boundary first
-                    List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, Properties.Settings.Default.tolDelta);
-                    Debug.Print($"ExtExportXML:: reduce line from {lineGroup.Count} to {aliLineGroup.Count}");
-                    List<gbSeg> extLineGroup = GBMethod.ExtendSegs(aliLineGroup, Properties.Settings.Default.tolExpand);
-                    List<gbSeg> fusLineGroup = GBMethod.SegsFusion(extLineGroup, Properties.Settings.Default.tolDelta);
+                    List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, Properties.Settings.Default.tolAlignment);
+                    //Debug.Print($"ExtExportXML:: reduce line from {lineGroup.Count} to {aliLineGroup.Count}");
+                    List<gbSeg> extLineGroup = GBMethod.SegsExtensionByLength(aliLineGroup, Properties.Settings.Default.tolPerimeter);
+                    List<gbSeg> fusLineGroup = GBMethod.SegsFusion(extLineGroup, Properties.Settings.Default.tolAlignment);
                     List<gbSeg> shatteredLineGroup = GBMethod.SkimOut(GBMethod.ShatterSegs(fusLineGroup), 0.001);
-                    orthoHull = SpaceDetect.GetShell(shatteredLineGroup);
+                    orthoHull = RegionDetect.GetShell(shatteredLineGroup);
 
                     if (orthoHull.Count < 10)
                         orthoHull = OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup));
 
-                    Debug.Print($"OrthoHull at F{z} B{lineGroups.IndexOf(lineGroup)} size {orthoHull.Count}");
+                    //Debug.Print($"OrthoHull at F{z} B{lineGroups.IndexOf(lineGroup)} size {orthoHull.Count}");
                     RegionTessellate.SimplifyPoly(orthoHull);
                     orthoHull.Add(orthoHull[0]);
                     hullGroups.Add(orthoHull);
-                    foreach (gbXYZ vertice in orthoHull)
-                        Debug.Print($"ExtExportXML:: Hull loop {vertice}");
                 }
 
 
@@ -197,7 +186,7 @@ namespace Gingerbread
                 //}
 
                 //Debug.Print($"ExtExportXML:: lineBlocks-{lineBlocks.Count}");
-
+                Util.LogPrint($"Level-{z} has {flatLines.Count} Centerlines kneaded into {lineBlocks.Count - redundantBlockIds.Count} Blocks");
 
 
                 // ###################### BLOCK ########################
@@ -208,9 +197,19 @@ namespace Gingerbread
                     if (redundantBlockIds.Contains(b))
                         continue;
 
+                    if (false)
+                    {
+                        string loopCoords = $"L{z}-B{b} outline of block\n";
+                        foreach (gbXYZ vertex in hullGroups[b])
+                        {
+                            loopCoords += $"           {{{vertex}}}\n";
+                        }
+                        Util.LogPrint(loopCoords);
+                    }
+                    
+
                     // enter point alignment and space detection of each segment group
                     List<List<gbRegion>> nestedRegion = new List<List<gbRegion>>();
-
 
                     // ###################### GROUP ########################
 
@@ -224,16 +223,18 @@ namespace Gingerbread
                         // need more cunning way to do this
                         if (g == 0 && lineBlocks[b][g].Count > 10)
                         {
-                            lineBlocks[b][g] = LayoutPatch.PerimeterPatch(lineBlocks[b][g], hullGroups[b],
+                            lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
                                 dictWall[z], dictWindow[z], dictDoor[z], dictFloor[z], 
-                                Properties.Settings.Default.tolExpand, Properties.Settings.Default.tolGroup, z == 0 ? false : true, 
-                                out List<gbSeg> glazings, out List<gbXYZ> voidLabels);
+                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping, z == 0 ? false : true, 
+                                out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidLoops);
 
                             dictGlazing[z].AddRange(glazings);
-                            foreach (gbXYZ label in voidLabels)
+                            dictAirwall[z].AddRange(airwalls);
+                            foreach (List<gbXYZ> loop in voidLoops)
                             {
-                                dictRoom[z].Add(new Tuple<gbXYZ, string>(label, "void"));
+                                dictRoom[z].Add(new Tuple<List<gbXYZ>, string>(loop, "void"));
                             }
+                            Util.LogPrint($"PerimeterPatch: L{z}-B{b} has {glazings.Count} glazing, {voidLoops.Count} void, {airwalls.Count} airwall");
                         }
                         
 
@@ -249,12 +250,12 @@ namespace Gingerbread
                         List<gbSeg> nextBlueprint_1, nextBlueprint_2;
                         List<gbXYZ> ptAlign_temp = PointAlign.AlignPts(joints, hands, preBlueprint,
                             Properties.Settings.Default.tolTheta,
-                            Properties.Settings.Default.tolDelta,
+                            Properties.Settings.Default.tolAlignment,
                             Properties.Settings.Default.tolDouble,
                             out anchorInfo_temp, out nextBlueprint_1);
                         List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp, preBlueprint,
                             Properties.Settings.Default.tolTheta - Math.PI / 2,
-                            Properties.Settings.Default.tolDelta,
+                            Properties.Settings.Default.tolAlignment,
                             Properties.Settings.Default.tolDouble,
                             out anchorInfo, out nextBlueprint_2);
                         nextBlueprint.AddRange(nextBlueprint_1);
@@ -295,23 +296,26 @@ namespace Gingerbread
 
                         Report(10 + z * 80 / levelNum, $"Processing floorplan on level {z} ...");
 
-                        SpaceDetect.GetRegion(lattice, z, b, g, out regions, out regionDebris);
+                        RegionDetect.GetRegion(lattice, z, b, g, out regions, out regionDebris);
                         strays.AddRange(Util.FlattenList(regionDebris));
 
-                        Debug.Print($"At level-{z} block-{b} group-{g} with {regions.Count} regions");
+                        //Debug.Print($"At level-{z} block-{b} group-{g} with {regions.Count} regions");
 
 
                         //nestedShell.Add(regionShell);
                         nestedRegion.Add(regions);
+
+                        Util.LogPrint($"RegionDetect: L{z}-B{b}-G{g} has {regions.Count} region, {regionDebris.Count} orphan");
                     } // end of the group loop
 
-                    Debug.Print($"At level-{z} block-{b} with {nestedRegion.Count} clusters");
+                    //Debug.Print($"At level-{z} block-{b} with {nestedRegion.Count} clusters");
 
                     // MCR split
                     if (nestedRegion.Count > 1)
                     {
-                        SpaceDetect.GetMCR(nestedRegion); //, nestedShell
-                        Debug.Print("ExtExportXML:: there seems to be an MCR");
+                        RegionDetect.GetMCR(nestedRegion); //, nestedShell
+                        //Debug.Print("ExtExportXML:: there seems to be an MCR");
+                        Util.LogPrint($"Tessellation: L{z}-B{b} has multiply connected regions");
                     }
 
                     // summarize geometries and flatten the list
@@ -322,7 +326,10 @@ namespace Gingerbread
                         for (int i = 0; i < regions.Count; i++)
                         {
                             if (regions[i].innerLoops != null) // check MCR
-                                Debug.Print($"ExtExportXML:: Got MCR with {regions[i].innerLoops.Count} holes {regions[i].tiles.Count} tiles");
+                            {
+                                //Debug.Print($"ExtExportXML:: Got MCR with {regions[i].innerLoops.Count} holes {regions[i].tiles.Count} tiles");
+                                Util.LogPrint($"Tessellation: L{z}-B{b}-R{i} is MCR with {regions[i].innerLoops.Count} holes, {regions[i].tiles.Count} tiles");
+                            }
                             if (regions[i].isShell == true) // check shell
                                 thisBlockShell = regions[i].loop;
                             if (i != 0) // check space region
@@ -347,7 +354,7 @@ namespace Gingerbread
 
                 } // end of the block loop
 
-
+                Util.LogPrint($"Level-{z} summarization: BlockShell-{dictShell[z].Count} Region-{dictRegion[z].Count}\n");
             }// end of the level loop
 
 
@@ -359,11 +366,12 @@ namespace Gingerbread
             }
 
             Report(90, "Create gbXML geometry information ...");
-
+            Util.LogPrint("----------------------------------------------------------------------------------------\n" +
+                "           Doughs are ready. Start shaping...\n");
 
             XMLGeometry.Generate(dictElevation,
                 dictRegion, dictShell,
-                dictWindow, dictDoor, dictColumn, dictBeam, dictGlazing, dictFloor, dictShade, dictRoom, 
+                dictWindow, dictDoor, dictColumn, dictBeam, dictGlazing, dictAirwall, dictFloor, dictShade, dictRoom, 
                 out List<gbZone> zones,
                 out List<gbLoop> floors,
                 out List<gbSurface> surfaces,
@@ -373,11 +381,16 @@ namespace Gingerbread
 
             Report(95, "Serilaize gbXML file ...");
 
+            Util.LogPrint("----------------------------------------------------------------------------------------\n" +
+                "           Heat the oven. Start baking...\n");
+
             string fileName = "GingerbreadXML.xml";
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
             XMLSerialization.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces, columns, beams, shafts);
 
             Report(100, "Done export to " + thisAssemblyFolderPath);
+            Util.LogPrint("----------------------------------------------------------------------------------------\n" +
+                "           Ready to serve.\n");
 
             CurrentUI.btnCancel.Visibility = System.Windows.Visibility.Collapsed;
             CurrentUI.btnGenerate.Visibility = System.Windows.Visibility.Visible;
@@ -392,7 +405,7 @@ namespace Gingerbread
             CurrentControl.CurrentValue = progress;
             CurrentUI.Dispatcher.Invoke(new ProgressBarDelegate(CurrentControl.NotifyUI), System.Windows.Threading.DispatcherPriority.Background);
             CurrentUI.btnCancel.Click += CurrentUI_Closed;
-            Debug.Print("ExtExportXML:: " + status + " / " + progress);
+            //Debug.Print("ExtExportXML:: " + status + " / " + progress);
             if (Cancel)
             {
                 CurrentControl.CurrentContext = "Aborted";

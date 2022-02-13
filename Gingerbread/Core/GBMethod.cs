@@ -96,6 +96,9 @@ namespace Gingerbread.Core
             return worldPlaneLines;
         }
 
+        /// <summary>
+        /// Just pile all endpoints in a list
+        /// </summary>
         public static List<gbXYZ> PilePts(List<gbSeg> segs)
         {
             List<gbXYZ> pts = new List<gbXYZ>();
@@ -110,23 +113,19 @@ namespace Gingerbread.Core
         }
 
 
-        public static List<gbSeg> PtsLoopToPoly(List<gbXYZ> pts)
-        {
-            List<gbSeg> segs = new List<gbSeg>();
-            for (int i = 0; i < pts.Count - 1; i++)
-                segs.Add(new gbSeg(pts[i], pts[i + 1]));
-            if (!pts[0].Equals(pts.Last()))
-                segs.Add(new gbSeg(pts.Last(), pts[0]));
-            return segs;
-        }
-
-        public static List<gbXYZ> ElevatePtsLoop(List<gbXYZ> pts, double elevation)
+        /// <summary>
+        /// Change the z coordinate of a list of points by elevation.
+        /// </summary>
+        public static List<gbXYZ> ElevatePts(List<gbXYZ> pts, double elevation)
         {
             List<gbXYZ> elevatedPts = new List<gbXYZ>();
             for (int i = 0; i < pts.Count; i++)
                 elevatedPts.Add(pts[i] + new gbXYZ(0, 0, elevation));
             return elevatedPts;
         }
+        /// <summary>
+        /// Make the z coordinate of a point zero.
+        /// </summary>
         public static gbXYZ FlattenPt(gbXYZ pt)
         {
             return new gbXYZ(pt.X, pt.Y, 0);
@@ -139,162 +138,10 @@ namespace Gingerbread.Core
                 Math.Abs(pt.Y - origin.Y),
                 Math.Abs(pt.Z - origin.Z));
         }
+        #endregion basic operations
 
 
-        public static double GetPolyArea(List<gbXYZ> pts)
-        {
-            var count = pts.Count;
-
-            double area0 = 0;
-            double area1 = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var x = pts[i].X;
-                var y = i + 1 < count ? pts[i + 1].Y : pts[0].Y;
-                area0 += x * y;
-
-                var a = pts[i].Y;
-                var b = i + 1 < count ? pts[i + 1].X : pts[0].X;
-                area1 += a * b;
-            }
-            return Math.Abs(0.5 * (area0 - area1));
-        }
-        // borrowed from Jeremy Tammik
-        public static double GetPolyArea3d(List<gbXYZ> polygon)
-        {
-            gbXYZ normal = new gbXYZ();
-            double area = 0.0;
-            int n = (null == polygon) ? 0 : polygon.Count;
-            bool rc = (2 < n);
-            if (3 == n)
-            {
-                gbXYZ a = polygon[0];
-                gbXYZ b = polygon[1];
-                gbXYZ c = polygon[2];
-                gbXYZ v = b - a;
-                normal = v.CrossProduct(c - a);
-            }
-            else if (4 == n)
-            {
-                gbXYZ a = polygon[0];
-                gbXYZ b = polygon[1];
-                gbXYZ c = polygon[2];
-                gbXYZ d = polygon[3];
-
-                normal.X = (c.Y - a.Y) * (d.Z - b.Z)
-                  + (c.Z - a.Z) * (b.Y - d.Y);
-                normal.Y = (c.Z - a.Z) * (d.X - b.X)
-                  + (c.X - a.X) * (b.Z - d.Z);
-                normal.Z = (c.X - a.X) * (d.Y - b.Y)
-                  + (c.Y - a.Y) * (b.X - d.X);
-            }
-            else if (4 < n)
-            {
-                gbXYZ a;
-                gbXYZ b = polygon[n - 2];
-                gbXYZ c = polygon[n - 1];
-
-                for (int i = 0; i < n; ++i)
-                {
-                    a = b;
-                    b = c;
-                    c = polygon[i];
-
-                    normal.X += b.Y * (c.Z - a.Z);
-                    normal.Y += b.Z * (c.X - a.X);
-                    normal.Z += b.X * (c.Y - a.Y);
-                }
-            }
-            if (rc)
-            {
-                double length = normal.Norm();
-                if (rc)
-                    area = 0.5 * length;
-            }
-            return area;
-        }
-
-        public static gbXYZ GetPolyCentroid(List<gbXYZ> poly)
-        {
-            double[] ans = new double[2];
-
-            int n = poly.Count;
-            double signedArea = 0;
-
-            // For all vertices
-            for (int i = 0; i < n; i++)
-            {
-                double x0 = poly[i].X;
-                double y0 = poly[i].Y;
-                double x1 = poly[(i + 1) % n].X;
-                double y1 = poly[(i + 1) % n].Y;
-
-                // Calculate value of A
-                // using shoelace formula
-                double A = (x0 * y1) - (x1 * y0);
-                signedArea += A;
-
-                // Calculating coordinates of
-                // centroid of polygon
-                ans[0] += (x0 + x1) * A;
-                ans[1] += (y0 + y1) * A;
-            }
-            signedArea *= 0.5;
-            gbXYZ centroid = new gbXYZ(ans[0] / (6 * signedArea),
-              ans[1] / (6 * signedArea), 0);
-            return centroid;
-        }
-
-        public static double GetPolyPerimeter(List<gbXYZ> poly)
-        {
-            double length = 0;
-            for (int i = 0; i < poly.Count - 1; i++)
-            {
-                length += poly[i].DistanceTo(poly[i + 1]);
-            }
-            length += poly[poly.Count - 1].DistanceTo(poly[0]);
-            return length;
-        }
-
-        public static List<gbSeg> GetPolyBoundary(List<gbXYZ> poly)
-        {
-            List<gbSeg> boundary = new List<gbSeg>();
-            for (int i = 0; i < poly.Count - 1; i++)
-            {
-                boundary.Add(new gbSeg(poly[i], poly[i + 1]));
-            }
-            gbSeg tail = new gbSeg(poly[poly.Count - 1], poly[0]);
-            if (tail.Length > _eps)
-                boundary.Add(tail);
-            return boundary;
-        }
-
-        public gbXYZ GetLabelCentroid()
-        {
-            return new gbXYZ();
-        }
-
-        public static bool IsClockwise(List<gbXYZ> pts)
-        {
-            var count = pts.Count;
-
-            double area0 = 0;
-            double area1 = 0;
-            for (int i = 0; i < count; i++)
-            {
-                var x = pts[i].X;
-                var y = i + 1 < count ? pts[i + 1].Y : pts[0].Y;
-                area0 += x * y;
-
-                var a = pts[i].Y;
-                var b = i + 1 < count ? pts[i + 1].X : pts[0].X;
-                area1 += a * b;
-            }
-            double ans = area0 - area1;
-            if (ans < 0) return true;
-            return false;
-        }
-
+        #region seg relations
         /// <summary>
         /// Return the intersectEnum, output the intersection point and the ratio if the point falls on the first segment.
         /// </summary>
@@ -369,7 +216,7 @@ namespace Gingerbread.Core
 
             if (t1 > 10000 || t2 > 10000)
             {
-                Debug.Print($"GBMethod:: Wrong at intersection checking");
+                //Debug.Print($"GBMethod:: Wrong at intersection checking");
             }
 
             if ((t1 >= 0 - tol) && (t1 <= 1 + tol))
@@ -417,7 +264,7 @@ namespace Gingerbread.Core
                 return segIntersectEnum.Parallel;
             if (Math.Abs(denominator) < _eps && Math.Abs(stretch) < _eps)
             {
-                Debug.Print($"GBMethod:: Seg fused {a} {b}");
+                //Debug.Print($"GBMethod:: Seg fused {a} {b}");
                 // express endpoints of seg2 in terms of seg1 parameter
                 double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
                 double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
@@ -501,10 +348,13 @@ namespace Gingerbread.Core
             }
             return false;
         }
+        #endregion seg relations
+
+        #region seg operations
 
         // futher there will be gbLine method to modify line endpoints directly
         // for now, just regenerate one. always the longer one when trimming.
-        public static gbSeg SegExtension(gbSeg a, gbSeg b, double tolerance)
+        public static gbSeg SegExtensionToSeg(gbSeg a, gbSeg b, double tolerance)
         {
             gbXYZ p1 = a.PointAt(0);
             gbXYZ p2 = a.PointAt(1);
@@ -554,8 +404,11 @@ namespace Gingerbread.Core
                 return a;
         }
         
-        // extrusion/trim will modify the segment directly
-        public static void SegExtension2(gbSeg subj, gbSeg obj, double tol, double delta)
+        /// <summary>
+        /// Extend the segment to another one if the extension is within the range "delta".
+        /// This function change the original subject segment.
+        /// </summary>
+        public static void SegExtendToSeg(gbSeg subj, gbSeg obj, double tol, double delta)
         {
             segIntersectEnum sectType = SegIntersection(subj, obj, tol, out gbXYZ intersection, out double t1, out double t2);
             if (sectType == segIntersectEnum.ColineDisjoint)
@@ -604,6 +457,9 @@ namespace Gingerbread.Core
             //return subj.Copy();
         }
 
+        /// <summary>
+        /// Align line segments if they are parallel and within a band with width smaller than the threshold.
+        /// </summary>
         public static List<gbSeg> SegsAlignment(List<gbSeg> segs, double threshold)
         {
             List<gbSeg> _segs = new List<gbSeg>();
@@ -634,7 +490,7 @@ namespace Gingerbread.Core
                     }
                 }
                 segGroups.Add(segGroup);
-                Debug.Print($"GBMethod:: cluster with {segGroup.Count} added.");
+                //Debug.Print($"GBMethod::SegsAlignment cluster with {segGroup.Count} added.");
             }
             List<gbSeg> collapse = new List<gbSeg>();
             foreach (List<gbSeg> segGroup in segGroups)
@@ -670,29 +526,31 @@ namespace Gingerbread.Core
                     refPt += plummet;
                 }
                 refPt = refPt / segGroup.Count;
-                gbSeg baseLine = new gbSeg(refPt, refPt + segGroup[0].direction);
+                gbSeg baseLine = new gbSeg(refPt, refPt + segGroup[0].Direction);
                 foreach (gbSeg seg in segGroup)
                 {
                     double d1 = PtDistanceToSeg(seg.Start, baseLine, out gbXYZ start, out double t1);
                     double d2 = PtDistanceToSeg(seg.End, baseLine, out gbXYZ end, out double t2);
                     gbSeg aligned = new gbSeg(start, end);
-                    if (aligned.length > 0.1)
+                    if (aligned.Length > 0.1)
                     {
                         collapse.Add(aligned);
-                        Debug.Print($"GBMethod:: aligned line added {aligned}");
+                        //Debug.Print($"GBMethod::SegsAlignment aligned line added {aligned}");
                     }
                 }
             }
             return collapse;
         }
-
+        /// <summary>
+        /// Fuse line segments if they are colinear and overlapping.
+        /// </summary>
         public static List<gbSeg> SegsFusion(List<gbSeg> segs, double threshold)
         {
             List<gbSeg> _segs = new List<gbSeg>();
             // 0 length segment that happens to be an intersection point
             // will be colined with two joining segments not parallel
             foreach (gbSeg seg in segs)
-                if (seg.length > _eps)
+                if (seg.Length > _eps)
                     _segs.Add(new gbSeg(seg.Start, seg.End));
                 
             for (int i = _segs.Count - 1; i >= 1; i--)
@@ -716,7 +574,10 @@ namespace Gingerbread.Core
             }
             return _segs;
         }
-
+        /// <summary>
+        /// Calculate the distance between the point and the segment.
+        /// Output the projected point and the ratio that the point is evaluated by the segment.
+        /// </summary>
         public static double PtDistanceToSeg(gbXYZ pt, gbSeg line,
           out gbXYZ plummet, out double stretch)
         {
@@ -744,12 +605,15 @@ namespace Gingerbread.Core
 
             return Math.Sqrt(dx * dx + dy * dy);
         }
-
+        /// <summary>
+        /// Calculate the distance between two line segments if they are parallel (with 1 degree tolerance).
+        /// Output the length of their overlapping region. Output the projected line segment as the overlapping region.
+        /// </summary>
         public static double SegDistanceToSeg(gbSeg subj, gbSeg obj, out double overlap, out gbSeg proj)
         {
             gbXYZ start = subj.Start;
             gbXYZ end = subj.End;
-            double angle = VectorAngle2D(subj.direction, obj.direction);
+            double angle = VectorAngle2D(subj.Direction, obj.Direction);
             //Debug.Print($"GBMethod::SegDistanceToSeg check angle {angle}");
             if (Math.Abs(angle - 90) > 89)
             {
@@ -778,8 +642,11 @@ namespace Gingerbread.Core
             }
                 
         }
-
-        public static gbSeg SegProjection(gbSeg a, gbSeg b, out double distance)
+        /// <summary>
+        /// Return the projected segment of the subject segment (Entire projection regardless of overplapping).
+        /// Output the mean distance of the two segments.
+        /// </summary>
+        public static gbSeg SegProjection(gbSeg a, gbSeg b, bool isProjectOnLine, out double distance)
         {
             double paramA, paramB;
             gbXYZ p1, p2;
@@ -787,10 +654,13 @@ namespace Gingerbread.Core
             double d2 = PtDistanceToSeg(a.PointAt(1), b, out p2, out paramB);
             distance = (d1 + d2) / 2;
 
+            if (isProjectOnLine)
+                return new gbSeg(p1, p2);
+
             if (paramA < paramB)
             {
-                Util.Swap<double>(ref paramA, ref paramB);
-                Util.Swap<gbXYZ>(ref p1, ref p2);
+                Util.Swap(ref paramA, ref paramB);
+                Util.Swap(ref p1, ref p2);
             }
             gbXYZ startPt;
             gbXYZ endPt;
@@ -810,77 +680,60 @@ namespace Gingerbread.Core
             return new gbSeg(startPt, endPt);
         }
 
-        public static gbSeg SegProjection2(gbSeg subj, gbSeg obj, out double distance)
-        {
-            double d1 = PtDistanceToSeg(subj.PointAt(0), obj, out gbXYZ p1, out double s1);
-            double d2 = PtDistanceToSeg(subj.PointAt(1), obj, out gbXYZ p2, out double s2);
-            distance = (d1 + d2) / 2;
 
-            return new gbSeg(p1, p2);
-        }
-
-        //public static gbXYZ PtProjection(gbXYZ pt, gbSeg seg, gbXYZ vec)
+        //public static gbSeg SegMerge(gbSeg a, gbSeg b, double tol)
         //{
-        //    gbSeg sample = new gbSeg(pt, pt + vec);
-        //    segIntersectEnum result = SegIntersection(sample, seg, 0.000001, out gbXYZ intersection, out double t1, out double t2);
-        //    if (result == segIntersectEnum.IntersectOnB || t1 > 0)
-        //        return intersection;
-        //    return null;
+        //    gbXYZ p1 = a.PointAt(0);
+        //    gbXYZ p2 = a.PointAt(1);
+        //    gbXYZ p3 = b.PointAt(0);
+        //    gbXYZ p4 = b.PointAt(1);
+
+        //    // represents stretch vector of seg1 vec1 = (dx12, dy12)
+        //    double dx12 = p2.X - p1.X;
+        //    double dy12 = p2.Y - p1.Y;
+        //    // represents stretch vector of seg2 vec2 = (dx34, dy34)
+        //    double dx34 = p4.X - p3.X;
+        //    double dy34 = p4.Y - p3.Y;
+
+        //    // checker as cross product of vec1 and vec2
+        //    double denominator = dy12 * dx34 - dx12 * dy34;
+        //    // co-line checker as cross product of (p3 - p1) and vec1/vec
+        //    double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
+
+        //    if (denominator == 0 && stretch != 0)
+        //        return new gbSeg();
+        //    if (denominator == 0 && stretch == 0)
+        //    {
+        //        // express endpoints of seg2 in terms of seg1 parameter
+        //        double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
+        //        double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
+        //        if (s1 > s2)
+        //        {
+        //            Util.Swap(ref s1, ref s2);
+        //            Util.Swap(ref p3, ref p4);
+        //        }
+        //        if ((s1 > 0 && s1 < 1) || (s2 > 0 && s2 < 1))
+        //            if ((s1 > 0 && s1 < 1) && (s2 > 0 && s2 < 1))
+        //                return a.Copy();
+        //            else if (s1 > 0 && s1 < 1)
+        //                return new gbSeg(p1, p4);
+        //            else
+        //                return new gbSeg(p3, p2);
+        //        if (s1 < 0 && s2 > 1)
+        //            return b.Copy();
+        //        if (s1 >= 1)
+        //            if (s1 < 1 + tol)
+        //                return new gbSeg(p1, p4);
+        //            else
+        //                return new gbSeg();
+        //        if (s2 <= 0)
+        //            if (s2 < 0 - tol)
+        //                return new gbSeg(p3, p2);
+        //            else
+        //                return new gbSeg();
+        //    }
+        //    return new gbSeg();
         //}
-
-        public static gbSeg SegMerge(gbSeg a, gbSeg b, double tol)
-        {
-            gbXYZ p1 = a.PointAt(0);
-            gbXYZ p2 = a.PointAt(1);
-            gbXYZ p3 = b.PointAt(0);
-            gbXYZ p4 = b.PointAt(1);
-
-            // represents stretch vector of seg1 vec1 = (dx12, dy12)
-            double dx12 = p2.X - p1.X;
-            double dy12 = p2.Y - p1.Y;
-            // represents stretch vector of seg2 vec2 = (dx34, dy34)
-            double dx34 = p4.X - p3.X;
-            double dy34 = p4.Y - p3.Y;
-
-            // checker as cross product of vec1 and vec2
-            double denominator = dy12 * dx34 - dx12 * dy34;
-            // co-line checker as cross product of (p3 - p1) and vec1/vec
-            double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
-
-            if (denominator == 0 && stretch != 0)
-                return new gbSeg();
-            if (denominator == 0 && stretch == 0)
-            {
-                // express endpoints of seg2 in terms of seg1 parameter
-                double s1 = ((p3.X - p1.X) * dx12 + (p3.Y - p1.Y) * dy12) / (dx12 * dx12 + dy12 * dy12);
-                double s2 = s1 + (dx12 * dx34 + dy12 * dy34) / (dx12 * dx12 + dy12 * dy12);
-                if (s1 > s2)
-                {
-                    Util.Swap(ref s1, ref s2);
-                    Util.Swap(ref p3, ref p4);
-                }
-                if ((s1 > 0 && s1 < 1) || (s2 > 0 && s2 < 1))
-                    if ((s1 > 0 && s1 < 1) && (s2 > 0 && s2 < 1))
-                        return a.Copy();
-                    else if (s1 > 0 && s1 < 1)
-                        return new gbSeg(p1, p4);
-                    else
-                        return new gbSeg(p3, p2);
-                if (s1 < 0 && s2 > 1)
-                    return b.Copy();
-                if (s1 >= 1)
-                    if (s1 < 1 + tol)
-                        return new gbSeg(p1, p4);
-                    else
-                        return new gbSeg();
-                if (s2 <= 0)
-                    if (s2 < 0 - tol)
-                        return new gbSeg(p3, p2);
-                    else
-                        return new gbSeg();
-            }
-            return new gbSeg();
-        }
 
         /// <summary>
         /// Create a expansion box by line segment offset
@@ -914,50 +767,25 @@ namespace Gingerbread.Core
         /// <summary>
         /// Extend line segment at two ends by a specific length
         /// </summary>
-        public static gbSeg ExtendSeg(gbSeg seg, double length)
+        public static gbSeg SegExtensionByLength(gbSeg seg, double length)
         {
             double ratio = length / seg.Length;
             gbXYZ startPt = seg.PointAt(-ratio);
             gbXYZ endPt = seg.PointAt(1 + ratio);
             return new gbSeg(startPt, endPt);
         }
-        public static List<gbSeg> ExtendSegs(List<gbSeg> segs, double length)
+        public static List<gbSeg> SegsExtensionByLength(List<gbSeg> segs, double length)
         {
             List<gbSeg> extSegs = new List<gbSeg>();
             foreach (gbSeg seg in segs)
-                extSegs.Add(ExtendSeg(seg, length));
+                extSegs.Add(SegExtensionByLength(seg, length));
             return extSegs;
         }
 
 
-        // switch to more robust polygon offset function in future
-        // note that this is not a closed vertice loop
-        public static List<gbXYZ> PolyOffset(List<gbXYZ> pts, double offset, bool isInward)
-        {
-            List<gbXYZ> offsetPts = new List<gbXYZ>();
-            for (int i = 0; i < pts.Count; i++)
-            {
-                gbXYZ vec1, vec2;
-                if (i == 0)
-                    vec1 = pts[0] - pts[pts.Count - 1];
-                else
-                    vec1 = pts[i] - pts[i - 1];
-                if (i == pts.Count - 1)
-                    vec2 = pts[pts.Count - 1] - pts[0];
-                else
-                    vec2 = pts[i] - pts[i + 1];
-                vec1.Unitize();
-                vec2.Unitize();
-                gbXYZ direction = vec1 + vec2;
-                if (isInward)
-                    offsetPts.Add(pts[i] - offset * direction);
-                else
-                    offsetPts.Add(pts[i] + offset * direction);
-            }
-            return offsetPts;
-        }
-
-
+        /// <summary>
+        /// Cluster a bunch of segments by checking their intersection relationship 
+        /// </summary>
         public static List<List<gbSeg>> SegClusterByFuzzyIntersection(List<gbSeg> lines, double tolerance)
         {
             List<gbSeg> linePool = new List<gbSeg>();
@@ -991,6 +819,9 @@ namespace Gingerbread.Core
             }
             return lineGroups;
         }
+        /// <summary>
+        /// Check if two segments are intersected by their expanded box.
+        /// </summary>
         public static bool IsSegFuzzyIntersected(gbSeg a, gbSeg b, double tolerance)
         {
             gbXYZ intersection; double t1, t2;
@@ -1005,13 +836,16 @@ namespace Gingerbread.Core
             if (IsPtInPoly(a.PointAt(0), expansionBox, true)
                 || IsPtInPoly(a.PointAt(1), expansionBox, true))
             {
-                Debug.Print($"GBMethod:: Containment intersection {a} in {b}");
+                //Debug.Print($"GBMethod:: Containment intersection {a} in {b}");
                 return true;
             }
                 
             return false;
         }
 
+        /// <summary>
+        /// Shatter a list of segments by their intersection relationship
+        /// </summary>
         public static List<gbSeg> ShatterSegs(List<gbSeg> crvs)
         {
             List<gbSeg> shatteredCrvs = new List<gbSeg>();
@@ -1032,7 +866,10 @@ namespace Gingerbread.Core
             }
             return shatteredCrvs;
         }
-
+        
+        /// <summary>
+        /// Remove segments whose length is below the tolerance
+        /// </summary>
         public static List<gbSeg> SkimOut(List<gbSeg> crvs, double tolerance)
         {
             for (int i = crvs.Count - 1; i >= 0; i--)
@@ -1042,7 +879,118 @@ namespace Gingerbread.Core
             }
             return crvs;
         }
+        /// <summary>
+        /// Substract a bunch of segments by a line segment. Debris whose length is 
+        /// smaller than the tolerance will be erased.
+        /// </summary>
+        public static List<gbSeg> EtchSegs(List<gbSeg> segs, gbSeg clip, double tol)
+        {
+            List<gbSeg> debris = new List<gbSeg>();
+            foreach (gbSeg seg in segs)
+                debris.Add(seg);
 
+            int counter = 0;
+
+            while (counter < debris.Count)
+            {
+                gbSeg seg = debris[counter];
+                if (seg.Length < tol)
+                {
+                    debris.RemoveAt(counter);
+                    continue;
+                }
+                double tolRatio = tol / seg.Length;
+
+                double d1 = PtDistanceToSeg(clip.Start, seg, out gbXYZ p1, out double s1);
+                double d2 = PtDistanceToSeg(clip.End, seg, out gbXYZ p2, out double s2);
+                double mod = clip.Direction.CrossProduct(seg.Direction).Norm();
+                // PENDING
+                if (d1 < 100 * _eps && d2 < 100 * _eps && Math.Abs(mod) < _eps)
+                {
+                    if (Math.Abs(s1 - s2) < _eps)
+                    {
+                        counter++;
+                        continue;
+                    }
+                    if (s1 > s2)
+                    {
+                        Util.Swap(ref s1, ref s2);
+                        Util.Swap(ref p1, ref p2);
+                    }
+
+                    if (Math.Abs(s1) < _eps) s1 = 0;
+                    if (Math.Abs(s2) < _eps) s2 = 0;
+                    if (Math.Abs(s1 - 1) < _eps) s1 = 1;
+                    if (Math.Abs(s2 - 1) < _eps) s2 = 1;
+
+                    if (s1 <= 0 && s2 >= 1)
+                    {
+                        debris.RemoveAt(counter);
+                    }
+                    else if (s1 < 0)
+                    {
+                        if (s2 <= 0)
+                            counter++;
+                        else
+                        {
+                            debris.Add(new gbSeg(p2, seg.End));
+                            debris.RemoveAt(counter);
+                        }
+
+                    }
+                    else if (s2 > 1)
+                    {
+                        if (s1 >= 1)
+                            counter++;
+                        else
+                        {
+                            debris.Add(new gbSeg(seg.Start, p1));
+                            debris.RemoveAt(counter);
+                        }
+                    }
+                    else
+                    {
+                        debris.Add(new gbSeg(seg.Start, p1));
+                        debris.Add(new gbSeg(p2, seg.End));
+                        debris.RemoveAt(counter);
+                    }
+                }
+                else
+                {
+                    counter++;
+                }
+            }
+
+            return debris;
+        }
+
+        #endregion seg operations
+
+        #region poly relations
+
+        /// <summary>
+        /// Check if the 2D polygon is clockwise (z coordinate is omitted)
+        /// </summary>
+        public static bool IsClockwise(List<gbXYZ> pts)
+        {
+            var count = pts.Count;
+
+            double area0 = 0;
+            double area1 = 0;
+            for (int i = 0; i < count; i++)
+            {
+                var x = pts[i].X;
+                var y = i + 1 < count ? pts[i + 1].Y : pts[0].Y;
+                area0 += x * y;
+
+                var a = pts[i].Y;
+                var b = i + 1 < count ? pts[i + 1].X : pts[0].X;
+                area1 += a * b;
+            }
+            double ans = area0 - area1;
+            if (ans < 0) return true;
+            return false;
+        }
 
         /// <summary>
         /// Point on the edge of a poly returns true. The poly includes the boundary
@@ -1209,6 +1157,22 @@ namespace Gingerbread.Core
             return loopGroups;
         }
 
+        #endregion poly relations
+
+        #region poly operations
+
+        /// <summary>
+        /// Get the copy of the reversed polygon vertices loop.
+        /// </summary>
+        static public List<gbXYZ> GetReversedPoly(List<gbXYZ> loop)
+        {
+            List<gbXYZ> revLoop = new List<gbXYZ>();
+            foreach (gbXYZ vertex in loop)
+                revLoop.Add(vertex);
+            revLoop.Reverse();
+            return revLoop;
+        }
+
         /// <summary>
         /// Get the normal of a polygon by Left-hand order
         /// </summary>
@@ -1239,142 +1203,191 @@ namespace Gingerbread.Core
         /// <summary>
         /// Only works for vertical walls (tilt == 90)
         /// </summary>
-        public static List<gbXYZ> PolyToPoly2D(List<gbXYZ> pts)
+        public static List<gbXYZ> PolyToUV(List<gbXYZ> pts)
         {
             gbXYZ normal = GetPolyNormal(pts);
             gbXYZ u = GetPendicularVec(normal, true);
             gbXYZ v = new gbXYZ(0, 0, 1);
-            List<gbXYZ> flattenPts = new List<gbXYZ>();
+            List<gbXYZ> pts2D = new List<gbXYZ>();
             foreach (gbXYZ pt in pts)
             {
                 gbXYZ vec = new gbXYZ(pt.X, pt.Y, pt.Z);
-                flattenPts.Add(new gbXYZ(vec.DotProduct(u), vec.DotProduct(v), 0));
+                pts2D.Add(new gbXYZ(vec.DotProduct(u), vec.DotProduct(v), 0));
             }
-            return flattenPts;
+            return pts2D;
         }
 
-        public static List<gbSeg> EtchSeg(gbSeg seg, gbSeg clip, double tol)
+        /// <summary>
+        /// Get the area of a simple polygon by the X, Y coordinates of vertices. This is the 
+        /// actually the z-plane projection of the original polygon.
+        /// </summary>
+        public static double GetPolyArea(List<gbXYZ> pts)
         {
-            List<gbSeg> debris = new List<gbSeg>();
-            double tolRatio = tol / seg.Length;
-            
-            double d1 = PtDistanceToSeg(clip.Start, seg, out gbXYZ p1, out double s1);
-            double d2 = PtDistanceToSeg(clip.End, seg, out gbXYZ p2, out double s2);
-            double mod = clip.Direction.CrossProduct(seg.Direction).Norm();
-            if (d1 < _eps && d2 < _eps && Math.Abs(mod) < _eps)
-            {
-                if (Math.Abs(s1 - s2) < _eps)
-                {
-                    debris.Add(seg);
-                    return debris;
-                }
-                if (s1 > s2)
-                {
-                    Util.Swap(ref s1, ref s2);
-                    Util.Swap(ref p1, ref p2);
-                }
+            var count = pts.Count;
 
-                if (Math.Abs(s1) < tolRatio) s1 = 0;
-                if (Math.Abs(s2) < tolRatio) s2 = 0;
-                if (Math.Abs(s1 - 1) < tolRatio) s1 = 1;
-                if (Math.Abs(s2 - 1) < tolRatio) s2 = 1;
-
-                if (s1 <= 0 && s2 >= 1) { }
-                else if (s1 < 0)
-                    debris.Add(new gbSeg(p2, seg.End));
-                else if (s2 > 1)
-                    debris.Add(new gbSeg(seg.Start, p1));
-                else
-                {
-                    debris.Add(new gbSeg(seg.Start, p1));
-                    debris.Add(new gbSeg(p2, seg.End));
-                }
-            }
-            else
+            double area0 = 0;
+            double area1 = 0;
+            for (int i = 0; i < count; i++)
             {
-                debris.Add(seg);
+                var x = pts[i].X;
+                var y = i + 1 < count ? pts[i + 1].Y : pts[0].Y;
+                area0 += x * y;
+
+                var a = pts[i].Y;
+                var b = i + 1 < count ? pts[i + 1].X : pts[0].X;
+                area1 += a * b;
             }
-            return debris;
+            return Math.Abs(0.5 * (area0 - area1));
         }
 
-        public static List<gbSeg> EtchSegs(List<gbSeg> segs, gbSeg clip, double tol)
+        /// <summary>
+        /// by Jeremy Tammik. This is a degenerated method that has some cases not appliable
+        /// </summary>
+        public static double GetPolyArea3d(List<gbXYZ> polygon)
         {
-            List<gbSeg> debris = new List<gbSeg>();
-            foreach (gbSeg seg in segs)
-                debris.Add(seg);
-
-            int counter = 0;
-
-            while (counter < debris.Count)
+            gbXYZ normal = new gbXYZ();
+            double area = 0.0;
+            int n = (null == polygon) ? 0 : polygon.Count;
+            bool rc = (2 < n);
+            if (3 == n)
             {
-                gbSeg seg = debris[counter];
-                if (seg.Length < tol)
-                {
-                    debris.RemoveAt(counter);
-                    continue;
-                }
-                double tolRatio = tol / seg.Length;
+                gbXYZ a = polygon[0];
+                gbXYZ b = polygon[1];
+                gbXYZ c = polygon[2];
+                gbXYZ v = b - a;
+                normal = v.CrossProduct(c - a);
+            }
+            else if (4 == n)
+            {
+                gbXYZ a = polygon[0];
+                gbXYZ b = polygon[1];
+                gbXYZ c = polygon[2];
+                gbXYZ d = polygon[3];
 
-                double d1 = PtDistanceToSeg(clip.Start, seg, out gbXYZ p1, out double s1);
-                double d2 = PtDistanceToSeg(clip.End, seg, out gbXYZ p2, out double s2);
-                double mod = clip.Direction.CrossProduct(seg.Direction).Norm();
-                if (d1 < _eps && d2 < _eps && Math.Abs(mod) < _eps)
-                {
-                    if (Math.Abs(s1 - s2) < _eps)
-                    {
-                        counter++;
-                        continue;
-                    }
-                    if (s1 > s2)
-                    {
-                        Util.Swap(ref s1, ref s2);
-                        Util.Swap(ref p1, ref p2);
-                    }
+                normal.X = (c.Y - a.Y) * (d.Z - b.Z)
+                  + (c.Z - a.Z) * (b.Y - d.Y);
+                normal.Y = (c.Z - a.Z) * (d.X - b.X)
+                  + (c.X - a.X) * (b.Z - d.Z);
+                normal.Z = (c.X - a.X) * (d.Y - b.Y)
+                  + (c.Y - a.Y) * (b.X - d.X);
+            }
+            else if (4 < n)
+            {
+                gbXYZ a;
+                gbXYZ b = polygon[n - 2];
+                gbXYZ c = polygon[n - 1];
 
-                    if (Math.Abs(s1) < tolRatio) s1 = 0;
-                    if (Math.Abs(s2) < tolRatio) s2 = 0;
-                    if (Math.Abs(s1 - 1) < tolRatio) s1 = 1;
-                    if (Math.Abs(s2 - 1) < tolRatio) s2 = 1;
-
-                    if (s1 <= 0 && s2 >= 1)
-                    {
-                        debris.RemoveAt(counter);
-                    }
-                    else if (s1 < 0)
-                    {
-                        if (s2 <= 0)
-                            counter++;
-                        else
-                        {
-                            debris.Add(new gbSeg(p2, seg.End));
-                            debris.RemoveAt(counter);
-                        }
-                            
-                    }
-                    else if (s2 > 1)
-                    {
-                        if (s1 >= 1)
-                            counter++;
-                        else
-                        {
-                            debris.Add(new gbSeg(seg.Start, p1));
-                            debris.RemoveAt(counter);
-                        }
-                    }
-                    else
-                    {
-                        debris.Add(new gbSeg(seg.Start, p1));
-                        debris.Add(new gbSeg(p2, seg.End));
-                        debris.RemoveAt(counter);
-                    }
-                }
-                else
+                for (int i = 0; i < n; ++i)
                 {
-                    counter++;
+                    a = b;
+                    b = c;
+                    c = polygon[i];
+
+                    normal.X += b.Y * (c.Z - a.Z);
+                    normal.Y += b.Z * (c.X - a.X);
+                    normal.Z += b.X * (c.Y - a.Y);
                 }
             }
+            if (rc)
+            {
+                double length = normal.Norm();
+                if (rc)
+                    area = 0.5 * length;
+            }
+            return area;
+        }
+        /// <summary>
+        /// Return the centroid of a convex polygon.
+        /// Please turn to the pole of accessibility when facing concave polygons.
+        /// </summary>
+        public static gbXYZ GetPolyCentroid(List<gbXYZ> poly)
+        {
+            double[] ans = new double[2];
 
-            return debris;
+            int n = poly.Count;
+            double signedArea = 0;
+
+            // For all vertices
+            for (int i = 0; i < n; i++)
+            {
+                double x0 = poly[i].X;
+                double y0 = poly[i].Y;
+                double x1 = poly[(i + 1) % n].X;
+                double y1 = poly[(i + 1) % n].Y;
+
+                // Calculate value of A
+                // using shoelace formula
+                double A = (x0 * y1) - (x1 * y0);
+                signedArea += A;
+
+                // Calculating coordinates of
+                // centroid of polygon
+                ans[0] += (x0 + x1) * A;
+                ans[1] += (y0 + y1) * A;
+            }
+            signedArea *= 0.5;
+            gbXYZ centroid = new gbXYZ(ans[0] / (6 * signedArea),
+              ans[1] / (6 * signedArea), 0);
+            return centroid;
+        }
+        /// <summary>
+        /// Return the perimeter length of a polygon represented by a list of points.
+        /// </summary>
+        public static double GetPolyPerimeter(List<gbXYZ> poly)
+        {
+            double length = 0;
+            for (int i = 0; i < poly.Count - 1; i++)
+            {
+                length += poly[i].DistanceTo(poly[i + 1]);
+            }
+            length += poly[poly.Count - 1].DistanceTo(poly[0]);
+            return length;
+        }
+        /// <summary>
+        /// Return the edges of a closed polygon by a list of points.
+        /// It does not matter if the list of points is closed. The function 
+        /// will erase edge with zero length and close the polygon.
+        /// </summary>
+        public static List<gbSeg> GetClosedPoly(List<gbXYZ> pts)
+        {
+            List<gbSeg> boundary = new List<gbSeg>();
+            for (int i = 0; i < pts.Count - 1; i++)
+            {
+                gbSeg edge = new gbSeg(pts[i], pts[i + 1]);
+                if (edge.Length > _eps)
+                    boundary.Add(edge);
+            }
+            if (pts[pts.Count - 1].DistanceTo(pts[0]) > _eps)
+                boundary.Add(new gbSeg(pts[pts.Count - 1], pts[0]));
+            return boundary;
+        }
+
+        /// <summary>
+        /// Degenerated version. Please refer to Clipper for more robust and complex functions.
+        /// </summary>
+        public static List<gbXYZ> PolyOffset(List<gbXYZ> pts, double offset, bool isInward)
+        {
+            List<gbXYZ> offsetPts = new List<gbXYZ>();
+            for (int i = 0; i < pts.Count; i++)
+            {
+                gbXYZ vec1, vec2;
+                if (i == 0)
+                    vec1 = pts[0] - pts[pts.Count - 1];
+                else
+                    vec1 = pts[i] - pts[i - 1];
+                if (i == pts.Count - 1)
+                    vec2 = pts[pts.Count - 1] - pts[0];
+                else
+                    vec2 = pts[i] - pts[i + 1];
+                vec1.Unitize();
+                vec2.Unitize();
+                gbXYZ direction = vec1 + vec2;
+                if (isInward)
+                    offsetPts.Add(pts[i] - offset * direction);
+                else
+                    offsetPts.Add(pts[i] + offset * direction);
+            }
+            return offsetPts;
         }
 
 
@@ -1543,20 +1556,7 @@ namespace Gingerbread.Core
             return offsetLoops;
         }
 
-        #endregion
+        #endregion poly operations
 
-        #region Misc.
-
-        static public List<gbXYZ> GetReversedLoop(List<gbXYZ> loop)
-        {
-            List<gbXYZ> revLoop = new List<gbXYZ>();
-            foreach (gbXYZ vertex in loop)
-                revLoop.Add(vertex);
-            revLoop.Reverse();
-            return revLoop;
-        }
-
-        #endregion
     }
 }
-

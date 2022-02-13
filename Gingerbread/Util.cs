@@ -951,10 +951,28 @@ namespace Gingerbread
         /// </summary>
         public static void LogPrint(string msg)
         {
-            using (var sw = File.AppendText(@"E:\project\gingerbread\log.txt"))
+            string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string logPath = thisAssemblyFolderPath + "/log.txt";
+            using (var sw = File.AppendText(logPath))
             {
-                sw.WriteLine(msg);
+                sw.WriteLine($"[{DateTime.Now.ToLongTimeString()}] {msg}");
             }
+        }
+
+        public static void LogInitiate()
+        {
+            string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            string logPath = thisAssemblyFolderPath + "/log.txt";
+            FileStream fs;
+            if (File.Exists(logPath))
+            {
+                fs = new FileStream(logPath, FileMode.Truncate, FileAccess.Write);
+            }
+            else
+            {
+                fs = new FileStream(logPath, FileMode.Create, FileAccess.Write);
+            }
+            fs.Close();
         }
 
         public static void Swap<T>(ref T left, ref T right)

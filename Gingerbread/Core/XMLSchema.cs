@@ -88,7 +88,12 @@ namespace Gingerbread.Core
         public string id { get; set; }
         [XmlAttribute]
         public buildingTypeEnum buildingType { get; set; }
+        //[XmlAttribute]
+        //public string ifcGUID { get; set; }
         public string Area { get; set; }
+        //public string Name { get; set; }
+        //public string Description { get; set; }
+        //public string StreetAddress { get; set; }
         [XmlElement("BuildingStorey")]
         public BuildingStorey[] bldgStories { get; set; }
         [XmlElement("Space")]
@@ -144,7 +149,142 @@ namespace Gingerbread.Core
         SportsArena,
         TownHall,
         Transportation,
-        Unknown
+        Unknown,
+        Warehouse,
+        Workshop
+    }
+
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
+    public enum spaceTypeEnum
+    {
+        ActiveStorage, 
+        ActiveStorageHospitalOrHealthcare,
+        AirOrTrainOrBusBaggageArea,
+        AirportConcourse,
+        AtriumEachAdditionalFloor,
+        AtriumFirstThreeFloors,
+        AudienceOrSeatingAreaPenitentiary,
+        AudienceOrSeatingAreaExerciseCenter,
+        AudienceOrSeatingAreaGymnasium,
+        AudienceOrSeatingAreaSportsArena,
+        AudienceOrSeatingAreaConventionCenter,
+        AudienceOrSeatingAreaMotionPictureTheatre,
+        AudienceOrSeatingAreaPerformingArtsTheatre,
+        AudienceOrSeatingAreaReligious,
+        AudienceOrSeatingAreaPoliceOrFireStations,
+        AudienceOrSeatingAreaCourtHouse,
+        AudienceOrSeatingAreaAuditorium,
+        BankCustomerArea,
+        BankingActivityAreaOffice,
+        BarberAndBeautyParlor,
+        CardFileAndCataloguingLibrary,
+        ClassroomOrLectureOrTrainingPenitentiary,
+        ClassroomOrLectureOrTraining,
+        ConfinementCellsPenitentiary,
+        ConfinementCellsCourtHouse,
+        ConferenceMeetingOrMultipurpose,
+        CooridorOrTransition,
+        CorridorOrTransitionManufacturingFacility,
+        CorridorsWithPatientWaitingExamHospitalOrHealthcare,
+        CourtSportsAreaSportsArena,
+        CourtroomCourtHouse,
+        DepartmentStoreSalesAreaRetail,
+        DetailedManufacturingFacility,
+        DiningArea,
+        DiningAreaHotel,
+        DiningAreaFamilyDining,
+        DiningAreaLoungeOrLeisureDining,
+        DiningAreaMotel,
+        DiningAreaTransportation,
+        DiningAreaPenitentiary,
+        DiningAreaCivilServices,
+        DormintoryBedroom,
+        DormintoryStudyHall,
+        DressingOrLockerOrFittingRoomGymnasium,
+        DressingOrLockerOrFittingRoomCourtHouse,
+        DressingOrLockerOrFittingRoomPerformingArtsTheatre,
+        DressingOrLockerOrFittingRoomAuditorium,
+        DressingOrLockerOrFittingRoomExerciseCenter,
+        ElectricalOrMechnaical,
+        ElevatorLobbies,
+        EmergencyHospitalOrHealthcare,
+        EquipmentRoomManufacturingFacility,
+        ExamOrTreatmentHospitalOrHealthcare,
+        ExcerciseAreaExerciseCenter,
+        ExcerciseAreaGymnasium,
+        ExhibitSpaceConventionCenter,
+        FellowshipHallReligiousBuildings,
+        FineMaterialWarehouse,
+        FineMerchandiseSalesAreaRetail,
+        FireStationEngineRoomPoliceOrFireStation,
+        FoodPreparation,
+        GarageServiceOrRepairAutomotiveFacility,
+        GeneralHighBayManufacturingFacility,
+        GneralLowBayManufacturingFacility,
+        GeneralExhibitionMuseum,
+        HospitalNurseryHospitalOrHealthcare,
+        HospitalOrMedicalSuppliesHospitalOrHealthcare,
+        HospitalOrRadiologyHospitalOrHealthcare,
+        HotelOrConferenceCenterConferenceOrMeeting,
+        InactiveStorage,
+        JudgesChambersCourtHouse,
+        LaboratoryOffice,
+        LaundryIroningAndSorting,
+        LaundryWashingHospitalOrHealthcare,
+        LibraryAudioVisualLibraryAudioVisual,
+        LivingQuartersDormintory,
+        LivingQuartersMotel,
+        LivingQuartersHoter,
+        Lobby,
+        LobbyReligiousBuildings,
+        LobbyMotionPictureTheatre,
+        LobbyAuditorium,
+        LobbyPerformingArtsTheatre,
+        LobbyPostOffice,
+        LobbyHotel,
+        LoungeOrRecreation,
+        MallConcourseSalesAreaRetail,
+        MassMerchandisingSalesAreaRetail,
+        MediumOrBulkyMaterialWarehouse,
+        MerchandisingSalesAreaRetail,
+        MuseumAndGalleryStorage,
+        NurseStationHospitalOrHealthcare,
+        OfficeEnclosed,
+        OfficeOpenPlan,
+        OfficeCommonActivityAreasInactiveStorage,
+        OperatingRoomHospitalOrHealthcare,
+        OtherTelevisedPlayingAreaSportsArena,
+        ParkingAreaAttendantOnlyParkingGarage,
+        ParkingAreaPedestrianParkingGarage,
+        PatientRoomHospitalOrHealthcare,
+        PersonalServicesSalesAreaRetail,
+        PharmacyHospitalOrHealthcare,
+        PhysicalTherapyHospitalOrHealthcare,
+        PlayingAreaGymnasium,
+        Plenum,
+        PoliceStationLaboratoryPoliceOrFireStations,
+        PublicAndStaffLoungeHospitalOrHealthcare,
+        ReadingAreaLibrary,
+        ReceptionOrWaitingTransportation,
+        ReceptionOrWaitingMotel,
+        ReceptionOrWaitingHotel,
+        RecoveryHospitalOrHealthcare,
+        RestorationMuseum,
+        Restrooms,
+        RingSportsAreaSportsArena,
+        ServerRoom,
+        SleepingQuartersPoliceOrFireStation,
+        SortingAreaPostOffice,
+        SpecialtyStoreSalesAreaRetail,
+        StacksLibrary,
+        StairsInactive,
+        Stairway,
+        SupermarketSalesAreaRetail,
+        TerminalTicketCounterTransportation,
+        WorkshopWorkshop,
+        WorshipPulpitChoirReligious,
     }
 
 
@@ -170,6 +310,8 @@ namespace Gingerbread.Core
     {
         [XmlAttribute]
         public string id;
+        //public string Name { get; set; }
+        //public string Description { get; set;}
         public Location Location;
         [XmlElement(ElementName = "Building", IsNullable = false)]
         public Building[] Buildings { get; set; }
@@ -372,6 +514,7 @@ namespace Gingerbread.Core
         Thu,
         Fri,
         Sat,
+        Custom, 
         All
     }
 
@@ -1037,6 +1180,7 @@ namespace Gingerbread.Core
         public string ProductName { get; set; }
         [XmlElement("Version")]
         public string Version { get; set; }
+        //public string ProjectEntity { get; set; }
         [XmlElement]
         public string Platform { get; set; }
     }
@@ -1199,8 +1343,9 @@ namespace Gingerbread.Core
     {
         Temp,
         Fraction,
-        OnOff
-
+        OnOff,
+        ResetTemp,
+        ActivityLevel
     }
 
     [Serializable]
@@ -1375,6 +1520,25 @@ namespace Gingerbread.Core
     [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
+    public enum surfaceDescriptionEnum
+    {
+        First = 1,
+        Second = 2,
+        Both,
+    }
+
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
+    public enum surfaceReferenceLocationEnum
+    {
+        Centerline,
+        InteriorSurface,
+    }
+
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
     public enum surfaceTypeEnum
     {
         InteriorWall,
@@ -1451,6 +1615,16 @@ namespace Gingerbread.Core
     [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
     [System.SerializableAttribute()]
     [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
+    public enum illuminaceUnitEnum
+    {
+        Footcandles,
+        Lux,
+        Phot,
+    }
+
+    [System.CodeDom.Compiler.GeneratedCodeAttribute("xsd", "4.0.30319.1")]
+    [System.SerializableAttribute()]
+    [System.Xml.Serialization.XmlTypeAttribute(Namespace = "http://www.gbxml.org/schema")]
     public enum unitlessUnitEnum
     {
         Percent,
@@ -1488,6 +1662,10 @@ namespace Gingerbread.Core
         FiveOneOne = 6,
         [Description("5.12")]
         FiveOneTwo = 7,
+        [Description("6.00")]
+        SixOhOh = 8,
+        [Description("6.01")]
+        SixOhOne = 9,
     }
 
     [Serializable]

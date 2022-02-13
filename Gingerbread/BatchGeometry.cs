@@ -40,7 +40,7 @@ namespace Gingerbread
             out Dictionary<int, List<List<gbXYZ>>> dictShade, 
             out Dictionary<int, List<gbSeg>> dictSeparationline,
             out Dictionary<int, List<gbSeg>> dictGrid,
-            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictRoom,
+            out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictRoom,
             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
             out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
             out string checkInfo)
@@ -58,7 +58,7 @@ namespace Gingerbread
             dictShade = new Dictionary<int, List<List<gbXYZ>>>();
             dictSeparationline = new Dictionary<int, List<gbSeg>>();
             dictGrid = new Dictionary<int, List<gbSeg>>();
-            dictRoom = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
+            dictRoom = new Dictionary<int, List<Tuple<List<gbXYZ>, string>>>();
             dictWindowplus = new Dictionary<string, List<Tuple<string, double>>>();
             dictDoorplus = new Dictionary<string, List<Tuple<string, double>>>();
             // retrieve all linked documents
@@ -219,7 +219,7 @@ namespace Gingerbread
             IList<Element> eCurtaSys = new FilteredElementCollector(doc)
                 .OfCategory(BuiltInCategory.OST_CurtaSystem)
                 .ToElements();
-            Debug.Print($"BatchGeometry:: We got {eCurtaSys.Count} curtain system elements");
+            //Debug.Print($"BatchGeometry:: We got {eCurtaSys.Count} curtain system elements");
 
             List<List<Line>> gridClusters = new List<List<Line>>();
             foreach (Element e in eCurtaSys)
@@ -230,10 +230,10 @@ namespace Gingerbread
                 if (cs is null)
                     continue;
                 List<Line> gridCluster = new List<Line>();
-                Debug.Write($"BatchGeometry:: The curtainGridSet- ");
+                //Debug.Write($"BatchGeometry:: The curtainGridSet- ");
                 foreach (CurtainGrid cg in cs.CurtainGrids)
                 {
-                    Debug.Write($" X ");
+                    //Debug.Write($" X ");
                     //List<ElementId> vIds = cg.GetVGridLineIds().ToList();
                     //for (int v = 0; v < vIds.Count; v++)
                     //{
@@ -243,10 +243,10 @@ namespace Gingerbread
                     //}
                     gridCluster.AddRange(Util.GetCurtainGridVerticalLattice(doc, cg));
                 }
-                Debug.Write($"\n");
+                //Debug.Write($"\n");
                 gridClusters.Add(gridCluster);
             }
-            Debug.Print($"BatchGeometry:: We got {gridClusters.Count} curtainGrids");
+            //Debug.Print($"BatchGeometry:: We got {gridClusters.Count} curtainGrids");
 
 
             // iterate each floor to append familyinstance information to the dictionary
@@ -344,17 +344,19 @@ namespace Gingerbread
 
 
                 // add room location and label, still PENDING
-                List<Tuple<gbXYZ, string>> roomlocs = new List<Tuple<gbXYZ, string>>();
-                IList<Element> eRooms = new FilteredElementCollector(doc)
-                    .OfCategory(BuiltInCategory.OST_Rooms)
-                    .WherePasses(levelFilter)
-                    .ToElements();
-                foreach (Element e in eRooms)
-                {
-                    LocationPoint lp = e.Location as LocationPoint;
-                    XYZ pt = lp.Point;
-                    roomlocs.Add(new Tuple<gbXYZ, string> (Util.gbXYZConvert(pt), "office"));
-                }
+                // before the function of visual centeroid of polygon is set
+                // use the polygon boundary to represent the room
+                List<Tuple<List<gbXYZ>, string>> roomlocs = new List<Tuple<List<gbXYZ>, string>>();
+                //IList<Element> eRooms = new FilteredElementCollector(doc)
+                //    .OfCategory(BuiltInCategory.OST_Rooms)
+                //    .WherePasses(levelFilter)
+                //    .ToElements();
+                //foreach (Element e in eRooms)
+                //{
+                //    LocationPoint lp = e.Location as LocationPoint;
+                //    XYZ pt = lp.Point;
+                //    roomlocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(pt), "office"));
+                //}
                 dictRoom.Add(z, roomlocs);
 
 
@@ -400,7 +402,7 @@ namespace Gingerbread
 
                         lcCrvs.Add(new gbSeg(lcPts[0], lcPts[lcPts.Count - 1]));
                     }
-                    Debug.Print($"BatchGeometry:: Gen {lcCrvs.Count} segs from {gridCluster.Count} grids");
+                    //Debug.Print($"BatchGeometry:: Gen {lcCrvs.Count} segs from {gridCluster.Count} grids");
                 }
                 dictCurtaSystem.Add(z, lcCrvs);
             }
@@ -523,61 +525,57 @@ namespace Gingerbread
                 List<List<gbXYZ>> floorSlab = new List<List<gbXYZ>>();
                 List<List<gbXYZ>> shadeSlabs = new List<List<gbXYZ>>();
 
-                Options op = e.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = e.get_Geometry(op);
-                foreach (GeometryObject geomObj in ge)
+                Floor floor = e as Floor;
+                if (floor == null)
+                    continue;
+
+                IList<Autodesk.Revit.DB.Reference> references = HostObjectUtils.GetTopFaces(floor);
+                if (references.Count > 0)
                 {
-                    Solid geomSolid = geomObj as Solid;
-                    if (geomObj != null)
+                    var reference = references[0];
+                    GeometryObject topFaceGeo = floor.GetGeometryObjectFromReference(reference);
+                    PlanarFace topFace = topFaceGeo as PlanarFace;
+                    // assuming that the floor slab clings to the level plane, 
+                    // which is a mandatory rule in BIM
+                    // other slabs violate this rule will be moved to a list of shading srfs
+                    if (topFace != null)
                     {
-                        foreach (Face geomFace in geomSolid.Faces)
+                        for (int i = 0; i < levels.Count; i++)
                         {
-                            PlanarFace planarFace = geomFace as PlanarFace;
-                            // pick the side facing top, which usually aligns with the floor elevation
-                            if (planarFace != null && planarFace.FaceNormal.Z == 1)
+                            double deltaZ = topFace.Origin.Z - levels[i].elevation;
+                            if (Math.Abs(deltaZ) < Util.MToFoot(0.2))
                             {
-                                // assuming that the floor slab clings to the level plane, 
-                                // which is a mandatory rule in BIM
-                                // other slabs violate this rule will be moved to a list of shading srfs
-                                for (int i = 0; i < levels.Count; i++)
+                                foreach (EdgeArray edgeArray in topFace.EdgeLoops)
                                 {
-                                    double deltaZ = planarFace.Origin.Z - levels[i].elevation;
-                                    if (Math.Abs(deltaZ) < Util.MToFoot(0.2)) // && 
-                                    //planarFace.FaceNormal.Z == 1) || planarFace.FaceNormal.Z == -1)
+                                    List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                                    foreach (Edge edge in edgeArray)
                                     {
-                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
-                                        {
-                                            List<gbXYZ> boundaryLoop = new List<gbXYZ>();
-                                            foreach (Edge edge in edgeArray)
-                                            {
-                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
-                                                boundaryLoop.Add(Util.gbXYZConvert(ptStart));
-                                            }
-                                            boundaryLoop.Add(boundaryLoop[0]);
-                                            // the boundary loop can be clockwise or counter-clockwise
-                                            // the clockwise loop always represents the boundary of a single slab
-                                            // the counter-clockwise loop represents the boundary of inner holes
-                                            floorSlab.Add(boundaryLoop);
-                                            levelMark = i;
-                                        }
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
-                                    else if (deltaZ > 0 && deltaZ < levels[i].height)
+                                    boundaryLoop.Add(boundaryLoop[0]);
+                                    // the boundary loop can be clockwise or counter-clockwise
+                                    // the clockwise loop always represents the boundary of a single slab
+                                    // the counter-clockwise loop represents the boundary of inner holes
+                                    floorSlab.Add(boundaryLoop);
+                                    levelMark = i;
+                                }
+                            }
+                            else if (deltaZ > 0 && deltaZ < levels[i].height)
+                            {
+                                foreach (EdgeArray edgeArray in topFace.EdgeLoops)
+                                {
+                                    List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                                    foreach (Edge edge in edgeArray)
                                     {
-                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
-                                        {
-                                            List<gbXYZ> boundaryLoop = new List<gbXYZ>();
-                                            foreach (Edge edge in edgeArray)
-                                            {
-                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
-                                                boundaryLoop.Add(Util.gbXYZConvert(ptStart));
-                                            }
-                                            boundaryLoop.Add(boundaryLoop[0]);
-                                            // as to shading surface, only the outer, counter-clockwise loop is neede
-                                            if (!GBMethod.IsClockwise(boundaryLoop))
-                                                shadeSlabs.Add(boundaryLoop);
-                                            levelMark = i;
-                                        }
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
+                                    boundaryLoop.Add(boundaryLoop[0]);
+                                    // as to shading surface, only the outer, counter-clockwise loop is neede
+                                    if (!GBMethod.IsClockwise(boundaryLoop))
+                                        shadeSlabs.Add(boundaryLoop);
+                                    levelMark = i;
                                 }
                             }
                         }
@@ -601,39 +599,36 @@ namespace Gingerbread
             {
                 int levelMark = -1;
                 List<List<gbXYZ>> roofSlab = new List<List<gbXYZ>>();
-                Options op = e.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = e.get_Geometry(op);
-                foreach (GeometryObject geomObj in ge)
+
+                Floor floor = e as Floor;
+                if (floor == null)
+                    continue;
+
+                IList<Autodesk.Revit.DB.Reference> references = HostObjectUtils.GetBottomFaces(floor);
+                if (references.Count > 0)
                 {
-                    Solid geomSolid = geomObj as Solid;
-                    if (geomObj != null)
+                    var reference = references[0];
+                    GeometryObject bottomFaceGeo = floor.GetGeometryObjectFromReference(reference);
+                    PlanarFace bottomFace = bottomFaceGeo as PlanarFace;
+                    if (bottomFace != null)
                     {
-                        foreach (Face geomFace in geomSolid.Faces)
+                        for (int i = 0; i < levels.Count; i++)
                         {
-                            PlanarFace planarFace = geomFace as PlanarFace;
-                            // pick the side facing down, which usually aligns with the roof elevation
-                            // the upper face of roof may have slope
-                            if (planarFace != null && planarFace.FaceNormal.Z == -1)
+                            if (Math.Abs(bottomFace.Origin.Z - levels[i].elevation) < Util.MToFoot(0.2))
                             {
-                                for (int i = 0; i < levels.Count; i++)
+                                foreach (EdgeArray edgeArray in bottomFace.EdgeLoops)
                                 {
-                                    if (Math.Abs(planarFace.Origin.Z - levels[i].elevation) < Util.MToFoot(0.2))
+                                    List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                                    foreach (Edge edge in edgeArray)
                                     {
-                                        foreach (EdgeArray edgeArray in geomFace.EdgeLoops)
-                                        {
-                                            List<gbXYZ> boundaryLoop = new List<gbXYZ>();
-                                            foreach (Edge edge in edgeArray)
-                                            {
-                                                XYZ ptStart = edge.AsCurve().GetEndPoint(0);
-                                                boundaryLoop.Add(Util.gbXYZConvert(ptStart));
-                                            }
-                                            boundaryLoop.Add(boundaryLoop[0]);
-                                            // reverse all loops when dealing a down-facing surface
-                                            boundaryLoop.Reverse();
-                                            roofSlab.Add(boundaryLoop);
-                                            levelMark = i;
-                                        }
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
+                                    boundaryLoop.Add(boundaryLoop[0]);
+                                    // reverse all loops when dealing a down-facing surface
+                                    boundaryLoop.Reverse();
+                                    roofSlab.Add(boundaryLoop);
+                                    levelMark = i;
                                 }
                             }
                         }
@@ -779,7 +774,7 @@ namespace Gingerbread
                 }
             }
 
-            Debug.Print($"BatchGeometry:: beams in total - {fiBeams.Count}");
+            //Debug.Print($"BatchGeometry:: beams in total - {fiBeams.Count}");
             foreach (FamilyInstance fi in fiBeams)
             {
                 // is it dangerous not considering the curve might not be a line?
@@ -792,11 +787,11 @@ namespace Gingerbread
                 GeometryElement ge = fi.get_Geometry(op);
                 double summit = ge.GetBoundingBox().Max.Z;
                 double bottom = ge.GetBoundingBox().Min.Z;
-                Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
+                //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
 
                 for (int i = 0; i < levels.Count; i++)
                 {
-                    Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
+                    //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
                     // compare the upper limit and the level elevation
                     // assume a tolerance of 0.2m
                     if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
@@ -814,14 +809,36 @@ namespace Gingerbread
 
             // DEBUG
             checkInfo = "";
+            
             for (int i = 0; i < levels.Count; i++)
             {
                 checkInfo += $"#{i} {dictElevation[i].Item2}m <{dictElevation[i].Item1}> geometry summary\n";
                 checkInfo += $"    Wall-{dictWall[i].Count} \tFloorSlab-{dictFloor[i].Count} \tWindow-{dictWindow[i].Count} \tColumn-{dictColumn[i].Count}\n";
                 checkInfo += $"    Curtain-{dictCurtain[i].Count} \tRoom-{dictRoom[i].Count}  \tDoor-{dictDoor[i].Count}  \tBeam-{dictBeam[i].Count}\n";
                 checkInfo += $"    CurtaSys-{dictCurtaSystem[i].Count} \tSeparation-{dictSeparationline[i].Count} \tSkylight-? \tShade-{dictShade[i].Count}\n";
+
+                string logInfo = "";
+                logInfo += $"Level-{i} {dictElevation[i].Item1} {dictElevation[i].Item2}m with components:\n";
+                logInfo += $"           Wall-{dictWall[i].Count} Curtain-{dictCurtain[i].Count} CurtaSys-{dictCurtaSystem[i].Count}\n";
+                logInfo += $"           Window-{dictWindow[i].Count} Door-{dictDoor[i].Count} Column-{dictColumn[i].Count} Beam-{dictBeam[i].Count}\n";
+                int floorSlabCount = 0;
+                int floorHoleCount = 0;
+                foreach (List<List<gbXYZ>> floorSlab in dictFloor[i])
+                {
+                    foreach (List<gbXYZ> loop in floorSlab)
+                    {
+                        if (GBMethod.IsClockwise(loop))
+                            floorHoleCount++;
+                        else
+                            floorSlabCount++;
+                    }
+                }
+                logInfo += $"           FloorMass-{dictFloor[i].Count} FloorSlab-{floorSlabCount} FloorHole-{floorHoleCount} FloorShade-{dictShade[i].Count}\n";
+                logInfo += $"           Room-{dictRoom[i].Count} Separation-{dictSeparationline[i].Count}\n";
+                Util.LogPrint(logInfo);
             }
             checkInfo += "\nDone model check.";
+            
 
             return;
         }

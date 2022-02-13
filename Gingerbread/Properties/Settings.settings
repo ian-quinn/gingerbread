@@ -5,17 +5,17 @@
     <Setting Name="ShortCurveTolerance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.0025602645573</Value>
     </Setting>
-    <Setting Name="tolGroup" Type="System.Double" Scope="User">
+    <Setting Name="tolGrouping" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.5</Value>
     </Setting>
-    <Setting Name="tolExpand" Type="System.Double" Scope="User">
+    <Setting Name="tolPerimeter" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.5</Value>
     </Setting>
     <Setting Name="tolTheta" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="tolDelta" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0.15</Value>
+    <Setting Name="tolAlignment" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0.11</Value>
     </Setting>
     <Setting Name="tolDouble" Type="System.Double" Scope="User">
       <Value Profile="(Default)">1E-05</Value>
@@ -42,7 +42,7 @@
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="projName" Type="System.String" Scope="User">
-      <Value Profile="(Default)">GingerbreadHouse</Value>
+      <Value Profile="(Default)">Gingerbread</Value>
     </Setting>
     <Setting Name="projAddress" Type="System.String" Scope="User">
       <Value Profile="(Default)">Shanghai, China</Value>

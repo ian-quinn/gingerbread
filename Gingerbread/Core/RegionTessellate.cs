@@ -31,21 +31,21 @@ namespace Gingerbread.Core
             int counter = 0;
             while (counter < 50)
             {
-                Debug.Print("RegionTessellate:: Tesselation initializing.. MCR with {0} loops", mcr.Count);
+                //Debug.Print("RegionTessellate:: Tesselation initializing.. MCR with {0} loops", mcr.Count);
 
-                if (counter == 0)
-                {
-                    foreach (gbXYZ pt in mcr[0])
-                        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
-                    Debug.Print("Now is the other");
-                    foreach (gbXYZ pt in mcr[1])
-                        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
-                }
+                //if (counter == 0)
+                //{
+                //    foreach (gbXYZ pt in mcr[0])
+                //        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
+                //    Debug.Print("Now is the other");
+                //    foreach (gbXYZ pt in mcr[1])
+                //        Debug.Print($"{{{pt.X}, {pt.Y}, {pt.Z}}}");
+                //}
 
                 Tessellate(mcr, out List<List<gbXYZ>> panel, out List<gbXYZ> tile);
                 tiles.Add(tile);
                 remains.Add(panel);
-                Debug.Print("RegionTessellate:: Tile generated: " + tiles.Count);
+                //Debug.Print("RegionTessellate:: Tile generated: " + tiles.Count);
                 counter += 1;
                 if (panel.Count == 1 && panel[0].Count <= 5)
                 {
@@ -80,7 +80,7 @@ namespace Gingerbread.Core
             }
             if (shellId == -1)
             {
-                Debug.Print("There is no counter-clockwise shell in the MCR loops");
+                //Debug.Print("There is no counter-clockwise shell in the MCR loops");
                 return;
             }
 
@@ -198,7 +198,7 @@ namespace Gingerbread.Core
             if (poly[poly.Count - 1].Equals(poly[0]))
             {
                 poly.RemoveAt(poly.Count - 1);
-                Debug.Print("RegionTesselate:: Prune the tail of a polyloop");
+                //Debug.Print("RegionTesselate:: Prune the tail of a polyloop");
             }
 
             for (int i = poly.Count - 1; i >= 0; i--)

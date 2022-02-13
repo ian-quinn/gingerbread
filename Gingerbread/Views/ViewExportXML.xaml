@@ -97,12 +97,12 @@ the boundary within this tolerance will be dragged onto that boundary."/>
                                     ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
 
-                        <TextBox Grid.Row="0" Grid.Column="1" Name="cluster" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGroup, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Name="expansion" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolExpand, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Name="threshold" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolDelta, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="0" Grid.Column="1" Name="grouping" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGrouping, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Name="perimeter" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolPerimeter, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Name="alignment" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolAlignment, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 

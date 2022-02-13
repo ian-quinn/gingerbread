@@ -83,7 +83,7 @@
     <Compile Include="Core\PointAlign.cs" />
     <Compile Include="Core\CurveSimplify.cs" />
     <Compile Include="Core\RegionTessellate.cs" />
-    <Compile Include="Core\SpaceDetect.cs" />
+    <Compile Include="Core\RegionDetect.cs" />
     <Compile Include="Core\XMLGeometry.cs" />
     <Compile Include="Core\XMLSchema.cs" />
     <Compile Include="Core\XMLSerialization.cs" />

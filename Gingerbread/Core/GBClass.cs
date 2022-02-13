@@ -182,10 +182,10 @@ namespace Gingerbread.Core
 
     public class gbSeg
     {
-        public gbXYZ start;
-        public gbXYZ end;
-        public double length;
-        public gbXYZ direction;
+        private gbXYZ start;
+        private gbXYZ end;
+        private double length;
+        private gbXYZ direction;
         public gbXYZ Start { get { return start; } }
         public gbXYZ End { get { return end; } }
         public double Length { get { return length; } }
@@ -344,7 +344,7 @@ namespace Gingerbread.Core
         {
             this.id = id;
             this.level = level;
-            this.loop = GBMethod.ElevatePtsLoop(loop, level.elevation);
+            this.loop = GBMethod.ElevatePts(loop, level.elevation);
         }
     }
 
@@ -453,17 +453,17 @@ namespace Gingerbread.Core
         public gbZone(string id, gbLevel level, gbRegion region)
         {
             this.id = id;
-            this.loop = GBMethod.ElevatePtsLoop(region.loop, level.elevation);
+            this.loop = GBMethod.ElevatePts(region.loop, level.elevation);
             if (region.tiles != null)
             {
                 List<List<gbXYZ>> elevatedTiles = new List<List<gbXYZ>>();
                 foreach (List<gbXYZ> tile in region.tiles)
-                    elevatedTiles.Add(GBMethod.ElevatePtsLoop(tile, level.elevation));
+                    elevatedTiles.Add(GBMethod.ElevatePts(tile, level.elevation));
                 tiles = elevatedTiles;
             }
             else
             {
-                tiles = new List<List<gbXYZ>>() { GBMethod.ElevatePtsLoop(region.loop, level.elevation) };
+                tiles = new List<List<gbXYZ>>() { GBMethod.ElevatePts(region.loop, level.elevation) };
             }
 
                 
@@ -501,7 +501,7 @@ namespace Gingerbread.Core
                     List<gbSurface> innerWalls = new List<gbSurface>();
                     for (int j = 0; j < region.innerLoops[i].Count - 1; j++)
                     {
-                        List<gbXYZ> elevatedInnerLoop = GBMethod.ElevatePtsLoop(region.innerLoops[i], level.elevation);
+                        List<gbXYZ> elevatedInnerLoop = GBMethod.ElevatePts(region.innerLoops[i], level.elevation);
                         List<gbXYZ> subLoop = new List<gbXYZ>() {
                             elevatedInnerLoop[j],
                             elevatedInnerLoop[j + 1],

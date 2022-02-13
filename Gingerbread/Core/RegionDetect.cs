@@ -10,7 +10,7 @@ using Gingerbread.Core;
 
 namespace Gingerbread.Core
 {
-    public static class SpaceDetect
+    public static class RegionDetect
     {
         public static object Rhino { get; private set; }
 
@@ -184,9 +184,9 @@ namespace Gingerbread.Core
                 //if (IsSegJoined(kvp.Value[0], kvp.Value.Last(), 0.00001))
                 {
                     orphanId.Add(kvp.Key);
-                    Debug.Print($"Log #{orphanId.Count} orphan for {intersectionCheck}. at {kvp.Key}");
+                    //Debug.Print($"Log #{orphanId.Count} orphan for {intersectionCheck}. at {kvp.Key}");
                     foreach (gbSeg edge in kvp.Value)
-                        Debug.Print($"{{{edge}}}");
+                        //Debug.Print($"{{{edge}}}");
                     //Debug.Print($"Log #{orphanId.Count} orphan for not joined. at {kvp.Key}");
                     continue;
                 }
@@ -222,7 +222,7 @@ namespace Gingerbread.Core
                     infoLoops.Add(new List<string>());
                     regions.Add(new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + kvp.Key.ToString(),
                         new List<gbXYZ>(), new List<string>()));
-                    Debug.Print($"SpaceDetect:: Unexpected orphan detected at F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key}");
+                    //Debug.Print($"SpaceDetect:: Unexpected orphan detected at F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key}");
                     continue;
                 }
 
@@ -276,7 +276,7 @@ namespace Gingerbread.Core
 
                 // mark the shell region. make it the first element in the list: regions
                 // this could mandate every nested regions to have its outer shell
-                Debug.Print($"Log preparing for region F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key} with {ptLoop.Count} edges");
+                //Debug.Print($"Log preparing for region F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key} with {ptLoop.Count} edges");
                 gbRegion newRegion = new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop);
                 if (shellId.Contains(kvp.Key))
                 {
@@ -554,8 +554,7 @@ namespace Gingerbread.Core
             // not possible to have a nesting over 10 levels
              while (containRef.Count > 0 && safeLock < 10)
             {
-                Debug.Print("SpaceDetect:: " + "Iteration at: " + safeLock.ToString() +
-                  " with " + containRef.Count.ToString() + "chains.");
+                //Debug.Print("SpaceDetect:: " + "Iteration at: " + safeLock.ToString() + " with " + containRef.Count.ToString() + "chains.");
                 int delChainIdx = -1;
                 int delCoupleIdx = -1;
                 foreach (var couple in containRef)
@@ -583,15 +582,15 @@ namespace Gingerbread.Core
             }
 
             // DEBUG
-            Debug.Print("SpaceDetect:: " + "Num of Chains " + chains.Count.ToString());
-            foreach (List<int> chain in chains)
-            {
-                Debug.Write("SpaceDetect:: " + "Chain-" + chains.IndexOf(chain).ToString());
-                Debug.Write(" ::Index-");
-                foreach (int num in chain)
-                    Debug.Write(num.ToString() + ", ");
-                Debug.Write("\n");
-            }
+            //Debug.Print("SpaceDetect:: " + "Num of Chains " + chains.Count.ToString());
+            //foreach (List<int> chain in chains)
+            //{
+            //    Debug.Write("SpaceDetect:: " + "Chain-" + chains.IndexOf(chain).ToString());
+            //    Debug.Write(" ::Index-");
+            //    foreach (int num in chain)
+            //        Debug.Write(num.ToString() + ", ");
+            //    Debug.Write("\n");
+            //}
 
             int depth = 0;
             foreach (List<int> chain in chains)
@@ -605,14 +604,14 @@ namespace Gingerbread.Core
                         nestedRegion[chain.Last()][1].loop = null;
                         nestedRegion[chain.Last()][0].isShell = false;
                         chain.RemoveAt(chain.Count - 1);
-                        Debug.Print("SpaceDetect:: Remove one region with too small area");
+                        //Debug.Print("SpaceDetect:: Remove one region with too small area");
                     }
                 if (chain.Count > depth)
                 {
                     depth = chain.Count;
                 }
             }
-            Debug.Print("SpaceDetect:: Containment chain has depth: " + depth);
+            //Debug.Print("SpaceDetect:: Containment chain has depth: " + depth);
             // DEBUG
             // Rhino.RhinoApp.WriteLine("Note the depth of tree is: " + depth.ToString());
             // foreach (List<Point3d[]> item in groups)

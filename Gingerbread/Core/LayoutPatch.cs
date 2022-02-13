@@ -12,14 +12,19 @@ namespace Gingerbread.Core
     public static class LayoutPatch
     {
         /// <summary>
+        /// Modify line segments within the input list: lines.
+        /// Modify the input dictWindow and dictDoor.
+        /// Modify the input dictFloor, appending the void region as slab holes.
+        /// Output list for dictGlazing and dictRoom.
         /// </summary>
-        public static List<gbSeg> PerimeterPatch(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall,
+        public static List<gbSeg> PatchPerimeter(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall,
             List<Tuple<gbXYZ, string>> thisWindow, List<Tuple<gbXYZ, string>> thisDoor, List<List<List<gbXYZ>>> thisFloor, 
             double offsetIn, double offsetExt, bool patchVoid, 
-            out List<gbSeg> glazings, out List<gbXYZ> voidLabels)
+            out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidRegions)
         {
             glazings = new List<gbSeg>();
-            voidLabels = new List<gbXYZ>();
+            airwalls = new List<gbSeg>();
+            voidRegions = new List<List<gbXYZ>>();
 
             List<gbXYZ> contourIn = GBMethod.OffsetPoly(hull, -offsetIn)[0];
             RegionTessellate.SimplifyPoly(contourIn);
@@ -28,11 +33,7 @@ namespace Gingerbread.Core
             RegionTessellate.SimplifyPoly(contourExt);
             contourExt.Add(contourExt[0]);
 
-            List<gbSeg> hullEdges = new List<gbSeg>();
-            for (int i = 0; i < hull.Count - 1; i++)
-            {
-                hullEdges.Add(new gbSeg(hull[i], hull[i + 1]));
-            }
+            List<gbSeg> hullEdges = GBMethod.GetClosedPoly(hull);
 
             List<gbSeg> wallLines = GBMethod.FlattenLines(thisWall);
 
@@ -50,17 +51,17 @@ namespace Gingerbread.Core
                 {
                     foreach (gbSeg hullEdge in hullEdges)
                     {
-                        wallLines[i] = GBMethod.SegExtension(wallLines[i], hullEdge,
-                            Properties.Settings.Default.tolExpand);
+                        wallLines[i] = GBMethod.SegExtensionToSeg(wallLines[i], hullEdge,
+                            Properties.Settings.Default.tolPerimeter);
                     }
                     foreach (gbSeg hullEdge in hullEdges)
                     {
                         double gap = GBMethod.SegDistanceToSeg(wallLines[i], hullEdge,
                             out double overlap, out gbSeg proj);
-                        if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0)
+                        if (proj != null && gap < Properties.Settings.Default.tolPerimeter && proj.Length > 0)
                         {
                             //projected to all hull edges
-                            gbSeg newProj = GBMethod.SegProjection(wallLines[i], hullEdge, out double inDistance);
+                            gbSeg newProj = GBMethod.SegProjection(wallLines[i], hullEdge, false, out double inDistance);
                             chisels.Add(newProj);
                         }
                     }
@@ -86,7 +87,7 @@ namespace Gingerbread.Core
                     foreach (gbSeg hullEdge in hullEdges)
                     {
                         double distance = GBMethod.PtDistanceToSeg(ptSurrogate, hullEdge, out gbXYZ p, out double s);
-                        if (distance < Properties.Settings.Default.tolExpand)
+                        if (distance < Properties.Settings.Default.tolPerimeter)
                         {
                             translation = p - ptSurrogate;
                             break;
@@ -130,7 +131,7 @@ namespace Gingerbread.Core
                             foreach (gbSeg hullEdge in hullEdges)
                             {
                                 double distance = GBMethod.PtDistanceToSeg(inPanels[i][j], hullEdge, out gbXYZ p, out double s);
-                                if (distance < Properties.Settings.Default.tolExpand)
+                                if (distance < Properties.Settings.Default.tolPerimeter)
                                 {
                                     inPanels[i][j] = p;
                                 }
@@ -149,9 +150,25 @@ namespace Gingerbread.Core
                         double perimeter = GBMethod.GetPolyPerimeter(loop);
                         if (area > 10 && perimeter / Math.Sqrt(area) < 6 || area > 100)
                         {
-                            voidBoundary.AddRange(GBMethod.GetPolyBoundary(loop));
-                            gbXYZ voidCentroid = GBMethod.GetPolyCentroid(loop);
-                            voidLabels.Add(voidCentroid);
+                            List<gbSeg> _airWalls = GBMethod.GetClosedPoly(loop);
+                            List<gbSeg> clipperWalls = new List<gbSeg>();
+
+                            for (int i = 0; i < _airWalls.Count; i++)
+                            {
+                                for (int j = 0; j < wallLines.Count; j++)
+                                {
+                                    gbSeg projection = GBMethod.SegProjection(wallLines[j], _airWalls[i], false, out double distance);
+                                    if (projection.Length > 0.5 && distance < 2 * Properties.Settings.Default.tolAlignment)
+                                        clipperWalls.Add(projection);
+                                }
+                            }
+                            clipperWalls.AddRange(hullEdges);
+                            foreach (gbSeg clipperWall in clipperWalls)
+                                _airWalls = GBMethod.EtchSegs(_airWalls, clipperWall, 0.01);
+                            airwalls.AddRange(_airWalls);
+                            voidBoundary.AddRange(GBMethod.GetClosedPoly(loop));
+                            //gbXYZ voidCentroid = GBMethod.GetPolyCentroid(loop);
+                            voidRegions.Add(loop);
                         }
                     }
                 }
@@ -162,7 +179,7 @@ namespace Gingerbread.Core
             {
                 gbXYZ start = lines[i].Start;
                 gbXYZ end = lines[i].End;
-                if (GBMethod.IsPtInPoly(start, hull, true) || GBMethod.IsPtInPoly(end, hull, true))
+                if (GBMethod.IsPtInPoly(start, hull, true) && GBMethod.IsPtInPoly(end, hull, true))
                 {
                     if (!GBMethod.IsSegPolyIntersected(lines[i], contourIn, 0.000001) &&
                         !(GBMethod.IsPtInPoly(start, contourIn, false) || GBMethod.IsPtInPoly(end, contourIn, false)))
@@ -177,9 +194,9 @@ namespace Gingerbread.Core
                             //    0.000001, out gbXYZ intersection, out double t1, out double t2);
                             double gap = GBMethod.SegDistanceToSeg(lines[i], hullEdge,
                                 out double overlap, out gbSeg proj);
-                            if (proj != null && gap < Properties.Settings.Default.tolExpand && proj.Length > 0.5)
+                            if (proj != null && gap < Properties.Settings.Default.tolPerimeter && proj.Length > 0.5)
                             {
-                                Debug.Print($"LayoutPatch:: Original inside seg removed {lines[i]} gap-{gap} shadow-{proj.Length}");
+                                //Debug.Print($"LayoutPatch:: Original inside seg removed {lines[i]} gap-{gap} shadow-{proj.Length}");
                                 //lineBlocks[b][g][i] = proj;
                                 lines.RemoveAt(i);
                                 break;
@@ -190,15 +207,15 @@ namespace Gingerbread.Core
                     {
                         for (int j = 0; j < hull.Count - 1; j++)
                         {
-                            GBMethod.SegExtension2(lines[i], new gbSeg(hull[j], hull[j + 1]),
-                                Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
+                            GBMethod.SegExtendToSeg(lines[i], new gbSeg(hull[j], hull[j + 1]),
+                                Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolPerimeter);
                         }
                     }
                 }
                 else if (!GBMethod.IsSegPolyIntersected(lines[i], hull, 0.000001))
                 {
                     lines.RemoveAt(i);
-                    Debug.Print($"LayoutPatch:: Original outside seg removed {lines[i]}");
+                    //Debug.Print($"LayoutPatch:: Original outside seg removed {lines[i]}");
                 }
             }
 

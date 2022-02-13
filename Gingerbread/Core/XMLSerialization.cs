@@ -50,6 +50,7 @@ namespace Gingerbread.Core
             // SPACE
             // a list for space that is replacable by multipliers during energy simulation
             List<string> spaceRemovableID = new List<string>();
+            List<string> spaceVoidID = new List<string>();
             // PENDING use another way to generate the label
             int currentLevel = 0;
             int counter = 0;
@@ -68,6 +69,8 @@ namespace Gingerbread.Core
 
                 if (zones[i].level.isShadowing == true)
                     spaceRemovableID.Add(zones[i].id);
+                if (zones[i].function == "Void")
+                    spaceVoidID.Add(zones[i].id);
             }
             // summarize the total indoor area
             cmp.Buildings[0].Area = string.Format("{0:0.000000}", sumArea);
@@ -84,12 +87,12 @@ namespace Gingerbread.Core
                 if (faces[i].loop.Count < 3)
                 {
                     // the degenearte surface exludes triangles
-                    Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
+                    //Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
                     continue;
                 }
                 if (faces[i].area < 0.001)
                 {
-                    Debug.Print("XMLSerialization:: 0 area warning at surface: " + i);
+                    //Debug.Print("XMLSerialization:: 0 area warning at surface: " + i);
                     //continue;
                 }
 
@@ -99,6 +102,7 @@ namespace Gingerbread.Core
                 uniqueSrfs.Add(faces[i]);
 
                 Surface newSurface = MakeSurface(faces[i], srfCounter);
+                //Debug.Print($"Generating surface-{srfCounter}");
 
                 // check if its adjacent spaces are all shadowing spaces, and removable
                 // by null, the surface is shading surface, skip it
@@ -108,9 +112,27 @@ namespace Gingerbread.Core
                         if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef))
                             newSurface.isShadowing = "true";
                     if (newSurface.AdjacentSpaceId.Length == 2)
+                    {
+                        if (spaceVoidID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef) ||
+                            spaceVoidID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
+                        {
+                            // return value is like ["F1", "", "B0", "", "G2", "", "Z10", ""]
+                            string[] lableChain1 = newSurface.AdjacentSpaceId[0].spaceIdRef.Split(':');
+                            // or you should split by a string
+                            //string[] lableChain1 = newSurface.AdjacentSpaceId[0].spaceIdRef.Split(new string[] { "::" },
+                            //StringSplitOptions.RemoveEmptyEntries);
+                            int levelId1 = Convert.ToInt32(lableChain1[0].Substring(1, lableChain1[0].Length - 1));
+                            string[] lableChain2 = newSurface.AdjacentSpaceId[1].spaceIdRef.Split(':');
+                            int levelId2 = Convert.ToInt32(lableChain2[0].Substring(1, lableChain2[0].Length - 1));
+                            if (spaceVoidID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
+                                Util.Swap(ref levelId1, ref levelId2);
+                            if (levelId1 == levelId2 + 1)
+                                newSurface.surfaceType = surfaceTypeEnum.Air;
+                        }
                         if (spaceRemovableID.Contains(newSurface.AdjacentSpaceId[0].spaceIdRef) &&
                             spaceRemovableID.Contains(newSurface.AdjacentSpaceId[1].spaceIdRef))
                             newSurface.isShadowing = "true";
+                    }
                 }
                 cmp.Surface[i] = newSurface;
                 srfCounter++;

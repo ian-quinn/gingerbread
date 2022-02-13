@@ -280,7 +280,7 @@ namespace Gingerbread.Core
 
                     // align this axis with the former blueprint
                     // search for the nearest axis in blueprint for alignment
-                    double minDistance = Properties.Settings.Default.tolDelta;
+                    double minDistance = Properties.Settings.Default.tolAlignment;
                     gbSeg offsetAxis = axis;
                     gbXYZ offset = new gbXYZ();
                     foreach (gbSeg preAxis in preBlueprint)
@@ -295,11 +295,11 @@ namespace Gingerbread.Core
                         }
                     }
                     // record the offset vector when the suitable target axis is found
-                    if (minDistance < Properties.Settings.Default.tolDelta)
+                    if (minDistance < Properties.Settings.Default.tolAlignment)
                     {
                         //Debug.Print($"Axis {axis} moves to {offsetAxis}");
-                        double distance = GBMethod.PtDistanceToSeg(axis.start, offsetAxis, out gbXYZ plummet, out double t);
-                        offset = plummet - axis.start;
+                        double distance = GBMethod.PtDistanceToSeg(axis.Start, offsetAxis, out gbXYZ plummet, out double t);
+                        offset = plummet - axis.Start;
                     }
 
                     // record the offset axis for the next level
@@ -634,7 +634,7 @@ namespace Gingerbread.Core
                     }
                 }
             }
-            Debug.Print("PointAlign:: lattice count after skim: " + lattice.Count);
+            //Debug.Print("PointAlign:: lattice count after skim: " + lattice.Count);
 
 
             return lattice;
