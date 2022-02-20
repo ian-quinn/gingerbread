@@ -993,6 +993,33 @@ namespace Gingerbread.Core
         }
 
         /// <summary>
+        /// Check the convexity of a polygon. False as to concave.
+        /// </summary>
+        public static bool IsConvex(List<gbXYZ> pts)
+        {
+            List<gbXYZ> _pts = new List<gbXYZ>();
+            for (int i = 0; i < pts.Count; i++)
+            {
+                int nextId = i + 1 < pts.Count ? i + 1 : 0;
+                if (pts[i].DistanceTo(pts[nextId]) > 0.000001)
+                    _pts.Add(pts[i]);
+            }
+            if (IsClockwise(_pts))
+                _pts.Reverse();
+            for (int i = 0; i < _pts.Count; i++)
+            {
+                int nextId = i + 1 < _pts.Count ? i + 1 : 0;
+                int prevId = i - 1 < 0 ? _pts.Count - 1 : i - 1;
+                if (VectorAngle(_pts[i] - _pts[prevId], _pts[i] - _pts[nextId]) > 180)
+                {
+                    Debug.Print("GBMethod:: a concave surface has been detected");
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        /// <summary>
         /// Point on the edge of a poly returns true. The poly includes the boundary
         /// </summary>
         public static bool IsPtInPoly(gbXYZ pt, List<gbXYZ> poly, bool includeOn)
@@ -1171,6 +1198,22 @@ namespace Gingerbread.Core
                 revLoop.Add(vertex);
             revLoop.Reverse();
             return revLoop;
+        }
+
+        static public List<gbXYZ> GetDuplicatePoly(List<gbXYZ> loop)
+        {
+            List<gbXYZ> dupLoop = new List<gbXYZ>();
+            foreach (gbXYZ vertex in loop)
+                dupLoop.Add(vertex);
+            return dupLoop;
+        }
+
+        static public List<gbXYZ> GetPolyLastPointRemoved(List<gbXYZ> loop)
+        {
+            List<gbXYZ> openLoop = new List<gbXYZ>();
+            for (int i = 0; i < loop.Count - 1; i++)
+                openLoop.Add(loop[i]);
+            return openLoop;
         }
 
         /// <summary>

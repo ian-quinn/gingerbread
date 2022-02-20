@@ -193,43 +193,41 @@ namespace Gingerbread.Core
         /// or else the duplicate point will be removed as well. Here we check if the two outgoing vectors 
         /// of a vertice are co-lined. 
         /// </summary>
-        public static void SimplifyPoly(List<gbXYZ> poly)
+        public static void SimplifyPoly(List<gbXYZ> poly, double tolLength = 0.001, double tolAngle = 0.001)
         {
-            if (poly[poly.Count - 1].Equals(poly[0]))
+            List<int> delId = new List<int>();
+            for (int i = 0; i < poly.Count; i++)
             {
-                poly.RemoveAt(poly.Count - 1);
-                //Debug.Print("RegionTesselate:: Prune the tail of a polyloop");
+                int nextId = i + 1 < poly.Count ? i + 1 : 0;
+                if (poly[i].DistanceTo(poly[nextId]) < tolLength)
+                    delId.Add(i);
             }
-
             for (int i = poly.Count - 1; i >= 0; i--)
+                if (delId.Contains(i))
+                    poly.RemoveAt(i);
+
+            delId = new List<int>();
+            for (int i = 0; i < poly.Count; i++)
             {
-                gbXYZ vec1, vec2;
-                if (i == poly.Count - 1)
-                    vec1 = poly[i] - poly[0];
-                else
-                    vec1 = poly[i] - poly[i + 1];
-                if (i == 0)
-                    vec2 = poly[i] - poly[poly.Count - 1];
-                else
-                    vec2 = poly[i] - poly[i - 1];
+                int nextId = i + 1 < poly.Count ? i + 1 : 0;
+                int prevId = i - 1 < 0 ? poly.Count - 1 : i - 1;
+                gbXYZ vec1 = poly[i] - poly[nextId];
+                gbXYZ vec2 = poly[i] - poly[prevId];
+
                 // The function VectorAngle will not check the minor value
                 // must make sure the input vectors are not residules extremely small
-                if (vec1.Norm() < 0.001 || vec2.Norm() < 0.001)
-                {
-                    //Rhino.RhinoApp.WriteLine("Zero norm: " + vec1.Norm().ToString() + " | " + vec2.Norm().ToString());
-                    poly.RemoveAt(i);
-                    continue;
-                }
                 double angle = GBMethod.VectorAngle(vec1, vec2);
                 //Rhino.RhinoApp.WriteLine("Check the redundant point: " + angle.ToString());
 
-                if (Math.Abs(180 - angle) < 0.001 || Math.Abs(0 - angle) < 0.001 || Math.Abs(360 - angle) < 0.001)
+                if (Math.Abs(180 - angle) < tolAngle || Math.Abs(0 - angle) < tolAngle || Math.Abs(360 - angle) < tolAngle)
                 {
                     //Rhino.RhinoApp.WriteLine("Remove point: " + poly[i].ToString());
-                    poly.RemoveAt(i);
+                    delId.Add(i);
                 }
-
             }
+            for (int i = poly.Count - 1; i >= 0; i--)
+                if (delId.Contains(i))
+                    poly.RemoveAt(i);
         }
     }
 

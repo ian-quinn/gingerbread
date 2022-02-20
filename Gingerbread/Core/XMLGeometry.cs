@@ -251,13 +251,14 @@ namespace Gingerbread.Core
                         //foreach (gbXYZ pt in srfLoop2d)
                         //    Debug.Write($"{pt}-");
                         //Debug.Write($"\n");
+                        List<gbXYZ> srfOffset = GBMethod.OffsetPoly(srfLoop2d, -0.05)[0];
 
                         List<gbXYZ> rectifiedOpening = new List<gbXYZ>();
                         if (GBMethod.IsPolyInPoly(boundingBox, srfLoop2d))
                             rectifiedOpening = boundingBox;
                         else
                         {
-                            List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfLoop2d, ClipType.ctIntersection);
+                            List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfOffset, ClipType.ctIntersection);
                             rectifiedOpening = section[0];
                             //Debug.Write($"XMLGeometry:: Rectified");
                             //foreach (gbXYZ pt in rectifiedOpening)
@@ -266,6 +267,21 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound windows detected on {srf.id}");
                         }
+                        RegionTessellate.SimplifyPoly(rectifiedOpening, 0.01);
+                        double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
+                        if (openingArea < 0.001)
+                        {
+                            Util.LogPrint($"Opening: Window < 0.001 will not be added");
+                            continue;
+                        }
+
+                        // prevent the sum of opening area surpassing the base surface area
+                        if (srf.openingArea + openingArea > srf.area)
+                        {
+                            Util.LogPrint($"Opening: The base surface is too full to host another window");
+                            continue;
+                        }
+                        srf.openingArea += openingArea;
 
                         //Debug.Print("XMLGeometry:: " + "Srf location: " + srf.locationLine.ToString());
                         gbXYZ srfVec = srf.locationLine.Direction;
@@ -278,6 +294,7 @@ namespace Gingerbread.Core
                             openingLoop.Add(_pt);
                             //Debug.Print("XMLGeometry:: " + "Pt after transformation: " + _pt.ToString());
                         }
+
                         gbOpening newOpening = new gbOpening(srf.id + "::Opening_" +
                             srf.openings.Count, openingLoop);
                         newOpening.type = openingTypeEnum.FixedWindow;
@@ -287,9 +304,56 @@ namespace Gingerbread.Core
                 }
 
 
+                
+
+
+                // curtain wall is the most likely to go wild
+                foreach (gbSeg opening in dictCurtain[level.id])
+                {
+                    gbSeg projection;
+
+                    for (int k = 0; k < thisSurface.Count; k++)
+                    {
+                        // note that the second segment is the baseline
+                        // the projection has the same direction as the second segment
+                        projection = GBMethod.SegProjection(opening, thisSurface[k].locationLine, 
+                            false, out double distance);
+                        if (projection.Length > 0.5 && distance < 0.1)
+                        {
+                            List<gbXYZ> openingLoop = new List<gbXYZ>();
+
+                            double elevation = thisSurface[k].loop[0].Z;
+                            double height = thisSurface[k].height;
+                            openingLoop.Add(projection.PointAt(0) + new gbXYZ(0, 0, elevation));
+                            openingLoop.Add(projection.PointAt(1) + new gbXYZ(0, 0, elevation));
+                            openingLoop.Add(projection.PointAt(1) + new gbXYZ(0, 0, elevation + height));
+                            openingLoop.Add(projection.PointAt(0) + new gbXYZ(0, 0, elevation + height));
+
+                            gbOpening newOpening = new gbOpening(thisSurface[k].id + "::Opening_" +
+                               thisSurface[k].openings.Count, GBMethod.PolyOffset(openingLoop, 0.05, true))
+                               //thisSurface[k].openings.Count, GBMethod.OffsetPoly(openingLoop, 0.1)[0])
+                            {
+                                width = projection.Length,
+                                height = height,
+                                type = openingTypeEnum.FixedWindow
+                            };
+                            // PENDING for more general methods here
+                            if (!IsOpeningOverlap(thisSurface[k].openings, newOpening))
+                            {
+                                thisSurface[k].openingArea += newOpening.area;
+                                thisSurface[k].openings.Add(newOpening);
+                            }
+                        }
+                        else if (projection.Length < 0.5 && projection.Length > 0.000001)
+                        {
+                            Util.LogPrint($"Glazing: {projection.Length:f4}m one is ignored at {{{projection}}}");
+                        }
+                    }
+                }
+
                 // as to doors
                 // such process is the same as the one creating windows
-                // they will be merged if there is no difference detected in future
+                // the door will be abandoned if the accumulated opening area surpasses the base surface area
                 //Debug.Print($"XMLGeometry:: There are {dictDoor[level.id].Count} doors on level-{level.id}");
                 foreach (Tuple<gbXYZ, string> opening in dictDoor[level.id])
                 {
@@ -377,13 +441,14 @@ namespace Gingerbread.Core
                         //foreach (gbXYZ pt in srfLoop2d)
                         //    Debug.Write($"{pt}-");
                         //Debug.Write($"\n");
+                        List<gbXYZ> srfOffset = GBMethod.OffsetPoly(srfLoop2d, -0.05)[0];
 
                         List<gbXYZ> rectifiedOpening = new List<gbXYZ>();
                         if (GBMethod.IsPolyInPoly(boundingBox, srfLoop2d))
                             rectifiedOpening = boundingBox;
                         else
                         {
-                            List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfLoop2d, ClipType.ctIntersection);
+                            List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfOffset, ClipType.ctIntersection);
                             rectifiedOpening = section[0];
                             //Debug.Write($"XMLGeometry:: Rectified");
                             //foreach (gbXYZ pt in rectifiedOpening)
@@ -392,6 +457,21 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound doors detected on {srf.id}");
                         }
+                        RegionTessellate.SimplifyPoly(rectifiedOpening, 0.01);
+                        double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
+                        if (openingArea < 0.001)
+                        {
+                            Util.LogPrint($"Opening: Door < 0.001 will not be added");
+                            continue;
+                        }
+                            
+                        // prevent the sum of opening area surpassing the base surface area
+                        if (srf.openingArea + openingArea > srf.area)
+                        {
+                            Util.LogPrint($"Opening: The base surface is too full to host another door");
+                            continue;
+                        }
+                        srf.openingArea += openingArea;
 
                         // the returning rectified Opening has already been an open loop
                         //rectifiedOpening.RemoveAt(rectifiedOpening.Count - 1); // transfer to open polyloop
@@ -415,47 +495,6 @@ namespace Gingerbread.Core
                     }
                 }
 
-
-                // curtain wall is the most likely to go wild
-                foreach (gbSeg opening in dictCurtain[level.id])
-                {
-                    gbSeg projection;
-
-                    for (int k = 0; k < thisSurface.Count; k++)
-                    {
-                        // note that the second segment is the baseline
-                        // the projection has the same direction as the second segment
-                        projection = GBMethod.SegProjection(opening, thisSurface[k].locationLine, 
-                            false, out double distance);
-                        if (projection.Length > 0.5 && distance < 0.1)
-                        {
-                            List<gbXYZ> openingLoop = new List<gbXYZ>();
-
-                            double elevation = thisSurface[k].loop[0].Z;
-                            double height = thisSurface[k].height;
-                            openingLoop.Add(projection.PointAt(0) + new gbXYZ(0, 0, elevation));
-                            openingLoop.Add(projection.PointAt(1) + new gbXYZ(0, 0, elevation));
-                            openingLoop.Add(projection.PointAt(1) + new gbXYZ(0, 0, elevation + height));
-                            openingLoop.Add(projection.PointAt(0) + new gbXYZ(0, 0, elevation + height));
-
-                            gbOpening newOpening = new gbOpening(thisSurface[k].id + "::Opening_" +
-                               thisSurface[k].openings.Count, GBMethod.PolyOffset(openingLoop, 0.1, true))
-                               //thisSurface[k].openings.Count, GBMethod.OffsetPoly(openingLoop, 0.1)[0])
-                            {
-                                width = projection.Length,
-                                height = height,
-                                type = openingTypeEnum.FixedWindow
-                            };
-                            if (!IsOpeningOverlap(thisSurface[k].openings, newOpening))
-                                thisSurface[k].openings.Add(newOpening);
-                        }
-                        else if (projection.Length < 0.5 && projection.Length > 0.000001)
-                        {
-                            Util.LogPrint($"Glazing: {projection.Length:f4}m one is ignored at {{{projection}}}");
-                        }
-                    }
-                }
-
                 // airwall assignment to interior walls. air boundary as for ceiling or floor
                 // will be left to the serialization process
                 foreach (gbSeg airwall in dictAirwall[level.id])
@@ -464,6 +503,13 @@ namespace Gingerbread.Core
 
                     for (int k = 0; k < thisSurface.Count; k++)
                     {
+                        // the surface that already hosts an opening will not be the airwall
+                        if (thisSurface[k].openings.Count > 0)
+                        {
+                            Util.LogPrint($"Airwall: type conversion forbidden because the surface already hosts an opening");
+                            continue;
+                        }
+                            
                         // note that the second segment is the baseline
                         // the projection has the same direction as the second segment
                         projection = GBMethod.SegProjection(airwall, thisSurface[k].locationLine,
@@ -513,9 +559,11 @@ namespace Gingerbread.Core
                         {
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
-                            List<gbXYZ> revLoop = GBMethod.GetReversedPoly(zone.loop);
-                            //revLoop.Reverse();
-                            gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, revLoop, 180);
+                            List<gbXYZ> dupPoly = GBMethod.GetDuplicatePoly(zone.loop);
+                            RegionTessellate.SimplifyPoly(dupPoly, 0.01);
+                            dupPoly.Reverse();
+
+                            gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupPoly, 180);
                             floor.type = surfaceTypeDef;
                             floor.adjSrfId = "Outside";
                             zone.floors.Add(floor);
@@ -531,15 +579,15 @@ namespace Gingerbread.Core
                                     //Debug.Print($"XMLGeometry:: WARNING This MCR zone tile is null!");
                                     continue;
                                 }
-                                    
-                                List<gbXYZ> revTile = new List<gbXYZ>();
-                                foreach (gbXYZ pt in tile)
-                                    revTile.Add(pt);
-                                revTile.Reverse();
-                                gbSurface floorTile = new gbSurface(zone.id + "::Floor_" + counter, zone.id, revTile, 180);
-                                floorTile.type = surfaceTypeDef;
-                                floorTile.adjSrfId = "Outside";
-                                zone.floors.Add(floorTile);
+
+                                List<gbXYZ> dupTile = GBMethod.GetDuplicatePoly(tile);
+                                RegionTessellate.SimplifyPoly(dupTile, 0.01);
+                                dupTile.Reverse();
+
+                                gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupTile, 180);
+                                floor.type = surfaceTypeDef;
+                                floor.adjSrfId = "Outside";
+                                zone.floors.Add(floor);
                                 counter++;
                             }
                         }
@@ -564,6 +612,7 @@ namespace Gingerbread.Core
                         //                skyLights.Add(loop);
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
+                            RegionTessellate.SimplifyPoly(tile, 0.01);
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
                                 GBMethod.ElevatePts(tile, level.height), 0);
                             ceilingTile.type = surfaceTypeEnum.Roof;
@@ -614,6 +663,9 @@ namespace Gingerbread.Core
                             {
                                 for (int j = 0; j < sectLoops.Count; j++)
                                 {
+                                    RegionTessellate.SimplifyPoly(sectLoops[j], 0.01);
+                                    if (sectLoops[j].Count == 0)
+                                        continue;
                                     gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
                                         GBMethod.ElevatePts(sectLoops[j], level.elevation + level.height), 0);
                                     splitCeil.adjSrfId = "Outside";
@@ -647,6 +699,9 @@ namespace Gingerbread.Core
                                 {
                                     List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], level.elevation);
                                     revLoop.Reverse();
+                                    RegionTessellate.SimplifyPoly(revLoop, 0.01);
+                                    if (revLoop.Count == 0)
+                                        continue;
                                     gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                         revLoop, 180);
                                     splitFloor.adjSrfId = "Outside";
@@ -702,9 +757,12 @@ namespace Gingerbread.Core
                                 // be cautious here
                                 // the ceiling here mean the shadowing floor, so the tilt is still 180
                                 List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation);
-                                revLoop.Reverse();
-                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, revLoop, 180);
-                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, revLoop, 180);
+                                //revLoop.Reverse();
+                                RegionTessellate.SimplifyPoly(revLoop, 0.01);
+                                if (revLoop.Count == 0)
+                                    continue;
+                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, revLoop, 0);
+                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, revLoop, 0);
 
                                 splitCeil.adjSrfId = splitFloorId;
                                 splitCeil.type = surfaceTypeEnum.InteriorFloor;
@@ -783,6 +841,9 @@ namespace Gingerbread.Core
                                         shellClippers, ClipType.ctDifference);
                                     foreach (List<gbXYZ> result in results)
                                     {
+                                        RegionTessellate.SimplifyPoly(result, 0.01);
+                                        if (result.Count == 0 || GBMethod.GetPolyArea(result) < 1 || GBMethod.IsClockwise(result))
+                                            continue;
                                         gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
                                             "Void", GBMethod.ElevatePts(result, shade[0].Z), 0);
                                         shading.type = surfaceTypeEnum.Shade;
@@ -820,11 +881,12 @@ namespace Gingerbread.Core
                                     shellClippers, ClipType.ctDifference);
                                 foreach (List<gbXYZ> result in results)
                                 {
+                                    RegionTessellate.SimplifyPoly(result, 0.01);
                                     //Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
                                     double area = GBMethod.GetPolyArea(result);
-                                    if (area < 1)
+                                    if (area < 1 || result.Count == 0 || GBMethod.IsClockwise(result))
                                     {
-                                        Util.LogPrint($"Shading: Tiny facet ({area:f4} m2) removed");
+                                        //Util.LogPrint($"Shading: Tiny facet ({area:f4} m2) removed");
                                         continue;
                                     }
                                     gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
