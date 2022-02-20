@@ -88,6 +88,7 @@ namespace Gingerbread.Core
                 {
                     // the degenearte surface exludes triangles
                     //Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
+                    Util.LogPrint($"Serialization: Degenerated surface removed at Surface_{i}");
                     continue;
                 }
                 if (faces[i].area < 0.001)
@@ -100,6 +101,7 @@ namespace Gingerbread.Core
                 if (IsDuplicateSrf(faces[i], uniqueSrfs))
                     continue;
                 uniqueSrfs.Add(faces[i]);
+
 
                 Surface newSurface = MakeSurface(faces[i], srfCounter);
                 //Debug.Print($"Generating surface-{srfCounter}");
@@ -334,7 +336,7 @@ namespace Gingerbread.Core
 
             // /PLANARGEOMETRY
             PlanarGeometry spaceplpoly = new PlanarGeometry();
-            spaceplpoly.PolyLoop = PtsToPolyLoop(zone.loop);
+            spaceplpoly.PolyLoop = PtsToPolyLoop(GBMethod.GetPolyLastPointRemoved(zone.loop));
             space.PlanarGeo = spaceplpoly;
 
             // /SHELLGEOMETRY

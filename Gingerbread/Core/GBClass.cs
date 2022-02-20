@@ -365,6 +365,7 @@ namespace Gingerbread.Core
         public gbSeg locationLine; // when the tilt is 90
         public List<gbOpening> openings;
         public List<List<gbXYZ>> subLoops;
+        public double openingArea;
 
         // modification attributes
         public string adjSrfId;
@@ -381,6 +382,7 @@ namespace Gingerbread.Core
             azimuth = GBMethod.VectorAngle(GBMethod.GetPolyNormal(loop), new gbXYZ(0, 1, 0));
             area = GBMethod.GetPolyArea3d(loop);
             openings = new List<gbOpening>();
+            openingArea = 0;
             
 
             if (tilt == 90)

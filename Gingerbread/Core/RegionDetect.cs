@@ -149,6 +149,7 @@ namespace Gingerbread.Core
                         {
                             orphanId.Add(faceIdx);
                             //Debug.Print("Log 1 orphan for missing next HC " + orphanId.Count);
+                            Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for missing next outward segment");
                             break;
                         }
 
@@ -163,6 +164,7 @@ namespace Gingerbread.Core
                         if (emExit == lines.Count - 1)
                         {
                             orphanId.Add(faceIdx);
+                            Util.LogPrint($"RegionDetect: Orphan located as Z::{faceIdx} for infinite looping");
                             break;
                         }
                     }
@@ -176,6 +178,8 @@ namespace Gingerbread.Core
             List<int> shellId = new List<int>();
             foreach (KeyValuePair<int, List<gbSeg>> kvp in F)
             {
+                if (orphanId.Contains(kvp.Key))
+                    continue;
                 // if the face edges are not enclosed, regard them as orphans
                 segIntersectEnum intersectionCheck = GBMethod.SegIntersection(
                     kvp.Value[0], kvp.Value.Last(), 0.0001, out gbXYZ intersection, out double t1, out double t2);
@@ -185,9 +189,11 @@ namespace Gingerbread.Core
                 {
                     orphanId.Add(kvp.Key);
                     //Debug.Print($"Log #{orphanId.Count} orphan for {intersectionCheck}. at {kvp.Key}");
-                    foreach (gbSeg edge in kvp.Value)
+                    //foreach (gbSeg edge in kvp.Value)
                         //Debug.Print($"{{{edge}}}");
                     //Debug.Print($"Log #{orphanId.Count} orphan for not joined. at {kvp.Key}");
+                    Util.LogPrint($"RegionDetect: Orphan located as Z::{kvp.Key} for missing {intersectionCheck}");
+
                     continue;
                 }
                 // if the loop is clockwise, regard it as outer shell
