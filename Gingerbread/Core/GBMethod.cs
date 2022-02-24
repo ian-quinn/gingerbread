@@ -130,6 +130,13 @@ namespace Gingerbread.Core
         {
             return new gbXYZ(pt.X, pt.Y, 0);
         }
+        public static List<gbXYZ> FlattenPts(List<gbXYZ> pts)
+        {
+            List<gbXYZ> flattenedPts = new List<gbXYZ>();
+            for (int i = 0; i < pts.Count; i++)
+                flattenedPts.Add(new gbXYZ(pts[i].X, pts[i].Y, 0));
+            return flattenedPts;
+        }
 
         public static gbXYZ RelativePt(gbXYZ pt, gbXYZ origin)
         {

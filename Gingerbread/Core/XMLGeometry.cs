@@ -83,7 +83,7 @@ namespace Gingerbread.Core
 
                 // add new floors
                 foreach (List<gbXYZ> blockShell in dictShell[level.id])
-                    floors.Add(new gbLoop("F" + level.id, level, blockShell));
+                    floors.Add(new gbLoop("F" + level.id, level, blockShell, 0));
 
                 List<gbZone> thisZone = new List<gbZone>();
                 List<gbSurface> thisSurface = new List<gbSurface>();
@@ -302,9 +302,6 @@ namespace Gingerbread.Core
                         srf.subLoops = new List<List<gbXYZ>>();
                     }
                 }
-
-
-                
 
 
                 // curtain wall is the most likely to go wild
@@ -531,8 +528,6 @@ namespace Gingerbread.Core
             foreach (gbLevel level in levels)
             {
                 if (level.isTop) continue;
-                if (!dictZone.ContainsKey(level.id))
-                    continue;
 
                 Util.LogPrint($"----------------Shape the floor on Level-{level.id}----------------");
 
@@ -715,6 +710,7 @@ namespace Gingerbread.Core
                     // interior floor adjacency check
                     // clip the tiles, do the matching, then transfer to the surfaces
                     if (level.id != levels.Count - 2 && dictZone.ContainsKey(level.id + 1))
+                    {
                         // if no data within dictZone[level.id + id], cancel the matching
                         foreach (gbZone adjZone in dictZone[level.id + 1])
                         {
@@ -745,24 +741,24 @@ namespace Gingerbread.Core
                             if (zoneSimilarity > 0)
                                 sumSimilarity.Add(zoneSimilarity);
 
-                                
+
                             if (sectLoops.Count == 0)
                                 continue;
                             for (int j = 0; j < sectLoops.Count; j++)
                             {
+                                RegionTessellate.SimplifyPoly(sectLoops[j], 0.000001);
+                                if (sectLoops[j].Count == 0)
+                                    continue;
                                 // the name does not matter
                                 // they only have to stay coincident so the adjacent spaces can be tracked
                                 string splitCeilId = zone.id + "::Ceil_" + zone.ceilings.Count;
                                 string splitFloorId = adjZone.id + "::Floor_" + zone.floors.Count;
                                 // be cautious here
                                 // the ceiling here mean the shadowing floor, so the tilt is still 180
-                                List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation);
-                                //revLoop.Reverse();
-                                RegionTessellate.SimplifyPoly(revLoop, 0.01);
-                                if (revLoop.Count == 0)
-                                    continue;
-                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, revLoop, 0);
-                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, revLoop, 0);
+                                List<gbXYZ> dupLoop = GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation);
+
+                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, dupLoop, 0);
+                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, dupLoop, 0);
 
                                 splitCeil.adjSrfId = splitFloorId;
                                 splitCeil.type = surfaceTypeEnum.InteriorFloor;
@@ -774,6 +770,7 @@ namespace Gingerbread.Core
 
                             }
                         }
+                    }
                     surfaces.AddRange(zone.floors);
                     surfaces.AddRange(zone.ceilings);
                 }
@@ -808,6 +805,9 @@ namespace Gingerbread.Core
                 // third loop for floor slab clipping and shading surface
                 foreach (gbLevel level in levels)
                 {
+                    if (!dictShade.ContainsKey(level.id) || !dictZone.ContainsKey(level.id))
+                        continue;
+
                     Util.LogPrint($"----------------Shape the shade on Level-{level.id}----------------");
 
                     // shadings are from dictShade (orphan floor slab or roof) and dictFloor
@@ -935,7 +935,7 @@ namespace Gingerbread.Core
                     loop.Add(label.Item1 + new gbXYZ(0.5 * width, -0.5 * height, 0));
                     loop.Add(label.Item1 + new gbXYZ(0.5 * width, 0.5 * height, 0));
                     loop.Add(label.Item1 + new gbXYZ(-0.5 * width, 0.5 * height, 0));
-                    gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
+                    gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, 0);
                     column.dimension1 = width;
                     column.dimension2 = height;
                     columns.Add(column);
@@ -966,8 +966,9 @@ namespace Gingerbread.Core
                         height = sizes[1];
 
                     List<gbXYZ> loop = new List<gbXYZ>();
-                    gbXYZ startPt = label.Item1.PointAt(0);
-                    gbXYZ endPt = label.Item1.PointAt(1);
+                    // 2D plane operation
+                    gbXYZ startPt = GBMethod.FlattenPt(label.Item1.Start);
+                    gbXYZ endPt = GBMethod.FlattenPt(label.Item1.End);
                     gbXYZ vec1 = endPt - startPt;
                     vec1.Unitize();
                     gbXYZ vec2 = GBMethod.GetPendicularVec(vec1, true);
@@ -975,7 +976,7 @@ namespace Gingerbread.Core
                     loop.Add(endPt + 0.5 * width * vec2);
                     loop.Add(endPt - 0.5 * width * vec2);
                     loop.Add(startPt - 0.5 * width * vec2);
-                    gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop);
+                    gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, levels[kvp.Key].height);
                     beam.dimension1 = width;
                     beam.dimension2 = height;
                     beams.Add(beam);
@@ -994,7 +995,8 @@ namespace Gingerbread.Core
                     {
                         if (GBMethod.IsClockwise(panel[i]))
                         {
-                            gbLoop shaft = new gbLoop($"F{kvp.Key}_{counter}", levels[kvp.Key], panel[i]);
+                            gbLoop shaft = new gbLoop($"F{kvp.Key}_{counter}", levels[kvp.Key], 
+                                GBMethod.FlattenPts(panel[i]), levels[kvp.Key].height);
                             shafts.Add(shaft);
                             counter++;
                         }

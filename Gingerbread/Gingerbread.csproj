@@ -86,7 +86,7 @@
     <Compile Include="Core\RegionDetect.cs" />
     <Compile Include="Core\XMLGeometry.cs" />
     <Compile Include="Core\XMLSchema.cs" />
-    <Compile Include="Core\XMLSerialization.cs" />
+    <Compile Include="Core\XMLSerialize.cs" />
     <Compile Include="ExtEmendo.cs" />
     <Compile Include="ExtExportXML.cs" />
     <Compile Include="Resources\lib\Clipper.cs" />

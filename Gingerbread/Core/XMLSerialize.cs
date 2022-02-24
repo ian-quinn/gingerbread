@@ -8,7 +8,7 @@ using System.Diagnostics;
 
 namespace Gingerbread.Core
 {
-    class XMLSerialization
+    class XMLSerialize
     {
         public static void Generate(string path, List<gbZone> zones, List<gbLoop> floors, List<gbSurface> faces,
             List<gbLoop> columns, List<gbLoop> beams, List<gbLoop> shafts)

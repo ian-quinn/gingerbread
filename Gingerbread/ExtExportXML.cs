@@ -386,7 +386,7 @@ namespace Gingerbread
 
             string fileName = "GingerbreadXML.xml";
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
-            XMLSerialization.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces, columns, beams, shafts);
+            XMLSerialize.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces, columns, beams, shafts);
 
             Report(100, "Done export to " + thisAssemblyFolderPath);
             Util.LogPrint("----------------------------------------------------------------------------------------\n" +
