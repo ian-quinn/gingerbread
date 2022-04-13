@@ -232,14 +232,16 @@ namespace Gingerbread
                             dictAirwall[z].AddRange(airwalls);
                             foreach (List<gbXYZ> loop in voidLoops)
                             {
-                                dictRoom[z].Add(new Tuple<List<gbXYZ>, string>(loop, "void"));
+                                dictRoom[z].Add(new Tuple<List<gbXYZ>, string>(loop, "Void"));
                             }
                             Util.LogPrint($"PerimeterPatch: L{z}-B{b} has {glazings.Count} glazing, {voidLoops.Count} void, {airwalls.Count} airwall");
                         }
-                        
+
 
                         //List<gbSeg> lineExtended = GBMethod.ExtendSegs(lineBlocks[b][g], 0.5);
-                        List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineBlocks[b][g]), 0.01);
+                        
+                        List<gbSeg> lineShatters = GBMethod.SkimOut(
+                            GBMethod.ShatterSegs(lineBlocks[b][g]), 0.01);
 
 
                         List<gbXYZ> joints = PointAlign.GetJoints(lineShatters,
@@ -253,11 +255,15 @@ namespace Gingerbread
                             Properties.Settings.Default.tolAlignment,
                             Properties.Settings.Default.tolDouble,
                             out anchorInfo_temp, out nextBlueprint_1);
+                        //List<gbSeg> lattice_temp = PointAlign.GetLattice(ptAlign_temp, anchorInfo_temp,
+                        //    Properties.Settings.Default.tolDouble, out List<gbSeg> someDebris);
+                        List<string> jointsLabels_temp = Util.HandString(anchorInfo_temp);
                         List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp, preBlueprint,
                             Properties.Settings.Default.tolTheta - Math.PI / 2,
                             Properties.Settings.Default.tolAlignment,
                             Properties.Settings.Default.tolDouble,
                             out anchorInfo, out nextBlueprint_2);
+                        List<string> jointsLabels = Util.HandString(anchorInfo);
                         nextBlueprint.AddRange(nextBlueprint_1);
                         nextBlueprint.AddRange(nextBlueprint_2);
                         preBlueprint = nextBlueprint;

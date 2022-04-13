@@ -98,7 +98,7 @@ namespace Gingerbread.Core
 
                     //Debug.Print($"XMLGeometry:: Heading for {region.label}");
                     gbZone newZone = new gbZone(region.label, level, region);
-                    newZone.function = "Office";
+                    //newZone.function = "Office";
 
                     foreach (Tuple<gbXYZ, double> hollow in hollows)
                         if (GBMethod.IsPtInPoly(hollow.Item1, region.loop, false))
@@ -120,15 +120,22 @@ namespace Gingerbread.Core
 
                     if (dictRoom.ContainsKey(level.id))
                     {
-                        foreach (Tuple<List<gbXYZ>, string> voidLabel in dictRoom[level.id])
+                        foreach (Tuple<List<gbXYZ>, string> roomLabel in dictRoom[level.id])
                         {
-                            List<List<gbXYZ>> areaOverlapping = GBMethod.ClipPoly(voidLabel.Item1, 
+                            List<List<gbXYZ>> areaOverlapping = GBMethod.ClipPoly(roomLabel.Item1, 
                                 region.loop, ClipType.ctIntersection);
                             if (areaOverlapping.Count > 0)
                             {
-                                if (GBMethod.GetPolyArea(areaOverlapping[0]) / newZone.area > 0.9)
+                                double areaRatio = GBMethod.GetPolyArea(areaOverlapping[0]) / newZone.area;
+                                Debug.Print($"XMLGeometry:: Comparing room and label regions: {areaRatio}");
+                                if (areaRatio > 0.9 && areaRatio < 1.1)
                                 {
-                                    newZone.function = "Void"; voidCount++;
+                                    if (newZone.function == null)
+                                    {
+                                        newZone.function = roomLabel.Item2;
+                                        if (roomLabel.Item2 == "Void")
+                                            voidCount++;
+                                    }
                                     //Debug.Print($"XMLGeometry:: Void space detected at {newZone.id}");
                                     break;
                                 }
@@ -542,8 +549,8 @@ namespace Gingerbread.Core
                     if (level.isBottom)
                     {
                         surfaceTypeEnum surfaceTypeDef = surfaceTypeEnum.SlabOnGrade;
-                        if (zone.level.elevation - 0 > 0.1)
-                            surfaceTypeDef = surfaceTypeEnum.ExposedFloor;
+                        //if (zone.level.elevation - 0 > 0.1)
+                        //    surfaceTypeDef = surfaceTypeEnum.ExposedFloor;
 
                         // to prevent empty tesselaltion
                         if (zone.tiles == null)
@@ -692,16 +699,34 @@ namespace Gingerbread.Core
                             {
                                 for (int j = 0; j < sectLoops.Count; j++)
                                 {
-                                    List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], level.elevation);
-                                    revLoop.Reverse();
-                                    RegionTessellate.SimplifyPoly(revLoop, 0.01);
-                                    if (revLoop.Count == 0)
+                                    List<gbXYZ> rawLoop = sectLoops[j];
+                                    RegionTessellate.SimplifyPoly(rawLoop, 0.01);
+                                    if (rawLoop.Count == 0)
                                         continue;
-                                    gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
-                                        revLoop, 180);
-                                    splitFloor.adjSrfId = "Outside";
-                                    splitFloor.type = surfaceTypeEnum.ExposedFloor;
-                                    zone.floors.Add(splitFloor);
+                                    if (GBMethod.IsConvex(rawLoop))
+                                    {
+                                        List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], level.elevation);
+                                        revLoop.Reverse();
+                                        gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
+                                            revLoop, 180);
+                                        splitFloor.adjSrfId = "Outside";
+                                        splitFloor.type = surfaceTypeEnum.ExposedFloor;
+                                        zone.floors.Add(splitFloor);
+                                    }
+                                    else
+                                    {
+                                        List<List<gbXYZ>> casters = RegionTessellate.Rectangle(new List<List<gbXYZ>>() { rawLoop });
+                                        foreach (List<gbXYZ> caster in casters)
+                                        {
+                                            List<gbXYZ> revLoop = GBMethod.ElevatePts(caster, level.elevation);
+                                            revLoop.Reverse();
+                                            gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
+                                                revLoop, 180);
+                                            splitFloor.adjSrfId = "Outside";
+                                            splitFloor.type = surfaceTypeEnum.ExposedFloor;
+                                            zone.floors.Add(splitFloor);
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -741,13 +766,12 @@ namespace Gingerbread.Core
                             if (zoneSimilarity > 0)
                                 sumSimilarity.Add(zoneSimilarity);
 
-
                             if (sectLoops.Count == 0)
                                 continue;
                             for (int j = 0; j < sectLoops.Count; j++)
                             {
                                 RegionTessellate.SimplifyPoly(sectLoops[j], 0.000001);
-                                if (sectLoops[j].Count == 0)
+                                if (sectLoops[j].Count <= 2)
                                     continue;
                                 // the name does not matter
                                 // they only have to stay coincident so the adjacent spaces can be tracked

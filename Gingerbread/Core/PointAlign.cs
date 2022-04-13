@@ -182,7 +182,7 @@ namespace Gingerbread.Core
                         {
                             for (int j = transIdx.Count - 1; j >= 0; j--)
                             {
-                                if (transPts[tempIdGroup[i]].Y == transPts[transIdx[j]].Y)
+                                if (Math.Abs(transPts[tempIdGroup[i]].Y - transPts[transIdx[j]].Y) < 0.000001)
                                 {
                                     tempIdGroup.Add(transIdx[j]);
                                     transIdx.RemoveAt(j);
@@ -242,6 +242,7 @@ namespace Gingerbread.Core
 
                     List<double> splits = new List<double>(); // section point position
                     List<bool> isConnected = new List<bool>(); // connectivity at each section
+                    List<bool> isConnected2 = new List<bool>(); // backward connectivity for testing 20220317
                     gbSeg axis = new gbSeg(p1, p2);
 
                     if (maxMember == 1) // one point as axis
@@ -254,17 +255,30 @@ namespace Gingerbread.Core
                     else if (maxMember > 1) // multiple points on the same axis
                     {
                         axis = new gbSeg(p1, p2);
+                        //Debug.Print($"PointAlign:: alignment target[?] {axis}");
+                        // this part may solve the endpoint segregation on the axis
                         for (int i = 0; i < axisIdPts.Count; i++)
                         {
                             double split = (axisPts[i].X - axisPts[0].X) / (axisPts.Last().X - axisPts[0].X);
                             splits.Add(split);
                             if (IsIncluded(vecList[ptIdGroup[axisIdPts[i]]], scanRay, tolerance))
-                            {
                                 isConnected.Add(true);
-                            }
                             else
-                            {
                                 isConnected.Add(false);
+                            if (IsIncluded(vecList[ptIdGroup[axisIdPts[i]]], -scanRay, tolerance))
+                                isConnected2.Add(true);
+                            else
+                                isConnected2.Add(false);
+                            //Debug.Print($"PointAlign:: axisIdPts[?] {axisPts[i]} - {split} - {isConnected[i]}");
+                        }
+                        for (int i = 1; i < axisIdPts.Count - 1; i++)
+                        {
+                            if (isConnected[i - 1] && isConnected2[i + 1])
+                            {
+                                if (!isConnected[i])
+                                    vecList[ptIdGroup[axisIdPts[i]]].Add(scanRay);
+                                if (!isConnected2[i])
+                                    vecList[ptIdGroup[axisIdPts[i]]].Add(-scanRay);
                             }
                         }
                     }
@@ -340,7 +354,8 @@ namespace Gingerbread.Core
                         //Rhino.RhinoApp.WriteLine("EVIL VEC IS ({0}, {1})", moveDirection.X, moveDirection.Y);
 
                         // t value between 0 - 1 means the point moves onto the axis
-                        // these may happen at the same time
+                        // if the moving point has an outward vector that represents the moving direction
+                        // remove that vector (the pused-to-the-wall situation)
                         if (t >= 0 && t <= 0)
                         {
                             //
@@ -353,7 +368,6 @@ namespace Gingerbread.Core
 
                         if (t > 0 && t < 1)
                         {
-                            //Rhino.RhinoApp.WriteLine("More vectors are added!");
                             if (isConnected[insertIdx])
                             {
                                 if (!IsIncluded(vecList[ptIdGroup[i]], scanRay, tolerance))

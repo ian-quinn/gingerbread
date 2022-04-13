@@ -266,9 +266,21 @@ namespace Gingerbread.Core
             double denominator = dy12 * dx34 - dx12 * dy34;
             // co-line checker as cross product of (p3 - p1) and vec1/vec
             double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
+            // check the gap between two almost parallel segments
+            double gap = SegDistanceToSeg(a, b, out double overlap, out gbSeg proj);
+            //if (gap < 0.000001 && overlap > 0.000001)
+            //{
+            //    Debug.Print("GBMethod:: experiencing the gap");
+            //    double d1 = PtDistanceToSeg(p1, b, out gbXYZ plummet1, out double s1);
+            //    double d2 = PtDistanceToSeg(p1, b, out gbXYZ plummet2, out double s2);
+            //    p1 = plummet1;
+            //    p2 = plummet2;
+            //}
 
             if (Math.Abs(denominator) < _eps && Math.Abs(stretch) > _eps)
+            {
                 return segIntersectEnum.Parallel;
+            }
             if (Math.Abs(denominator) < _eps && Math.Abs(stretch) < _eps)
             {
                 //Debug.Print($"GBMethod:: Seg fused {a} {b}");

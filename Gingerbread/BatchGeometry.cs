@@ -6,6 +6,7 @@ using System.Diagnostics;
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
+using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Gingerbread.Core;
@@ -248,6 +249,10 @@ namespace Gingerbread
             }
             //Debug.Print($"BatchGeometry:: We got {gridClusters.Count} curtainGrids");
 
+            // get all roomtags for room extraction
+            IList<Element> eRoomTags = new FilteredElementCollector(doc)
+                .OfCategory(BuiltInCategory.OST_RoomTags)
+                .ToElements();
 
             // iterate each floor to append familyinstance information to the dictionary
             for (int z = 0; z < levels.Count; z++)
@@ -347,6 +352,30 @@ namespace Gingerbread
                 // before the function of visual centeroid of polygon is set
                 // use the polygon boundary to represent the room
                 List<Tuple<List<gbXYZ>, string>> roomlocs = new List<Tuple<List<gbXYZ>, string>>();
+                List<Element> eRooms = new List<Element>();
+                foreach (Element eTag in eRoomTags)
+                {
+                    RoomTag roomTag = eTag as RoomTag;
+                    if (roomTag == null)
+                        continue;
+                    string tagName = roomTag.TagText;
+                    Room room = roomTag.Room;
+                    if (room.LevelId == levels[z].id)
+                    {
+                        List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                        var roomBoundaries = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
+                        if (roomBoundaries.Count == 0)
+                            continue;
+                        foreach (BoundarySegment bs in roomBoundaries[0])
+                        {
+                            Curve bc = bs.GetCurve();
+                            XYZ pt = bc.GetEndPoint(0);
+                            boundaryLoop.Add(Util.gbXYZConvert(pt));
+                        }
+                        boundaryLoop.Add(boundaryLoop[0]);
+                        roomlocs.Add(new Tuple<List<gbXYZ>, string>(boundaryLoop, tagName));
+                    }
+                }
                 //IList<Element> eRooms = new FilteredElementCollector(doc)
                 //    .OfCategory(BuiltInCategory.OST_Rooms)
                 //    .WherePasses(levelFilter)
@@ -432,7 +461,11 @@ namespace Gingerbread
                 else
                 {
                     List<XYZ> pts = new List<XYZ>(lc.Curve.Tessellate());
-                    List<XYZ> midPts = CurveSimplify.DouglasPeuckerReduction(pts, Util.MmToFoot(1000));
+                    //List<XYZ> pts = new List<XYZ>();
+                    //for (int i = 0; i < 3; i++)
+                    //    pts.Add(lc.Curve.Evaluate(0.5 * i, true));
+                    //List<XYZ> midPts = pts;
+                    List<XYZ> midPts = CurveSimplify.DouglasPeuckerReduction(pts, Util.MmToFoot(500));
                     for (int i = 0; i < midPts.Count - 1; i++)
                         temps.Add(
                             new gbSeg(Util.gbXYZConvert(midPts[i]), Util.gbXYZConvert(midPts[i + 1])));
@@ -460,49 +493,49 @@ namespace Gingerbread
                         // if the WallType is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
                         {
-                            if (wall.WallType.Kind == WallKind.Curtain)
+                            // --------------------comment out the lines in between when testing ROOMVENT model----------------
+                            CurtainGrid cg = wall.CurtainGrid;
+
+                            if (cg != null)
                             {
-                                CurtainGrid cg = wall.CurtainGrid;
+                                List<XYZ> boundaryPts = new List<XYZ>();
+                                Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
+                                cwOpt.IncludeNonVisibleObjects = true;
+                                GeometryElement geomElem = wall.get_Geometry(cwOpt);
 
-                                if (cg != null)
+                                foreach (GeometryObject go in geomElem)
                                 {
-                                    List<XYZ> boundaryPts = new List<XYZ>();
-                                    Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
-                                    cwOpt.IncludeNonVisibleObjects = true;
-                                    GeometryElement geomElem = wall.get_Geometry(cwOpt);
-
-                                    foreach (GeometryObject go in geomElem)
+                                    Curve anyCrv = go as Curve;
+                                    if (anyCrv != null)
                                     {
-                                        Curve anyCrv = go as Curve;
-                                        if (anyCrv != null)
+                                        XYZ start = anyCrv.GetEndPoint(0);
+                                        XYZ end = anyCrv.GetEndPoint(1);
+                                        // the curtain wall my span over multiple levels
+                                        // only taking the bottom line is not an ideal choice
+                                        if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
                                         {
-                                            XYZ start = anyCrv.GetEndPoint(0);
-                                            XYZ end = anyCrv.GetEndPoint(1);
-                                            // the curtain wall my span over multiple levels
-                                            // only taking the bottom line is not an ideal choice
-                                            if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
-                                            {
-                                                boundaryPts.Add(anyCrv.GetEndPoint(0));
-                                                boundaryPts.Add(anyCrv.GetEndPoint(1));
-                                            }
+                                            boundaryPts.Add(anyCrv.GetEndPoint(0));
+                                            boundaryPts.Add(anyCrv.GetEndPoint(1));
                                         }
                                     }
+                                }
 
-                                    //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
-                                    if (boundaryPts.Count >= 2)
-                                    {
-                                        boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
-                                        boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
-                                        temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
-                                        //Debug.Print($"BatchGeometry:: new baseline updated");
-                                    }
-                                    else
-                                    {
-                                        //Debug.Print("BatchGeometry:: empty panelPts");
-                                        temps = new List<gbSeg>();
-                                    }
+                                //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
+                                if (boundaryPts.Count >= 2)
+                                {
+                                    boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
+                                    boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
+                                    temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
+                                    //Debug.Print($"BatchGeometry:: new baseline updated");
+                                }
+                                else
+                                {
+                                    //Debug.Print("BatchGeometry:: empty panelPts");
+                                    temps = new List<gbSeg>();
                                 }
                             }
+                            // --------------------comment out the lines in between when testing ROOMVENT model----------------
+
                             dictCurtain[i].AddRange(temps);
                         }
 

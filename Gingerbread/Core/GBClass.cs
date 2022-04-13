@@ -31,9 +31,12 @@ namespace Gingerbread.Core
 
         public gbXYZ(double x, double y, double z)
         {
-            this.x = x;
-            this.y = y;
-            this.z = z;
+            //this.x = x;
+            //this.y = y;
+            //this.z = z;
+            this.x = Math.Abs(x) > eps ? x : 0;
+            this.y = Math.Abs(y) > eps ? y : 0;
+            this.z = Math.Abs(z) > eps ? z : 0;
         }
 
         // public methods

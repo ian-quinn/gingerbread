@@ -311,7 +311,7 @@ namespace Gingerbread.Core
             double bottom = Math.Sqrt(Math.Pow(pt1.X - pt2.X, 2) +
             Math.Pow(pt1.Y - pt2.Y, 2));
             double height = area / bottom * 2;
-            Debug.Print("we got the distance for measure is: " + height.ToString());
+            //Debug.Print("we got the distance for measure is: " + height.ToString());
             return height;
         }
         #endregion

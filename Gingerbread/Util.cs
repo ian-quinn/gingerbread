@@ -932,6 +932,23 @@ namespace Gingerbread
             return sum;
         }
 
+        public static List<string> HandString(List<List<gbXYZ>> hands)
+        {
+            List<string> handsList = new List<string>();
+            foreach (List<gbXYZ> hand in hands)
+            {
+                string serialization = "";
+                foreach (gbXYZ h in hand)
+                {
+                    serialization = serialization + "{" + h.ToString() + "}";
+                    if (hand.IndexOf(h) != hand.Count - 1)
+                        serialization += "#";
+                }
+                handsList.Add(serialization);
+            }
+            return handsList;
+        }
+
 
         #endregion // Formatting
 
