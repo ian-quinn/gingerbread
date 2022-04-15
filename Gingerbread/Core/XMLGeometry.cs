@@ -335,7 +335,7 @@ namespace Gingerbread.Core
 
                             gbOpening newOpening = new gbOpening(thisSurface[k].id + "::Opening_" +
                                thisSurface[k].openings.Count, GBMethod.PolyOffset(openingLoop, 0.05, true))
-                               //thisSurface[k].openings.Count, GBMethod.OffsetPoly(openingLoop, 0.1)[0])
+                            //thisSurface[k].openings.Count, GBMethod.OffsetPoly(openingLoop, 0.1)[0])
                             {
                                 width = projection.Length,
                                 height = height,
@@ -352,6 +352,8 @@ namespace Gingerbread.Core
                         {
                             Util.LogPrint($"Glazing: {projection.Length:f4}m one is ignored at {{{projection}}}");
                         }
+                        //else
+                            //Debug.Print($"Glazing: No adherence found for this curtain wal");
                     }
                 }
 
@@ -561,7 +563,7 @@ namespace Gingerbread.Core
                         {
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
-                            List<gbXYZ> dupPoly = GBMethod.GetDuplicatePoly(zone.loop);
+                            List<gbXYZ> dupPoly = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(zone.loop));
                             RegionTessellate.SimplifyPoly(dupPoly, 0.01);
                             dupPoly.Reverse();
 
@@ -582,7 +584,7 @@ namespace Gingerbread.Core
                                     continue;
                                 }
 
-                                List<gbXYZ> dupTile = GBMethod.GetDuplicatePoly(tile);
+                                List<gbXYZ> dupTile = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(tile));
                                 RegionTessellate.SimplifyPoly(dupTile, 0.01);
                                 dupTile.Reverse();
 
@@ -615,8 +617,9 @@ namespace Gingerbread.Core
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
                             RegionTessellate.SimplifyPoly(tile, 0.01);
+                            List<gbXYZ> tilePoly = GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.height));
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
-                                GBMethod.ElevatePts(tile, level.height), 0);
+                                tilePoly, 0);
                             ceilingTile.type = surfaceTypeEnum.Roof;
                             ceilingTile.adjSrfId = "Outside";
                             //if (skyLights.Count > 0)
@@ -668,8 +671,10 @@ namespace Gingerbread.Core
                                     RegionTessellate.SimplifyPoly(sectLoops[j], 0.01);
                                     if (sectLoops[j].Count == 0)
                                         continue;
+                                    List<gbXYZ> tilePoly = GBMethod.ReorderPoly(
+                                        GBMethod.ElevatePts(sectLoops[j], level.elevation + level.height));
                                     gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
-                                        GBMethod.ElevatePts(sectLoops[j], level.elevation + level.height), 0);
+                                        tilePoly, 0);
                                     splitCeil.adjSrfId = "Outside";
                                     splitCeil.type = surfaceTypeEnum.Roof;
                                     zone.ceilings.Add(splitCeil);
@@ -705,7 +710,8 @@ namespace Gingerbread.Core
                                         continue;
                                     if (GBMethod.IsConvex(rawLoop))
                                     {
-                                        List<gbXYZ> revLoop = GBMethod.ElevatePts(sectLoops[j], level.elevation);
+                                        List<gbXYZ> revLoop = GBMethod.ReorderPoly(
+                                            GBMethod.ElevatePts(sectLoops[j], level.elevation));
                                         revLoop.Reverse();
                                         gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                             revLoop, 180);
@@ -718,7 +724,8 @@ namespace Gingerbread.Core
                                         List<List<gbXYZ>> casters = RegionTessellate.Rectangle(new List<List<gbXYZ>>() { rawLoop });
                                         foreach (List<gbXYZ> caster in casters)
                                         {
-                                            List<gbXYZ> revLoop = GBMethod.ElevatePts(caster, level.elevation);
+                                            List<gbXYZ> revLoop = GBMethod.ReorderPoly(
+                                                GBMethod.ElevatePts(caster, level.elevation));
                                             revLoop.Reverse();
                                             gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                                 revLoop, 180);
@@ -779,7 +786,8 @@ namespace Gingerbread.Core
                                 string splitFloorId = adjZone.id + "::Floor_" + zone.floors.Count;
                                 // be cautious here
                                 // the ceiling here mean the shadowing floor, so the tilt is still 180
-                                List<gbXYZ> dupLoop = GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation);
+                                List<gbXYZ> dupLoop = GBMethod.ReorderPoly(
+                                    GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation));
 
                                 gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, dupLoop, 0);
                                 gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, dupLoop, 0);
@@ -869,7 +877,7 @@ namespace Gingerbread.Core
                                         if (result.Count == 0 || GBMethod.GetPolyArea(result) < 1 || GBMethod.IsClockwise(result))
                                             continue;
                                         gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                                            "Void", GBMethod.ElevatePts(result, shade[0].Z), 0);
+                                            "Void", GBMethod.ReorderPoly(GBMethod.ElevatePts(result, shade[0].Z)), 0);
                                         shading.type = surfaceTypeEnum.Shade;
                                         surfaces.Add(shading);
                                         shadeCounter++;
@@ -914,7 +922,7 @@ namespace Gingerbread.Core
                                         continue;
                                     }
                                     gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                                    "Void", GBMethod.ElevatePts(result, level.elevation), 0);
+                                    "Void", GBMethod.ReorderPoly(GBMethod.ElevatePts(result, level.elevation)), 0);
                                     shading.type = surfaceTypeEnum.Shade;
                                     surfaces.Add(shading);
                                     shadeCounter++;

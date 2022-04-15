@@ -381,8 +381,9 @@ namespace Gingerbread.Core
             subLoops = new List<List<gbXYZ>>();
             this.parentId = parentId;
             this.tilt = tilt;
-            // the azimuth is the angle (0-360) between the normal vector and the north axis (0, 1, 0)
-            azimuth = GBMethod.VectorAngle(GBMethod.GetPolyNormal(loop), new gbXYZ(0, 1, 0));
+            // the azimuth is the angle (0-360) from the north axis (0, 1, 0) to the normal vector
+            // the azimuth should follow the clockwise sequence. north-0, east-90, south-180, west-270
+            azimuth = GBMethod.VectorAngle(new gbXYZ(0, 1, 0), GBMethod.GetPolyNormal(loop));
             area = GBMethod.GetPolyArea3d(loop);
             openings = new List<gbOpening>();
             openingArea = 0;

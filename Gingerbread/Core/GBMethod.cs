@@ -167,7 +167,9 @@ namespace Gingerbread.Core
 
             // checker as cross product of vec1 and vec2
             double denominator = dy12 * dx34 - dx12 * dy34;
-            // co-line checker as cross product of (p3 - p1) and vec1/vec
+            // co-line checker as cross product of (p3 - p1) and (p2 - p1)
+            // this value represents the area of the parallelogram.
+            // If near to zero,  the parallel edges are co-lined
             double stretch = (p3.X - p1.X) * dy12 + (p1.Y - p3.Y) * dx12;
             t1 = 0;
             t2 = 0;
@@ -1422,6 +1424,56 @@ namespace Gingerbread.Core
             if (pts[pts.Count - 1].DistanceTo(pts[0]) > _eps)
                 boundary.Add(new gbSeg(pts[pts.Count - 1], pts[0]));
             return boundary;
+        }
+
+        /// <summary>
+        /// Reorder a polyloop to make it start with the bottom-left point. 
+        /// This may be a prerequisite of EnergyPlus and gbXML schema.
+        /// Note that this will return a new, ordered list.
+        /// The default input/output is a closed, XY-plane loop.
+        /// </summary>
+        public static List<gbXYZ> ReorderPoly(List<gbXYZ> pts)
+        {
+            if (pts.Count <= 2)
+                return pts;
+            // check if the polygon is closed
+            int numPts = pts.Count;
+            if (pts[0].DistanceTo(pts[pts.Count - 1]) < _eps)
+                numPts = numPts - 1;
+            int idStart = 0;
+            List<int> idsPending = new List<int>();
+            double min = double.PositiveInfinity;
+
+            // ignore the last point
+            for (int i = 0; i < numPts; i++)
+                if (pts[i].Y < min)
+                    min = pts[i].Y;
+            for (int i = 0; i < numPts; i++)
+                if (Math.Abs(pts[i].Y - min) < _eps)
+                    idsPending.Add(i);
+            if (idsPending.Count == 1)
+                idStart = idsPending[0];
+            else
+            {
+                min = double.PositiveInfinity;
+                for (int j = 0; j < idsPending.Count; j++)
+                    if (pts[idsPending[j]].X < min)
+                    {
+                        min = pts[idsPending[j]].X;
+                        idStart = idsPending[j];
+                    }
+            }
+            List<gbXYZ> ptsSorted = new List<gbXYZ>();
+            for (int i = idStart; i < numPts; i++)
+            {
+                ptsSorted.Add(pts[i]);
+            }
+            for (int i = 0; i < idStart; i++)
+            {
+                ptsSorted.Add(pts[i]);
+            }
+            ptsSorted.Add(ptsSorted[0]);
+            return ptsSorted;
         }
 
         /// <summary>

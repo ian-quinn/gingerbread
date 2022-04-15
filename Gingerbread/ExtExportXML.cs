@@ -94,6 +94,8 @@ namespace Gingerbread
                 enclosings.AddRange(dictWall[z]);
                 enclosings.AddRange(dictCurtain[z]);
                 enclosings.AddRange(dictCurtaSystem[z]);
+                enclosings.AddRange(dictSeparationline[z]);
+                dictAirwall[z].AddRange(dictSeparationline[z]);
                 List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
 
                 // the extension copies all segments to another list
@@ -155,7 +157,8 @@ namespace Gingerbread
                     List<gbSeg> shatteredLineGroup = GBMethod.SkimOut(GBMethod.ShatterSegs(fusLineGroup), 0.001);
                     orthoHull = RegionDetect.GetShell(shatteredLineGroup);
 
-                    if (orthoHull.Count < 10)
+                    // PENDING for minimum hull for 2D segments
+                    if (orthoHull.Count < 4)
                         orthoHull = OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup));
 
                     //Debug.Print($"OrthoHull at F{z} B{lineGroups.IndexOf(lineGroup)} size {orthoHull.Count}");
@@ -216,12 +219,16 @@ namespace Gingerbread
                     // enter point alignment and space detection of each segment group
                     for (int g = 0; g < lineBlocks[b].Count; g++)
                     {
+                        // g = 0 indicates the hull of this block, g > 0 indicates groups nested within it
                         // if loop to the first group within the lineBlocks[b]
                         // add the ortho-hull of this block
                         // PENDING encounter with minor block, like a square shaft, just skip it
                         // prevent the block dimension smaller than the offset distance
-                        // need more cunning way to do this
-                        if (g == 0 && lineBlocks[b][g].Count > 10)
+                        // need more cunning way to do this?
+                        // compare the area of offsets and the hull 22-04-15
+                        double areaHull = GBMethod.GetPolyArea(hullGroups[b]);
+                        double areaOffset = GBMethod.GetPolyPerimeter(hullGroups[b]) * Properties.Settings.Default.tolPerimeter;
+                        if (g == 0 && areaHull > areaOffset)
                         {
                             lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
                                 dictWall[z], dictWindow[z], dictDoor[z], dictFloor[z], 
@@ -239,9 +246,9 @@ namespace Gingerbread
 
 
                         //List<gbSeg> lineExtended = GBMethod.ExtendSegs(lineBlocks[b][g], 0.5);
-                        
+                        List<gbSeg> lineFused = GBMethod.SegsFusion(lineBlocks[b][g], Properties.Settings.Default.tolAlignment);
                         List<gbSeg> lineShatters = GBMethod.SkimOut(
-                            GBMethod.ShatterSegs(lineBlocks[b][g]), 0.01);
+                            GBMethod.ShatterSegs(lineFused), 0.01);
 
 
                         List<gbXYZ> joints = PointAlign.GetJoints(lineShatters,
