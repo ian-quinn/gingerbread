@@ -54,7 +54,7 @@ namespace Gingerbread
                 out Dictionary<int, List<List<gbXYZ>>> dictShade,
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
                 out Dictionary<int, List<gbSeg>> dictGrid,
-                out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictRoom,
+                out Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom,
                 out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
                 out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
                 out string checkInfo);
@@ -231,7 +231,7 @@ namespace Gingerbread
                         if (g == 0 && areaHull > areaOffset)
                         {
                             lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
-                                dictWall[z], dictWindow[z], dictDoor[z], dictFloor[z], 
+                                dictWall[z], dictCurtain[z], dictWindow[z], dictDoor[z], dictFloor[z], 
                                 Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping, z == 0 ? false : true, 
                                 out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidLoops);
 
@@ -239,7 +239,8 @@ namespace Gingerbread
                             dictAirwall[z].AddRange(airwalls);
                             foreach (List<gbXYZ> loop in voidLoops)
                             {
-                                dictRoom[z].Add(new Tuple<List<gbXYZ>, string>(loop, "Void"));
+                                dictRoom[z].Add(new Tuple<List<List<gbXYZ>>, string>(
+                                    new List<List<gbXYZ>>() { loop }, "Void"));
                             }
                             Util.LogPrint($"PerimeterPatch: L{z}-B{b} has {glazings.Count} glazing, {voidLoops.Count} void, {airwalls.Count} airwall");
                         }

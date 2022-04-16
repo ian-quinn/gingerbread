@@ -932,6 +932,9 @@ namespace Gingerbread
             return sum;
         }
 
+        /// <summary>
+        /// Serialize all outward vectors of each joint in point alignment
+        /// </summary>
         public static List<string> HandString(List<List<gbXYZ>> hands)
         {
             List<string> handsList = new List<string>();
@@ -947,6 +950,24 @@ namespace Gingerbread
                 handsList.Add(serialization);
             }
             return handsList;
+        }
+
+        /// <summary>
+        /// Serialize a list of regions for Rhino visualization
+        /// </summary>
+        public static string RegionString(List<gbRegion> regions)
+        {
+            string serialization = "";
+            foreach (gbRegion region in regions)
+            {
+                string loopString = "";
+                foreach (gbXYZ pt in region.loop)
+                {
+                    loopString += $"{{{pt.X}, {pt.Y}, {pt.Z}}}#";
+                }
+                serialization += loopString + "\n";
+            }
+            return serialization;
         }
 
 

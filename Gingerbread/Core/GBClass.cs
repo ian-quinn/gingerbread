@@ -477,7 +477,11 @@ namespace Gingerbread.Core
             this.level = level;
             this.height = level.height;
 
-            area = GBMethod.GetPolyArea(region.loop); // PENDING
+            // PENDING // use net area 22-04-16
+            area = GBMethod.GetPolyArea(region.loop);
+            if (region.innerLoops != null)
+                foreach (List<gbXYZ> hole in region.innerLoops)
+                    area -= GBMethod.GetPolyArea(hole);
             volume = area * height;
 
             walls = new List<gbSurface>();

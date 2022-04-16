@@ -22,7 +22,7 @@ namespace Gingerbread.Core
             Dictionary<int, List<gbSeg>> dictAirwall,
             Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
             Dictionary<int, List<List<gbXYZ>>> dictShade,
-            Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictRoom, 
+            Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom, 
             out List<gbZone> zones,
             out List<gbLoop> floors,
             out List<gbSurface> surfaces,
@@ -120,16 +120,29 @@ namespace Gingerbread.Core
 
                     if (dictRoom.ContainsKey(level.id))
                     {
-                        foreach (Tuple<List<gbXYZ>, string> roomLabel in dictRoom[level.id])
+                        foreach (Tuple<List<List<gbXYZ>>, string> roomLabel in dictRoom[level.id])
                         {
-                            List<List<gbXYZ>> areaOverlapping = GBMethod.ClipPoly(roomLabel.Item1, 
-                                region.loop, ClipType.ctIntersection);
-                            if (areaOverlapping.Count > 0)
+                            // do intersection clip between a MCR room boundary and the region
+                            List<List<gbXYZ>> polyRegion = new List<List<gbXYZ>>() { region.loop };
+                            if (region.innerLoops != null)
+                                polyRegion.AddRange(region.innerLoops);
+                            // ClipPoly has many overloads to handle simply/multiply connected regions
+                            List<List<gbXYZ>> polyOverlap = GBMethod.ClipPoly(roomLabel.Item1,
+                                polyRegion, ClipType.ctIntersection);
+                            if (polyOverlap.Count > 0)
                             {
-                                double areaRatio = GBMethod.GetPolyArea(areaOverlapping[0]) / newZone.area;
-                                Debug.Print($"XMLGeometry:: Comparing room and label regions: {areaRatio}");
-                                if (areaRatio > 0.9 && areaRatio < 1.1)
+                                double areaOverlap = GBMethod.GetPolyArea(polyOverlap[0]);
+                                if (polyOverlap.Count > 1)
+                                    for (int i = 1; i < polyOverlap.Count; i++)
+                                        areaOverlap -= GBMethod.GetPolyArea(polyOverlap[i]);
+                                double areaRatio = areaOverlap / newZone.area;
+                                // this range comes from real project experience
+                                // by default, the thickness of interior wall, and the column
+                                // all take part of the room area. if this percentage is around theta
+                                // then the range should be (1 - theta, 1)
+                                if (areaRatio > 0.8 && areaRatio <= 1)
                                 {
+                                    Debug.Print($"XMLGeometry:: Assigning label {newZone.id} | {roomLabel.Item2} : {areaRatio}");
                                     if (newZone.function == null)
                                     {
                                         newZone.function = roomLabel.Item2;
@@ -322,7 +335,7 @@ namespace Gingerbread.Core
                         // the projection has the same direction as the second segment
                         projection = GBMethod.SegProjection(opening, thisSurface[k].locationLine, 
                             false, out double distance);
-                        if (projection.Length > 0.5 && distance < 0.1)
+                        if (projection.Length > 0.5 && distance < Properties.Settings.Default.tolAlignment)
                         {
                             List<gbXYZ> openingLoop = new List<gbXYZ>();
 
@@ -348,7 +361,8 @@ namespace Gingerbread.Core
                                 thisSurface[k].openings.Add(newOpening);
                             }
                         }
-                        else if (projection.Length < 0.5 && projection.Length > 0.000001)
+                        // record a successful match which is abandoned due to small width
+                        else if (projection.Length < 0.5 && projection.Length > 0.000001 && distance < 0.1)
                         {
                             Util.LogPrint($"Glazing: {projection.Length:f4}m one is ignored at {{{projection}}}");
                         }

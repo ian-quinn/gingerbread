@@ -17,7 +17,7 @@ namespace Gingerbread.Core
         /// Modify the input dictFloor, appending the void region as slab holes.
         /// Output list for dictGlazing and dictRoom.
         /// </summary>
-        public static List<gbSeg> PatchPerimeter(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall,
+        public static List<gbSeg> PatchPerimeter(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall, List<gbSeg> thisCurtain, 
             List<Tuple<gbXYZ, string>> thisWindow, List<Tuple<gbXYZ, string>> thisDoor, List<List<List<gbXYZ>>> thisFloor, 
             double offsetIn, double offsetExt, bool patchVoid, 
             out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidRegions)
@@ -74,6 +74,14 @@ namespace Gingerbread.Core
             foreach (gbSeg chisel in chisels)
             {
                 glazings = GBMethod.EtchSegs(glazings, chisel, 0.01);
+            }
+
+            // the internal curtain wall not projected to the hull boundary
+            // should be kept and acting as glazings (on interior surface)
+            foreach (gbSeg curtain in thisCurtain)
+            {
+                if (GBMethod.IsSegInPoly(curtain, contourIn))
+                    glazings.Add(curtain);
             }
 
             // pull windows to the hull

@@ -41,7 +41,7 @@ namespace Gingerbread
             out Dictionary<int, List<List<gbXYZ>>> dictShade, 
             out Dictionary<int, List<gbSeg>> dictSeparationline,
             out Dictionary<int, List<gbSeg>> dictGrid,
-            out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictRoom,
+            out Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom,
             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
             out Dictionary<string, List<Tuple<string, double>>> dictDoorplus,
             out string checkInfo)
@@ -59,7 +59,7 @@ namespace Gingerbread
             dictShade = new Dictionary<int, List<List<gbXYZ>>>();
             dictSeparationline = new Dictionary<int, List<gbSeg>>();
             dictGrid = new Dictionary<int, List<gbSeg>>();
-            dictRoom = new Dictionary<int, List<Tuple<List<gbXYZ>, string>>>();
+            dictRoom = new Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>>();
             dictWindowplus = new Dictionary<string, List<Tuple<string, double>>>();
             dictDoorplus = new Dictionary<string, List<Tuple<string, double>>>();
             // retrieve all linked documents
@@ -351,7 +351,7 @@ namespace Gingerbread
                 // add room location and label, still PENDING
                 // before the function of visual centeroid of polygon is set
                 // use the polygon boundary to represent the room
-                List<Tuple<List<gbXYZ>, string>> roomlocs = new List<Tuple<List<gbXYZ>, string>>();
+                List<Tuple<List<List<gbXYZ>>, string>> roomlocs = new List<Tuple<List<List<gbXYZ>>, string>>();
                 List<Element> eRooms = new List<Element>();
                 foreach (Element eTag in eRoomTags)
                 {
@@ -362,18 +362,28 @@ namespace Gingerbread
                     Room room = roomTag.Room;
                     if (room.LevelId == levels[z].id)
                     {
-                        List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                        List<List<gbXYZ>> boundaryLoops = new List<List<gbXYZ>>();
                         var roomBoundaries = room.GetBoundarySegments(new SpatialElementBoundaryOptions());
                         if (roomBoundaries.Count == 0)
                             continue;
-                        foreach (BoundarySegment bs in roomBoundaries[0])
+                        // the boundary of a room is a nested list of points
+                        // representing a simply connected region (count == 1) or
+                        // multiply connected region (count > 1)
+                        // considering the situation of corridor, it is better to 
+                        // cache multiple loops inside one list, as representation of a room
+                        foreach (var nestedSegments in roomBoundaries)
                         {
-                            Curve bc = bs.GetCurve();
-                            XYZ pt = bc.GetEndPoint(0);
-                            boundaryLoop.Add(Util.gbXYZConvert(pt));
+                            List<gbXYZ> boundaryLoop = new List<gbXYZ>();
+                            foreach (BoundarySegment bs in nestedSegments)
+                            {
+                                Curve bc = bs.GetCurve();
+                                XYZ pt = bc.GetEndPoint(0);
+                                boundaryLoop.Add(Util.gbXYZConvert(pt));
+                            }
+                            boundaryLoop.Add(boundaryLoop[0]);
+                            boundaryLoops.Add(boundaryLoop);
                         }
-                        boundaryLoop.Add(boundaryLoop[0]);
-                        roomlocs.Add(new Tuple<List<gbXYZ>, string>(boundaryLoop, tagName));
+                        roomlocs.Add(new Tuple<List<List<gbXYZ>>, string>(boundaryLoops, tagName));
                     }
                 }
                 //IList<Element> eRooms = new FilteredElementCollector(doc)
@@ -493,50 +503,73 @@ namespace Gingerbread
                         // if the WallType is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
                         {
-                            // --------------------comment out the lines in between when testing ROOMVENT model----------------
-                            CurtainGrid cg = wall.CurtainGrid;
-
-                            if (cg != null)
+                            // check if the curtain is not acting like a window
+                            // the height of the curtain wall should almost equal
+                            // or over the height of this level
+                            // 0.2m gap ensures the strength of the structure, practical value
+                            // this value may vary with projects, so PENDING mark
+                            if (summit - bottom < levels[i].height - Util.MToFoot(0.2))
                             {
-                                List<XYZ> boundaryPts = new List<XYZ>();
-                                Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
-                                cwOpt.IncludeNonVisibleObjects = true;
-                                GeometryElement geomElem = wall.get_Geometry(cwOpt);
-
-                                foreach (GeometryObject go in geomElem)
+                                Debug.Print($"BatchGeometry:: Panel Level{i}-{levels[i].height - Util.MToFoot(0.1)} u:{summit} b:{bottom}");
+                                foreach (gbSeg segment in temps)
                                 {
-                                    Curve anyCrv = go as Curve;
-                                    if (anyCrv != null)
-                                    {
-                                        XYZ start = anyCrv.GetEndPoint(0);
-                                        XYZ end = anyCrv.GetEndPoint(1);
-                                        // the curtain wall my span over multiple levels
-                                        // only taking the bottom line is not an ideal choice
-                                        if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
-                                        {
-                                            boundaryPts.Add(anyCrv.GetEndPoint(0));
-                                            boundaryPts.Add(anyCrv.GetEndPoint(1));
-                                        }
-                                    }
-                                }
-
-                                //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
-                                if (boundaryPts.Count >= 2)
-                                {
-                                    boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
-                                    boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
-                                    temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
-                                    //Debug.Print($"BatchGeometry:: new baseline updated");
-                                }
-                                else
-                                {
-                                    //Debug.Print("BatchGeometry:: empty panelPts");
-                                    temps = new List<gbSeg>();
+                                    gbXYZ locationPt = segment.PointAt(0.5);
+                                    double width = Math.Round(segment.Length, 3) * 1000;
+                                    double height = Math.Round(Util.FootToM(summit - bottom), 3) * 1000;
+                                    var winPanel = new Tuple<gbXYZ, string>(
+                                        locationPt, width.ToString() + " x " + height.ToString());
+                                    dictWindow[i].Add(winPanel);
                                 }
                             }
-                            // --------------------comment out the lines in between when testing ROOMVENT model----------------
+                            // if the curtain wall do surpass the height of level
+                            // it may function like a normal curtain wall
+                            else
+                            {
+                                // --------------------comment out the lines in between when testing ROOMVENT model----------------
+                                //CurtainGrid cg = wall.CurtainGrid;
 
-                            dictCurtain[i].AddRange(temps);
+                                //if (cg != null)
+                                //{
+                                //    List<XYZ> boundaryPts = new List<XYZ>();
+                                //    Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
+                                //    cwOpt.IncludeNonVisibleObjects = true;
+                                //    GeometryElement geomElem = wall.get_Geometry(cwOpt);
+
+                                //    foreach (GeometryObject go in geomElem)
+                                //    {
+                                //        Curve anyCrv = go as Curve;
+                                //        if (anyCrv != null)
+                                //        {
+                                //            XYZ start = anyCrv.GetEndPoint(0);
+                                //            XYZ end = anyCrv.GetEndPoint(1);
+                                //            // the curtain wall my span over multiple levels
+                                //            // only taking the bottom line is not an ideal choice
+                                //            if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
+                                //            {
+                                //                boundaryPts.Add(anyCrv.GetEndPoint(0));
+                                //                boundaryPts.Add(anyCrv.GetEndPoint(1));
+                                //            }
+                                //        }
+                                //    }
+
+                                //    //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
+                                //    if (boundaryPts.Count >= 2)
+                                //    {
+                                //        boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
+                                //        boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
+                                //        temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
+                                //        //Debug.Print($"BatchGeometry:: new baseline updated");
+                                //    }
+                                //    else
+                                //    {
+                                //        //Debug.Print("BatchGeometry:: empty panelPts");
+                                //        temps = new List<gbSeg>();
+                                //    }
+                                //}
+                                // --------------------comment out the lines in between when testing ROOMVENT model----------------
+
+                                dictCurtain[i].AddRange(temps);
+                            }
                         }
 
                         // if the WallType is something else, Basic, Stacked, Unknown, append it to dictWall
