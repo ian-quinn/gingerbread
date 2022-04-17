@@ -34,7 +34,7 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictWall,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
-                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
+                out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,

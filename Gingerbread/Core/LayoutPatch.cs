@@ -17,8 +17,10 @@ namespace Gingerbread.Core
         /// Modify the input dictFloor, appending the void region as slab holes.
         /// Output list for dictGlazing and dictRoom.
         /// </summary>
-        public static List<gbSeg> PatchPerimeter(List<gbSeg> lines, List<gbXYZ> hull, List<gbSeg> thisWall, List<gbSeg> thisCurtain, 
-            List<Tuple<gbXYZ, string>> thisWindow, List<Tuple<gbXYZ, string>> thisDoor, List<List<List<gbXYZ>>> thisFloor, 
+        public static List<gbSeg> PatchPerimeter(List<gbSeg> lines, List<gbXYZ> hull, 
+            List<gbSeg> thisWall, List<gbSeg> thisCurtain, 
+            List<Tuple<gbXYZ, string>> thisWindow, List<Tuple<gbXYZ, string>> thisDoor, 
+            List<List<List<gbXYZ>>> thisFloor, 
             double offsetIn, double offsetExt, bool patchVoid, 
             out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidRegions)
         {
@@ -245,6 +247,136 @@ namespace Gingerbread.Core
             return GBMethod.SegsFusion(lines, 0.01);
         }
 
+        public static List<gbSeg> PatchColumn(List<gbSeg> thisWall, 
+            List<Tuple<List<gbXYZ>, string>> thisColumn)
+        {
+            List<List<gbSeg>> patches = new List<List<gbSeg>>();
+
+            // loop throught all column polygons
+            // 
+            foreach (Tuple<List<gbXYZ>, string> column in thisColumn)
+            {
+                // vertex loop of column footprint and its expansion
+                // skip if the polygon is not convex, 
+                // which ensures the wall line can only have 
+                // 2 intersections with the polygon utmost
+                List<gbXYZ> colPoly = column.Item1;
+                if (colPoly == null)
+                    continue;
+                List<gbXYZ> colExpansion = GBMethod.OffsetPoly(
+                    OrthoHull.GetRectHull(colPoly),
+                    0.5 * Properties.Settings.Default.tolAlignment)[0];
+                colExpansion.Add(colExpansion[0]);
+
+                // sketch lines for trimming of a patch
+                List<gbSeg> sketch = new List<gbSeg>();
+                // cache joint points for walls and this column
+                List<gbXYZ> joints = new List<gbXYZ>();
+                // cache the directions of the joining walls
+                List<gbXYZ> directions = new List<gbXYZ>();
+                foreach (gbSeg wall in thisWall)
+                {
+                    // retrieve the wall that only steps on foot into the poly
+                    // isCrossed, an even number counter
+                    // add the sketch when the wall has only one intersection with the poly
+                    bool isCrossed = false;
+                    // cache the intersection points between wall and column
+                    List<gbXYZ> endPts = new List<gbXYZ>();
+
+                    for (int i = 0; i < colExpansion.Count - 1; i++)
+                    {
+                        gbSeg edge = new gbSeg(colExpansion[i], colExpansion[i + 1]);
+                        segIntersectEnum intersectEnum = GBMethod.SegIntersection(wall, edge,
+                            0.000001, out gbXYZ intersection, out double t1, out double t2);
+                        if (intersectEnum == segIntersectEnum.IntersectOnB)
+                            endPts.Add(intersection);
+                        if (intersectEnum == segIntersectEnum.IntersectOnBoth)
+                        {
+                            endPts.Insert(0, intersection);
+                            joints.Add(intersection);
+                            gbXYZ cutDirection = GBMethod.GetPendicularVec(wall.Direction, true);
+                            // need tolerance
+                            if (!directions.Contains(cutDirection) &&
+                                !directions.Contains(-cutDirection))
+                                directions.Add(cutDirection);
+                            isCrossed = !isCrossed;
+                        }
+                    }
+                    if (isCrossed)
+                    {
+                        sketch.Add(new gbSeg(endPts[0], endPts[endPts.Count - 1]));
+                    }
+                } // end searching for walls
+
+                int cutOriginal = sketch.Count;
+                if (cutOriginal == 0)
+                    continue;
+
+
+                // generate the patch of current column
+                List<gbSeg> patch = new List<gbSeg>();
+                int step = 0; // indicator for steps
+                while (step < 5)
+                {
+                    step++;
+                    for (int i = 0; i < sketch.Count; i++)
+                    {
+                        List<double> breakParams = new List<double>();
+                        for (int j = 0; j < sketch.Count; j++)
+                        {
+                            if (i != j)
+                            {
+                                segIntersectEnum intersectEnum = GBMethod.SegIntersection(sketch[i], sketch[j], 
+                                    0.000001, out gbXYZ intersection, out double t1, out double t2);
+                                if (intersectEnum == segIntersectEnum.IntersectOnBoth)
+                                {
+                                    if (!breakParams.Contains(t1))
+                                        breakParams.Add(t1);
+                                }
+                            }
+                        }
+                        breakParams.Sort();
+                        bool extOnEndFlag = breakParams.Contains(1);
+                        bool extOnStartFlag = breakParams.Contains(0);
+
+                        // shatter the sketch to splited lines
+                        List<gbSeg> splits = sketch[i].Split(breakParams);
+
+                        // trim the strays with the endpoint with no other connection
+                        if (splits.Count > 0)
+                        {
+                            // the sketch is not joined by others at the end, so trim it
+                            if (!extOnEndFlag)
+                                splits.RemoveAt(splits.Count - 1);
+                            // the start point is where the wall gets into the column, so keep it
+                            if (i > cutOriginal - 1 && !extOnStartFlag)
+                                splits.RemoveAt(0);
+                        }
+
+                        patch.AddRange(splits);
+                    }
+
+                    // the first loop checks if there are intersections within the column region
+                    if (patch.Count > 0)
+                        break;
+                    // the second loop will add column axes to aid the trimming
+                    // in case there are no intersections
+                    else if (step == 1)
+                        sketch.AddRange(GetRectAxis(colExpansion, directions));
+                    // the third loop is the last resort
+                    // just simply connect the joint points by CW/CCW order
+                    else if (step == 2)
+                        for (int i = 0; i < joints.Count - 1; i++)
+                            patch.Add(new gbSeg(joints[i], joints[i + 1]));
+
+                } // end loop of this column
+                patches.Add(patch);
+
+            } // end loop of all columns
+
+            return Util.FlattenList(patches);
+        }
+
         private static List<gbXYZ> SortPtLoop(List<gbSeg> lines)
         {
             if (lines.Count == 0)
@@ -273,13 +405,34 @@ namespace Gingerbread.Core
                     ptLoop.Add(lines[i].PointAt(0));
 
             return ptLoop;
-        }                     
+        }
 
-        /// <summary>
-        /// </summary>
-        public static void ColumnPatch(List<gbSeg> walls, List<List<List<gbXYZ>>> floors)
+        static List<gbSeg> GetRectAxis(List<gbXYZ> pts, List<gbXYZ> vecs)
         {
-            return;
+            List<gbSeg> axes = new List<gbSeg>();
+            // here need to check if the input is one rectangle
+            // for a simple version... note only works for rectangles
+            gbXYZ centroid = new gbXYZ();
+            for (int i = 0; i < pts.Count - 1; i++)
+                centroid = centroid + pts[i];
+            centroid = centroid / (pts.Count - 1);
+
+            foreach (gbXYZ vec in vecs)
+            {
+                List<gbXYZ> endPts = new List<gbXYZ>();
+                for (int i = 0; i < pts.Count - 1; i++)
+                {
+                    segIntersectEnum intersectEnum = GBMethod.SegIntersection(centroid, centroid + vec, pts[i], pts[i + 1], 
+                        0.00001, out gbXYZ intersection, out double t1, out double t2);
+                    if (intersectEnum == segIntersectEnum.IntersectOnB)
+                        endPts.Insert(0, intersection);
+                    if (intersectEnum == segIntersectEnum.IntersectOnBoth)
+                        endPts.Add(intersection);
+                }
+                axes.Add(new gbSeg(endPts[0], endPts[endPts.Count - 1]));
+            }
+
+            return axes;
         }
     }
 }

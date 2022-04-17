@@ -1639,6 +1639,9 @@ namespace Gingerbread.Core
             return sectLoops;
         }
 
+        /// <summary>
+        /// Note that this function returns polygon not enclosed.
+        /// </summary>
         public static List<List<gbXYZ>> OffsetPoly(List<gbXYZ> poly, double offset)
         {
             IntPoint PtToIntPt(gbXYZ pt)

@@ -16,7 +16,7 @@ namespace Gingerbread.Core
             //Dictionary<int, List<List<string>>> dictMatch,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
-            Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn, 
+            Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn, 
             Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             Dictionary<int, List<gbSeg>> dictCurtain,
             Dictionary<int, List<gbSeg>> dictAirwall,
@@ -100,24 +100,6 @@ namespace Gingerbread.Core
                     gbZone newZone = new gbZone(region.label, level, region);
                     //newZone.function = "Office";
 
-                    foreach (Tuple<gbXYZ, double> hollow in hollows)
-                        if (GBMethod.IsPtInPoly(hollow.Item1, region.loop, false))
-                        {
-                            double areaRatio = hollow.Item2 / newZone.area;
-                            if (areaRatio > 0.5 && areaRatio < 1)
-                            {
-                                if (hollow.Item2 < 10)
-                                {
-                                    newZone.function = "Shaft"; shaftCount++;
-                                }
-                                    
-                                else
-                                {
-                                    newZone.function = "Stair"; stairCount++;
-                                }
-                            }
-                        }
-
                     if (dictRoom.ContainsKey(level.id))
                     {
                         foreach (Tuple<List<List<gbXYZ>>, string> roomLabel in dictRoom[level.id])
@@ -154,6 +136,27 @@ namespace Gingerbread.Core
                                 }
                             }
                         }
+
+                        // as a substitue, if there is no labeling, Shaft/Stair will be assigned
+                        // to the void region where the floor has a hole
+                        if (newZone.function == null)
+                            foreach (Tuple<gbXYZ, double> hollow in hollows)
+                                if (GBMethod.IsPtInPoly(hollow.Item1, region.loop, false))
+                                {
+                                    double areaRatio = hollow.Item2 / newZone.area;
+                                    if (areaRatio > 0.5 && areaRatio < 1)
+                                    {
+                                        if (hollow.Item2 < 10)
+                                        {
+                                            newZone.function = "Shaft"; shaftCount++;
+                                        }
+
+                                        else
+                                        {
+                                            newZone.function = "Stair"; stairCount++;
+                                        }
+                                    }
+                                }
                     }
 
                     thisZone.Add(newZone);
@@ -534,7 +537,7 @@ namespace Gingerbread.Core
                         // the projection has the same direction as the second segment
                         projection = GBMethod.SegProjection(airwall, thisSurface[k].locationLine,
                             false, out double distance);
-                        if (projection.Length > 0.5 && distance < 2 * Properties.Settings.Default.tolAlignment)
+                        if (projection.Length > 0.5 && distance < Properties.Settings.Default.tolAlignment)
                         {
                             thisSurface[k].type = surfaceTypeEnum.Air;
                             Util.LogPrint($"Airwall: Space separation added to {thisSurface[k].id}");
@@ -959,10 +962,10 @@ namespace Gingerbread.Core
 
             //appendix
             columns = new List<gbLoop>();
-            foreach (KeyValuePair<int, List<Tuple<gbXYZ, string>>> kvp in dictColumn)
+            foreach (KeyValuePair<int, List<Tuple<List<gbXYZ>, string>>> kvp in dictColumn)
             {
                 int counter = 0;
-                foreach (Tuple<gbXYZ, string> label in kvp.Value)
+                foreach (Tuple<List<gbXYZ>, string> label in kvp.Value)
                 {
                     List<double> sizes = new List<double>();
                     foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
@@ -976,11 +979,13 @@ namespace Gingerbread.Core
                     double height = sizes[0];
                     if (sizes.Count == 2)
                         height = sizes[1];
-                    List<gbXYZ> loop = new List<gbXYZ>();
-                    loop.Add(label.Item1 + new gbXYZ(-0.5 * width, -0.5 * height, 0));
-                    loop.Add(label.Item1 + new gbXYZ(0.5 * width, -0.5 * height, 0));
-                    loop.Add(label.Item1 + new gbXYZ(0.5 * width, 0.5 * height, 0));
-                    loop.Add(label.Item1 + new gbXYZ(-0.5 * width, 0.5 * height, 0));
+                    List<gbXYZ> loop = label.Item1;
+                    loop.RemoveAt(loop.Count - 1);
+                    // legacy version uses the centroid of column to transfer data
+                    //loop.Add(label.Item1 + new gbXYZ(-0.5 * width, -0.5 * height, 0));
+                    //loop.Add(label.Item1 + new gbXYZ(0.5 * width, -0.5 * height, 0));
+                    //loop.Add(label.Item1 + new gbXYZ(0.5 * width, 0.5 * height, 0));
+                    //loop.Add(label.Item1 + new gbXYZ(-0.5 * width, 0.5 * height, 0));
                     gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, 0);
                     column.dimension1 = width;
                     column.dimension2 = height;

@@ -33,7 +33,7 @@ namespace Gingerbread
             out Dictionary<int, List<gbSeg>> dictWall,
             out Dictionary<int, List<gbSeg>> dictCurtain,
             out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
-            out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
+            out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
             out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
@@ -51,7 +51,7 @@ namespace Gingerbread
             dictWall = new Dictionary<int, List<gbSeg>>();
             dictCurtain = new Dictionary<int, List<gbSeg>>();
             dictCurtaSystem = new Dictionary<int, List<gbSeg>>();
-            dictColumn = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
+            dictColumn = new Dictionary<int, List<Tuple<List<gbXYZ>, string>>>();
             dictBeam = new Dictionary<int, List<Tuple<gbSeg, string>>>();
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
@@ -266,7 +266,7 @@ namespace Gingerbread
                     Math.Round(Util.FootToM(levels[z].elevation), 3)
                     ));
                 dictWall.Add(z, new List<gbSeg>());
-                dictColumn.Add(z, new List<Tuple<gbXYZ, string>>());
+                dictColumn.Add(z, new List<Tuple<List<gbXYZ>, string>>());
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
                 dictCurtain.Add(z, new List<gbSeg>());
                 dictWindow.Add(z, new List<Tuple<gbXYZ, string>>());
@@ -804,7 +804,29 @@ namespace Gingerbread
                        summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
                        bottom <= (levels[i].elevation + 0.5 * levels[i].height))
                     {
-                        dictColumn[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), fi.Name));
+                        List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
+                        List<gbXYZ> colPoly = new List<gbXYZ>();
+                        // only cache the outer boundary without holes
+                        foreach (Curve crv in colCrvLoops[0])
+                        {
+                            if (crv is Line)
+                            {
+                                colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                            }
+                            // we are expecting rectangular columns but
+                            // there will always be special-shaped and round ones
+                            else
+                            {
+                                List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                                // remove the end point so there will be no duplicate
+                                ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                                colPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                            }
+                        }
+                        // make it a closed polygon
+                        colPoly.Add(colPoly[0]);
+                        if (colPoly.Count > 0)
+                            dictColumn[i].Add(new Tuple<List<gbXYZ>, string>(colPoly, fi.Name));
                     }
                 }
             }
@@ -907,6 +929,78 @@ namespace Gingerbread
             
 
             return;
+        }
+
+        // Private method
+        // Iterate to get the bottom face of a solid
+        static Face GetBottomFace(Solid solid)
+        {
+            PlanarFace pf = null;
+            foreach (Face face in solid.Faces)
+            {
+                pf = face as PlanarFace;
+                if (null != pf)
+                {
+                    if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolDouble)
+                        && pf.FaceNormal.Z < 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            return pf;
+        }
+
+        // Private method
+        // Generate the CurveLoop of the footprint
+        static List<CurveLoop> GetFootprintOfColumn(FamilyInstance fi)
+        {
+            List<CurveLoop> footprints = new List<CurveLoop>();
+
+            Options opt = new Options();
+            opt.ComputeReferences = true;
+            opt.DetailLevel = ViewDetailLevel.Medium;
+            GeometryElement ge = fi.get_Geometry(opt);
+
+            foreach (GeometryObject obj in ge)
+            {
+                if (obj is Solid)
+                {
+                    Face bottomFace = GetBottomFace(obj as Solid);
+                    if (null != bottomFace)
+                    {
+                        foreach (CurveLoop edge in bottomFace.GetEdgesAsCurveLoops())
+                        {
+                            footprints.Add(edge);
+                        }
+                    }
+                }
+                else if (obj is GeometryInstance)
+                {
+                    GeometryInstance geoInstance = obj as GeometryInstance;
+                    GeometryElement geoElement = geoInstance.GetInstanceGeometry();
+                    foreach (GeometryObject obj2 in geoElement)
+                    {
+                        if (obj2 is Solid)
+                        {
+                            Solid solid2 = obj2 as Solid;
+                            if (solid2.Faces.Size > 0)
+                            {
+                                Face bottomFace = GetBottomFace(solid2);
+                                foreach (CurveLoop edge in bottomFace.GetEdgesAsCurveLoops())
+                                {
+                                    footprints.Add(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // else
+            // doing nothing and return the empty list
+
+            return footprints;
         }
     }
 }

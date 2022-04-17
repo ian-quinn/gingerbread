@@ -46,7 +46,7 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictWall,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
-                out Dictionary<int, List<Tuple<gbXYZ, string>>> dictColumn,
+                out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
                 out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
@@ -97,6 +97,10 @@ namespace Gingerbread
                 enclosings.AddRange(dictSeparationline[z]);
                 dictAirwall[z].AddRange(dictSeparationline[z]);
                 List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
+
+                List<gbSeg> colPatches = LayoutPatch.PatchColumn(flatLines, dictColumn[z]);
+
+                flatLines.AddRange(colPatches);
 
                 // the extension copies all segments to another list
                 // not able to operate the endpoints directly for now
