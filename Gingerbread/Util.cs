@@ -969,6 +969,20 @@ namespace Gingerbread
             }
             return serialization;
         }
+        public static string LoopString(List<List<gbXYZ>> loops)
+        {
+            string serialization = "";
+            foreach (List<gbXYZ> loop in loops)
+            {
+                string loopString = "";
+                foreach (gbXYZ pt in loop)
+                {
+                    loopString += $"{{{pt.X}, {pt.Y}, {pt.Z}}}#";
+                }
+                serialization += loopString + "\n";
+            }
+            return serialization;
+        }
 
 
         #endregion // Formatting

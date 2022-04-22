@@ -254,9 +254,9 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("31.4")]
-        public string projLatitude {
+        public double projLatitude {
             get {
-                return ((string)(this["projLatitude"]));
+                return ((double)(this["projLatitude"]));
             }
             set {
                 this["projLatitude"] = value;
@@ -266,9 +266,9 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("121.45")]
-        public string projLongitude {
+        public double projLongitude {
             get {
-                return ((string)(this["projLongitude"]));
+                return ((double)(this["projLongitude"]));
             }
             set {
                 this["projLongitude"] = value;
@@ -278,9 +278,9 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("5.5")]
-        public string projElevation {
+        public double projElevation {
             get {
-                return ((string)(this["projElevation"]));
+                return ((double)(this["projElevation"]));
             }
             set {
                 this["projElevation"] = value;
@@ -308,6 +308,18 @@ namespace Gingerbread.Properties {
             }
             set {
                 this["exportShade"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double projAzimuth {
+            get {
+                return ((double)(this["projAzimuth"]));
+            }
+            set {
+                this["projAzimuth"] = value;
             }
         }
     }

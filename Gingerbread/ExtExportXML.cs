@@ -98,9 +98,10 @@ namespace Gingerbread
                 dictAirwall[z].AddRange(dictSeparationline[z]);
                 List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
 
-                List<gbSeg> colPatches = LayoutPatch.PatchColumn(flatLines, dictColumn[z]);
-
-                flatLines.AddRange(colPatches);
+                // Patch lines may have collision with the wall lines
+                // thus making the alginment not stable
+                //List<gbSeg> colPatches = LayoutPatch.PatchColumn(flatLines, dictColumn[z]);
+                //flatLines.AddRange(colPatches);
 
                 // the extension copies all segments to another list
                 // not able to operate the endpoints directly for now

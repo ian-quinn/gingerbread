@@ -444,6 +444,7 @@ namespace Gingerbread.Core
         public double height;
         public bool isFuzzySeperated = false; // goto isovist division if true
         public bool isMultiConnected = false; // goto multiconnected region separation if true
+        public bool isExposedAbove = false;   // the zone lacks top ceiling if true
 
         // connect to program presets or space label
         public string function;

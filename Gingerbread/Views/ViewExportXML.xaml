@@ -27,7 +27,7 @@
         
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
             <StackPanel Orientation="Vertical">
-                <GroupBox Header="Header Info" Padding="5" Width="200" Height="165">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="185">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -46,13 +46,15 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="Address" Margin="0 4 0 5"/>
                         <TextBlock Grid.Row="1" Grid.Column="0" Text="Lat/Long" Margin="0 4 0 5"/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Elevation" Margin="0 5 0 5"/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Name" Margin="0 5 0 5"/>
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Azimuth" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Name" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>
 
                         <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="projAddress" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projAddress, Mode=TwoWay}" Margin="0 2 0 2"/>
@@ -62,9 +64,11 @@
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projLongitude, Mode=TwoWay}" Margin="2 2 0 2"/>
                         <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Name="projElevation" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projElevation, Mode=TwoWay}"  Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
+                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Name="projAzimuth" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAzimuth, Mode=TwoWay}"  Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projName, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
+                        <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projNumber, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>

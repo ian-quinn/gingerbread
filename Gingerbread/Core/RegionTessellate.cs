@@ -24,8 +24,24 @@ namespace Gingerbread.Core
             if (mcr.Count == 0)
                 return tiles;
             //if (mcr[0].Count <= 5)
-            if (mcr.Count == 1 && mcr[0].Count <= 5)
-                return tiles;
+            if (mcr.Count == 1)
+            {
+                if (mcr[0].Count < 5)
+                    return tiles = mcr;
+                // represents polygon with 4 vertices
+                // for not self-intersected polygon, connect diagonal points
+                // will always generates to convex triangles
+                if (mcr[0].Count == 5)
+                {
+                    List<gbXYZ> shapeA = new List<gbXYZ>() { 
+                        mcr[0][0], mcr[0][1], mcr[0][2], mcr[0][0] };
+                    List<gbXYZ> shapeB = new List<gbXYZ>() { 
+                        mcr[0][2], mcr[0][3], mcr[0][4], mcr[0][2] };
+                    tiles.Add(shapeA);
+                    tiles.Add(shapeB);
+                    return tiles;
+                }
+            }
 
             // a safe lock
             int counter = 0;
@@ -224,6 +240,19 @@ namespace Gingerbread.Core
                     //Rhino.RhinoApp.WriteLine("Remove point: " + poly[i].ToString());
                     delId.Add(i);
                 }
+            }
+            for (int i = poly.Count - 1; i >= 0; i--)
+                if (delId.Contains(i))
+                    poly.RemoveAt(i);
+        }
+        public static void RemoveOverlapPts(List<gbXYZ> poly, double tolLength = 0.0000001)
+        {
+            List<int> delId = new List<int>();
+            for (int i = 0; i < poly.Count; i++)
+            {
+                int nextId = i + 1 < poly.Count ? i + 1 : 0;
+                if (poly[i].DistanceTo(poly[nextId]) < tolLength)
+                    delId.Add(i);
             }
             for (int i = poly.Count - 1; i >= 0; i--)
                 if (delId.Contains(i))

@@ -35,6 +35,7 @@ namespace Gingerbread.Core
             zeloc.Latitude = Properties.Settings.Default.projLatitude;
             zeloc.Longitude = Properties.Settings.Default.projLongitude;
             zeloc.Elevation = Properties.Settings.Default.projElevation;
+            zeloc.CADModelAzimuth = Properties.Settings.Default.projAzimuth;
             cmp.Location = zeloc; // backward mapping
 
             // set default building area then revise it
@@ -98,9 +99,10 @@ namespace Gingerbread.Core
                 }
 
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
-                if (IsDuplicateSrf(faces[i], uniqueSrfs))
-                    continue;
-                uniqueSrfs.Add(faces[i]);
+                // if the current face has already been an adjacent face 
+                // of one of those modeled surfaces (uniqueSrfs), skip it
+                if (RetrieveMatchedSrf(faces[i].id, uniqueSrfs) == null)
+                    uniqueSrfs.Add(faces[i]);
 
 
                 Surface newSurface = MakeSurface(faces[i], srfCounter);
@@ -140,7 +142,22 @@ namespace Gingerbread.Core
                 srfCounter++;
             }
 
-            //Appendix, columns, beams, shafts
+            // the SpaceBoundary may point to a surface not modeled
+            // the reference must be in the unique surface list
+            foreach (Space zone in cmp.Buildings[0].Spaces)
+            {
+                if (zone == null) continue;
+                foreach (SpaceBoundary sb in zone.spbound)
+                {
+                    string matchedSrfId = RetrieveMatchedSrf(sb.surfaceIdRef, uniqueSrfs);
+                    if (matchedSrfId != null)
+                    {
+                        sb.surfaceIdRef = matchedSrfId;
+                    }
+                }
+            }
+
+            // Appendix, columns, beams, shafts
             cmp.Column = new Column[columns.Count];
             for (int i = 0; i < columns.Count; i++)
             {
@@ -422,7 +439,7 @@ namespace Gingerbread.Core
             surface.RectangularGeometry = rg;
 
             PlanarGeometry pg = new PlanarGeometry();
-            pg.PolyLoop = PtsToPolyLoop(face.loop);
+            pg.PolyLoop = PtsToPolyLoop(GBMethod.GetOpenPolyLoop(face.loop));
             surface.PlanarGeometry = pg;
 
             // openings
@@ -478,14 +495,19 @@ namespace Gingerbread.Core
         }
         #endregion
 
-        public static bool IsDuplicateSrf(gbSurface target, List<gbSurface> faces)
+
+        /// <summary>
+        /// Return the id string of the adjacent surface of the current gbSurface
+        /// by looking up in the unique surface list
+        /// </summary>
+        private static string RetrieveMatchedSrf(string id, List<gbSurface> faces)
         {
             if (faces.Count == 0)
-                return false;
+                return null;
             foreach (gbSurface face in faces)
-                if (target.adjSrfId == face.id)
-                    return true;
-            return false;
+                if (id == face.adjSrfId)
+                    return face.id;
+            return null;
         }
     }
 }

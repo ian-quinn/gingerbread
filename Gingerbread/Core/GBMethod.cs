@@ -1134,11 +1134,30 @@ namespace Gingerbread.Core
             //        return false;
             //}
         }
+
+        /// <summary>
+        /// Check if a polygon is totally inside another one.
+        /// The method needs update.
+        /// </summary>
         public static bool IsPolyInPoly(List<gbXYZ> polyA, List<gbXYZ> polyB)
         {
+            // if any vertex of polygon A outside polygon B, deny it
             foreach (gbXYZ pt in polyA)
                 if (!IsPtInPoly(pt, polyB, false))
                     return false;
+            // if any edge of polygon A intersects with polygon B, deny it
+            for (int i = 0; i < polyA.Count - 1; i++)
+            {
+                gbSeg edgeA = new gbSeg(polyA[i], polyA[i + 1]);
+                for (int j = 0; j < polyB.Count - 1; j++)
+                {
+                    gbSeg edgeB = new gbSeg(polyB[j], polyB[j + 1]);
+                    segIntersectEnum intersectEnum = SegIntersection(edgeA, edgeB, _eps, 
+                        out gbXYZ sectPt, out double t1, out double t2);
+                    if (intersectEnum == segIntersectEnum.IntersectOnBoth)
+                        return false;
+                }
+            }
             return true;
         }
         // 
@@ -1236,6 +1255,18 @@ namespace Gingerbread.Core
                 openLoop.Add(loop[i]);
             return openLoop;
         }
+        static public List<gbXYZ> GetOpenPolyLoop(List<gbXYZ> loop)
+        {
+            List<gbXYZ> openLoop = new List<gbXYZ>() { loop[0] };
+            for (int i = 1; i < loop.Count; i++)
+            {
+                if (loop[i].DistanceTo(loop[0]) > _eps)
+                    openLoop.Add(loop[i]);
+                else
+                    break;
+            }
+            return openLoop;
+        }
 
         /// <summary>
         /// Get the normal of a polygon by Left-hand order
@@ -1302,6 +1333,22 @@ namespace Gingerbread.Core
                 area1 += a * b;
             }
             return Math.Abs(0.5 * (area0 - area1));
+        }
+        /// <summary>
+        /// Get the area of multiple multiply connected regions.
+        /// Following one simple rule, + CCW region and - CW region
+        /// </summary>
+        public static double GetPolysArea(List<List<gbXYZ>> polys)
+        {
+            double area = 0;
+            foreach (List<gbXYZ> poly in polys)
+            {
+                if (IsClockwise(poly))
+                    area -= GetPolyArea(poly);
+                else
+                    area += GetPolyArea(poly);
+            }
+            return Math.Abs(area);
         }
 
         /// <summary>

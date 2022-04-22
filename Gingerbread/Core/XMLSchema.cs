@@ -953,9 +953,9 @@ namespace Gingerbread.Core
     public class Location
     {
         public string Name { get; set; }
-        public string Latitude { get; set; }
-        public string Longitude { get; set; }
-        public string Elevation { get; set; }
+        public double Latitude { get; set; }
+        public double Longitude { get; set; }
+        public double Elevation { get; set; }
         public double CADModelAzimuth { get; set; }
         public string ZipcodeOrPostalCode { get; set; }
 

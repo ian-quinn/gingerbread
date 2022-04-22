@@ -64,9 +64,10 @@ namespace Gingerbread.Views
             Properties.Settings.Default.projName = projName.Text;
             Properties.Settings.Default.projAddress = projAddress.Text;
             Properties.Settings.Default.projNumber = projNumber.Text;
-            Properties.Settings.Default.projLatitude = projLatitude.Text;
-            Properties.Settings.Default.projLongitude = projLongitude.Text;
-            Properties.Settings.Default.projElevation = projElevation.Text;
+            Properties.Settings.Default.projLatitude = double.Parse(projLatitude.Text);
+            Properties.Settings.Default.projLongitude = double.Parse(projLongitude.Text);
+            Properties.Settings.Default.projElevation = double.Parse(projElevation.Text);
+            Properties.Settings.Default.projAzimuth = double.Parse(projAzimuth.Text);
             Properties.Settings.Default.Save();
             txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
             txtState.Visibility = System.Windows.Visibility.Visible;
@@ -84,9 +85,10 @@ namespace Gingerbread.Views
             Properties.Settings.Default.projName = "GingerbreadHouse";
             Properties.Settings.Default.projAddress = "Shanghai, China";
             Properties.Settings.Default.projNumber = projNumber.Text;
-            Properties.Settings.Default.projLatitude = "31.4";
-            Properties.Settings.Default.projLongitude = "121.45";
-            Properties.Settings.Default.projElevation = "5.5";
+            Properties.Settings.Default.projLatitude = 31.4;
+            Properties.Settings.Default.projLongitude = 121.45;
+            Properties.Settings.Default.projElevation = 5.5;
+            Properties.Settings.Default.projAzimuth = 0;
             txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
             txtState.Visibility = System.Windows.Visibility.Visible;
             txtState.Text = "Reset to default value.";

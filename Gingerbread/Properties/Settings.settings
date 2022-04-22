@@ -59,13 +59,13 @@
     <Setting Name="originZ" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="projLatitude" Type="System.String" Scope="User">
+    <Setting Name="projLatitude" Type="System.Double" Scope="User">
       <Value Profile="(Default)">31.4</Value>
     </Setting>
-    <Setting Name="projLongitude" Type="System.String" Scope="User">
+    <Setting Name="projLongitude" Type="System.Double" Scope="User">
       <Value Profile="(Default)">121.45</Value>
     </Setting>
-    <Setting Name="projElevation" Type="System.String" Scope="User">
+    <Setting Name="projElevation" Type="System.Double" Scope="User">
       <Value Profile="(Default)">5.5</Value>
     </Setting>
     <Setting Name="shadowPrev" Type="System.Boolean" Scope="User">
@@ -73,6 +73,9 @@
     </Setting>
     <Setting Name="exportShade" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
+    </Setting>
+    <Setting Name="projAzimuth" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
   </Settings>
 </SettingsFile>

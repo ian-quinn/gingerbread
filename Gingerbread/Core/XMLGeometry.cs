@@ -56,7 +56,7 @@ namespace Gingerbread.Core
             // 0000 x 0000 is the default naming for all opening family types, for now
             string sizeMockup = @"\d+";
 
-            // first loop to add spaces, walls, adjacencies and adhering openings
+            // 1st loop to add spaces, walls, adjacencies and adhering openings
             foreach (gbLevel level in levels)
             {
                 Util.LogPrint($"----------------Shape the wall on Level-{level.id}----------------");
@@ -113,23 +113,23 @@ namespace Gingerbread.Core
                                 polyRegion, ClipType.ctIntersection);
                             if (polyOverlap.Count > 0)
                             {
-                                double areaOverlap = GBMethod.GetPolyArea(polyOverlap[0]);
-                                if (polyOverlap.Count > 1)
-                                    for (int i = 1; i < polyOverlap.Count; i++)
-                                        areaOverlap -= GBMethod.GetPolyArea(polyOverlap[i]);
+                                double areaOverlap = GBMethod.GetPolysArea(polyOverlap);
                                 double areaRatio = areaOverlap / newZone.area;
                                 // this range comes from real project experience
                                 // by default, the thickness of interior wall, and the column
-                                // all take part of the room area. if this percentage is around theta
-                                // then the range should be (1 - theta, 1)
-                                if (areaRatio > 0.8 && areaRatio <= 1)
+                                // all take part of the room area. The ratio fluctuates with the area of zone
+                                Debug.Print($"XMLGeometry:: Assigning label {newZone.id} | {roomLabel.Item2} : {areaRatio}");
+                                if (areaRatio > 0.5 && areaRatio <= 1)
                                 {
-                                    Debug.Print($"XMLGeometry:: Assigning label {newZone.id} | {roomLabel.Item2} : {areaRatio}");
                                     if (newZone.function == null)
                                     {
                                         newZone.function = roomLabel.Item2;
                                         if (roomLabel.Item2 == "Void")
                                             voidCount++;
+                                    }
+                                    else
+                                    {
+                                        Debug.Print($"XMLGeometry:: Space pre-filled with {newZone.function}");
                                     }
                                     //Debug.Print($"XMLGeometry:: Void space detected at {newZone.id}");
                                     break;
@@ -157,6 +157,25 @@ namespace Gingerbread.Core
                                         }
                                     }
                                 }
+                    }
+
+                    // check if this zone is exposed (with no ceiling above)
+                    if (dictFloor.ContainsKey(level.nextId))
+                    {
+                        foreach (List<List<gbXYZ>> panel in dictFloor[level.nextId])
+                        {
+                            foreach (List<gbXYZ> loop in panel)
+                            {
+                                if (GBMethod.IsClockwise(loop))
+                                {
+                                    List<List<gbXYZ>> result = GBMethod.ClipPoly(
+                                        GBMethod.ElevatePts(loop, 0), region.loop, ClipType.ctIntersection);
+                                    double overlap = GBMethod.GetPolysArea(result);
+                                    if (overlap / newZone.area > 0.8)
+                                        newZone.isExposedAbove = true;
+                                }
+                            }
+                        }
                     }
 
                     thisZone.Add(newZone);
@@ -290,7 +309,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound windows detected on {srf.id}");
                         }
-                        RegionTessellate.SimplifyPoly(rectifiedOpening, 0.01);
+                        RegionTessellate.RemoveOverlapPts(rectifiedOpening, 0.000001);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -480,7 +499,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound doors detected on {srf.id}");
                         }
-                        RegionTessellate.SimplifyPoly(rectifiedOpening, 0.01);
+                        RegionTessellate.RemoveOverlapPts(rectifiedOpening, 0.000001);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -546,7 +565,7 @@ namespace Gingerbread.Core
                 }
             }
 
-            // second loop solve adjacencies among floors
+            // 2nd loop solve adjacencies among floors
             // perform on already created zones
             // prepare a counter for shadowing level indexation
             int shadowingCounter = 0;
@@ -581,7 +600,7 @@ namespace Gingerbread.Core
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
                             List<gbXYZ> dupPoly = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(zone.loop));
-                            RegionTessellate.SimplifyPoly(dupPoly, 0.01);
+                            RegionTessellate.RemoveOverlapPts(dupPoly, 0.000001);
                             dupPoly.Reverse();
 
                             gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupPoly, 180);
@@ -602,7 +621,7 @@ namespace Gingerbread.Core
                                 }
 
                                 List<gbXYZ> dupTile = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(tile));
-                                RegionTessellate.SimplifyPoly(dupTile, 0.01);
+                                RegionTessellate.RemoveOverlapPts(dupTile, 0.000001);
                                 dupTile.Reverse();
 
                                 gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupTile, 180);
@@ -633,7 +652,7 @@ namespace Gingerbread.Core
                         //                skyLights.Add(loop);
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
-                            RegionTessellate.SimplifyPoly(tile, 0.01);
+                            RegionTessellate.RemoveOverlapPts(tile, 0.000001);
                             List<gbXYZ> tilePoly = GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.height));
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
                                 tilePoly, 0);
@@ -661,7 +680,7 @@ namespace Gingerbread.Core
                         }
                     }
 
-                    // exposed floor or offset roof check
+                    // offset roof check
                     // clip the zone tiles then translate them to surfaces
                     // note that a level may include multiple block shells
                     if (level.id != levels.Count - 2 && dictShell.ContainsKey(level.nextId))
@@ -683,23 +702,60 @@ namespace Gingerbread.Core
                             }
                             if (sectLoops.Count != 0)
                             {
-                                for (int j = 0; j < sectLoops.Count; j++)
+                                // duplicate sectLoops only for debugging
+                                // if stable just modify sectLoops directly
+                                List<List<gbXYZ>> rawLoops = new List<List<gbXYZ>>();
+                                for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
-                                    RegionTessellate.SimplifyPoly(sectLoops[j], 0.01);
-                                    if (sectLoops[j].Count == 0)
-                                        continue;
-                                    List<gbXYZ> tilePoly = GBMethod.ReorderPoly(
+                                    List<gbXYZ> rawLoop = sectLoops[j];
+                                    RegionTessellate.RemoveOverlapPts(rawLoop, 0.000001);
+                                    if (rawLoop.Count != 0)
+                                    {
+                                        // always keep the loop closed
+                                        rawLoop.Add(rawLoop[0]);
+                                        rawLoops.Add(rawLoop);
+                                    }
+                                }
+                                // in case the the loops are nested, so do sort out mcrs first
+                                List<List<List<gbXYZ>>> mcrs = SortMultiplyConnectedRegions(rawLoops);
+                                for (int j = 0; j < mcrs.Count; j++)
+                                {
+                                    bool checker3 = GBMethod.IsConvex(mcrs[j][0]);
+                                    if (mcrs[j].Count == 0) continue;
+                                    if (mcrs[j].Count == 1)
+                                    {
+                                        // for a simply connected region
+                                        // no big deal if it is convex or concave
+                                        List<gbXYZ> tilePoly = GBMethod.ReorderPoly(
                                         GBMethod.ElevatePts(sectLoops[j], level.elevation + level.height));
-                                    gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
-                                        tilePoly, 0);
-                                    splitCeil.adjSrfId = "Outside";
-                                    splitCeil.type = surfaceTypeEnum.Roof;
-                                    zone.ceilings.Add(splitCeil);
+                                        gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
+                                            tilePoly, 0);
+                                        splitCeil.adjSrfId = "Outside";
+                                        splitCeil.type = surfaceTypeEnum.Roof;
+                                        zone.ceilings.Add(splitCeil);
+                                    }
+                                    else
+                                    {
+                                        // for a multiply connected region
+                                        List<List<gbXYZ>> casters = RegionTessellate.Rectangle(mcrs[j]);
+                                        foreach (List<gbXYZ> caster in casters)
+                                        {
+                                            List<gbXYZ> tilePoly = GBMethod.ReorderPoly(
+                                                GBMethod.ElevatePts(caster, level.elevation + level.height));
+                                            gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
+                                                tilePoly, 0);
+                                            splitCeil.adjSrfId = "Outside";
+                                            splitCeil.type = surfaceTypeEnum.Roof;
+                                            zone.floors.Add(splitCeil);
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
 
+
+                    // exposed floor generation
                     if (!level.isBottom && dictShell.ContainsKey(level.prevId))
                     {
                         int containmentCounter = 0;
@@ -717,18 +773,37 @@ namespace Gingerbread.Core
                                 sectLoops.AddRange(result);
                                 //Debug.Print($"XMLGeometry:: Exposed floor {zone.id} section - {result.Count}");
                             }
+
+                            // if the previous shell is completely within the the tile
+                            // in case that any MCR is generated within sectLoops
+                            // you must check the CW/CCW of the loop and containment
                             if (sectLoops.Count != 0)
                             {
-                                for (int j = 0; j < sectLoops.Count; j++)
+                                // duplicate sectLoops only for debugging
+                                // if stable just modify sectLoops directly
+                                List<List<gbXYZ>> rawLoops = new List<List<gbXYZ>>();
+                                for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
                                     List<gbXYZ> rawLoop = sectLoops[j];
-                                    RegionTessellate.SimplifyPoly(rawLoop, 0.01);
-                                    if (rawLoop.Count == 0)
-                                        continue;
-                                    if (GBMethod.IsConvex(rawLoop))
+                                    RegionTessellate.RemoveOverlapPts(rawLoop, 0.000001);
+                                    if (rawLoop.Count != 0)
                                     {
+                                        // always keep the loop closed
+                                        rawLoop.Add(rawLoop[0]);
+                                        rawLoops.Add(rawLoop);
+                                    }
+                                }
+                                // in case the the loops are nested, so do sort out mcrs first
+                                List<List<List<gbXYZ>>> mcrs = SortMultiplyConnectedRegions(rawLoops);
+                                for (int j = 0; j < mcrs.Count; j++)
+                                {
+                                    bool checker3 = GBMethod.IsConvex(mcrs[j][0]);
+                                    if (mcrs[j].Count == 0) continue;
+                                    if (mcrs[j].Count == 1 && GBMethod.IsConvex(mcrs[j][0]))
+                                    {
+                                        // for a convex AND simply connected region
                                         List<gbXYZ> revLoop = GBMethod.ReorderPoly(
-                                            GBMethod.ElevatePts(sectLoops[j], level.elevation));
+                                            GBMethod.ElevatePts(mcrs[j][0], level.elevation));
                                         revLoop.Reverse();
                                         gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                             revLoop, 180);
@@ -738,7 +813,9 @@ namespace Gingerbread.Core
                                     }
                                     else
                                     {
-                                        List<List<gbXYZ>> casters = RegionTessellate.Rectangle(new List<List<gbXYZ>>() { rawLoop });
+                                        // for a concave simply connected region
+                                        // and a multiply connected region
+                                        List<List<gbXYZ>> casters = RegionTessellate.Rectangle(mcrs[j]);
                                         foreach (List<gbXYZ> caster in casters)
                                         {
                                             List<gbXYZ> revLoop = GBMethod.ReorderPoly(
@@ -849,9 +926,10 @@ namespace Gingerbread.Core
                 }
             }
 
+
+            // 3rd loop for floor slab clipping and shading surface
             if (Properties.Settings.Default.exportShade == true)
             {
-                // third loop for floor slab clipping and shading surface
                 foreach (gbLevel level in levels)
                 {
                     if (!dictShade.ContainsKey(level.id) || !dictZone.ContainsKey(level.id))
@@ -956,11 +1034,70 @@ namespace Gingerbread.Core
             }
 
 
-            // forth loop summarizes all faces
-            foreach (gbZone zone in zones)
-            zone.Summarize();
+            // 4th loop summarizes all faces for each zone
+            // and delete zones exposed to the outside
+            // their interior boundary deleted and exterior boundary into shadings
+            List<gbZone> delZones = new List<gbZone>();
+            List<string> delZoneIds = new List<string>();
+            List<string> delSurfaceIds = new List<string>();
+            for (int i = zones.Count - 1; i >= 0; i--)
+            {
+                // critial process to summarize the information
+                zones[i].Summarize();
+                // try to locate all spaces exposed to outdoor
+                if (zones[i].isExposedAbove)
+                {
+                    foreach (gbSurface ceiling in zones[i].ceilings)
+                    {
+                        if (ceiling.type == surfaceTypeEnum.Roof)
+                        {
+                            delZones.Add(zones[i]);
+                            delZoneIds.Add(zones[i].id);
+                            foreach (gbSurface delSrf in zones[i].faces)
+                                delSurfaceIds.Add(delSrf.id);
+                            break;
+                            // delAction = true;
+                        }
+                        // delZones list is expanding, avoid using foreach..
+                        for (int j = 0; j < delZones.Count; j++)
+                        {
+                            foreach (gbSurface floor in delZones[j].floors)
+                            {
+                                if (ceiling.adjSrfId == floor.id && 
+                                    !delZoneIds.Contains(zones[i].id))
+                                {
+                                    delZones.Add(zones[i]);
+                                    delZoneIds.Add(zones[i].id);
+                                    foreach (gbSurface delSrf in zones[i].faces)
+                                        delSurfaceIds.Add(delSrf.id);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            // iterate zones backward deleting zones exposed to outdoor
+            for (int i = zones.Count - 1; i >= 0; i--)
+            {
+                if (delZoneIds.Contains(zones[i].id))
+                    zones.RemoveAt(i);
+            }
+            // remove all surfaces included in the delZones
+            // change all surfaces' boundary condition to "Outside"
+            // if they are adjacent to zones in the delZones list
+            for (int i = surfaces.Count - 1; i >= 0; i--)
+            {
+                if (delSurfaceIds.Contains(surfaces[i].id))
+                    if (surfaces[i].adjSrfId == "Outside")
+                        surfaces[i].type = surfaceTypeEnum.Shade;
+                    else
+                        surfaces.RemoveAt(i);
+                if (delSurfaceIds.Contains(surfaces[i].adjSrfId))
+                    surfaces[i].adjSrfId = "Outside";
+            }
 
-            //appendix
+
+            // appendix for structure components
             columns = new List<gbLoop>();
             foreach (KeyValuePair<int, List<Tuple<List<gbXYZ>, string>>> kvp in dictColumn)
             {
@@ -1066,6 +1203,36 @@ namespace Gingerbread.Core
                     return true;
             }
             return false; 
+        }
+
+        /// <summary>
+        /// Sort out the hierarchy structure of multiply connected regions
+        /// from a bunch of CW or CCW polygon vertices loops
+        /// this is a degenerated version of MCR given the right CW/CCW order
+        /// </summary>
+        static List<List<List<gbXYZ>>> SortMultiplyConnectedRegions(List<List<gbXYZ>> loops)
+        {
+            List<int> skipLoops = new List<int>();
+            List<List<List<gbXYZ>>> mcrs = new List<List<List<gbXYZ>>>();
+            for (int i = 0; i < loops.Count; i++)
+            {
+                if (!GBMethod.IsClockwise(loops[i]))
+                {
+                    List<List<gbXYZ>> mcr =
+                        new List<List<gbXYZ>>() { loops[i] };
+                    mcrs.Add(mcr);
+                    skipLoops.Add(i);
+                }
+            }
+            for (int i = 0; i < loops.Count; i++)
+            {
+                if (!skipLoops.Contains(i))
+                    if (GBMethod.IsClockwise(loops[i]))
+                        foreach (List<List<gbXYZ>> mcr in mcrs)
+                            if (GBMethod.IsPolyInPoly(loops[i], mcr[0]))
+                                mcr.Add(loops[i]);
+            }
+            return mcrs;
         }
     }
 }
