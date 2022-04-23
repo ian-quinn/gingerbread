@@ -309,7 +309,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound windows detected on {srf.id}");
                         }
-                        RegionTessellate.RemoveOverlapPts(rectifiedOpening, 0.000001);
+                        RegionTessellate.SimplifyPoly(rectifiedOpening, true, true, false, 0.000001);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -499,7 +499,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound doors detected on {srf.id}");
                         }
-                        RegionTessellate.RemoveOverlapPts(rectifiedOpening, 0.000001);
+                        RegionTessellate.SimplifyPoly(rectifiedOpening, true, true, false, 0.000001);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -600,7 +600,7 @@ namespace Gingerbread.Core
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
                             List<gbXYZ> dupPoly = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(zone.loop));
-                            RegionTessellate.RemoveOverlapPts(dupPoly, 0.000001);
+                            RegionTessellate.SimplifyPoly(dupPoly, true, true, false, 0.000001);
                             dupPoly.Reverse();
 
                             gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupPoly, 180);
@@ -621,7 +621,7 @@ namespace Gingerbread.Core
                                 }
 
                                 List<gbXYZ> dupTile = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(tile));
-                                RegionTessellate.RemoveOverlapPts(dupTile, 0.000001);
+                                RegionTessellate.SimplifyPoly(dupTile, true, true, false, 0.000001);
                                 dupTile.Reverse();
 
                                 gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupTile, 180);
@@ -652,7 +652,7 @@ namespace Gingerbread.Core
                         //                skyLights.Add(loop);
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
-                            RegionTessellate.RemoveOverlapPts(tile, 0.000001);
+                            RegionTessellate.SimplifyPoly(tile, true, true, false, 0.000001);
                             List<gbXYZ> tilePoly = GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.height));
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
                                 tilePoly, 0);
@@ -708,7 +708,7 @@ namespace Gingerbread.Core
                                 for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
                                     List<gbXYZ> rawLoop = sectLoops[j];
-                                    RegionTessellate.RemoveOverlapPts(rawLoop, 0.000001);
+                                    RegionTessellate.SimplifyPoly(rawLoop, true, true, false, 0.000001);
                                     if (rawLoop.Count != 0)
                                     {
                                         // always keep the loop closed
@@ -785,7 +785,7 @@ namespace Gingerbread.Core
                                 for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
                                     List<gbXYZ> rawLoop = sectLoops[j];
-                                    RegionTessellate.RemoveOverlapPts(rawLoop, 0.000001);
+                                    RegionTessellate.SimplifyPoly(rawLoop, true, true, false, 0.000001);
                                     if (rawLoop.Count != 0)
                                     {
                                         // always keep the loop closed
@@ -871,7 +871,7 @@ namespace Gingerbread.Core
                                 continue;
                             for (int j = 0; j < sectLoops.Count; j++)
                             {
-                                RegionTessellate.SimplifyPoly(sectLoops[j], 0.000001);
+                                RegionTessellate.SimplifyPoly(sectLoops[j], true, true, false, 0.000001);
                                 if (sectLoops[j].Count <= 2)
                                     continue;
                                 // the name does not matter
@@ -968,7 +968,7 @@ namespace Gingerbread.Core
                                         shellClippers, ClipType.ctDifference);
                                     foreach (List<gbXYZ> result in results)
                                     {
-                                        RegionTessellate.SimplifyPoly(result, 0.01);
+                                        RegionTessellate.SimplifyPoly(result, true, true, true, 0.01);
                                         if (result.Count == 0 || GBMethod.GetPolyArea(result) < 1 || GBMethod.IsClockwise(result))
                                             continue;
                                         gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
@@ -1008,7 +1008,7 @@ namespace Gingerbread.Core
                                     shellClippers, ClipType.ctDifference);
                                 foreach (List<gbXYZ> result in results)
                                 {
-                                    RegionTessellate.SimplifyPoly(result, 0.01);
+                                    RegionTessellate.SimplifyPoly(result, true, true, true, 0.01);
                                     //Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
                                     double area = GBMethod.GetPolyArea(result);
                                     if (area < 1 || result.Count == 0 || GBMethod.IsClockwise(result))
@@ -1088,12 +1088,24 @@ namespace Gingerbread.Core
             for (int i = surfaces.Count - 1; i >= 0; i--)
             {
                 if (delSurfaceIds.Contains(surfaces[i].id))
-                    if (surfaces[i].adjSrfId == "Outside")
+                    if (surfaces[i].type == surfaceTypeEnum.ExteriorWall)
                         surfaces[i].type = surfaceTypeEnum.Shade;
                     else
                         surfaces.RemoveAt(i);
                 if (delSurfaceIds.Contains(surfaces[i].adjSrfId))
+                {
                     surfaces[i].adjSrfId = "Outside";
+                    if (surfaces[i].type == surfaceTypeEnum.InteriorWall)
+                        surfaces[i].type = surfaceTypeEnum.ExteriorWall;
+                    if (surfaces[i].type == surfaceTypeEnum.InteriorFloor)
+                    {
+                        if (surfaces[i].tilt == 180)
+                            surfaces[i].type = surfaceTypeEnum.ExposedFloor;
+                        if (surfaces[i].tilt == 0)
+                            surfaces[i].type = surfaceTypeEnum.Roof;
+                    }       
+                }
+                    
             }
 
 

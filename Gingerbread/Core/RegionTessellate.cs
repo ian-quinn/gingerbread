@@ -209,51 +209,49 @@ namespace Gingerbread.Core
         /// or else the duplicate point will be removed as well. Here we check if the two outgoing vectors 
         /// of a vertice are co-lined. 
         /// </summary>
-        public static void SimplifyPoly(List<gbXYZ> poly, double tolLength = 0.001, double tolAngle = 0.001)
+        public static void SimplifyPoly(List<gbXYZ> poly, 
+            bool removeOverlap = true, 
+            bool removeAbrupt = true, 
+            bool removeRelay = true, 
+            double tolLength = 0.001, double tolAngle = 0.001)
         {
             List<int> delId = new List<int>();
-            for (int i = 0; i < poly.Count; i++)
+            if (removeOverlap)
             {
-                int nextId = i + 1 < poly.Count ? i + 1 : 0;
-                if (poly[i].DistanceTo(poly[nextId]) < tolLength)
-                    delId.Add(i);
-            }
-            for (int i = poly.Count - 1; i >= 0; i--)
-                if (delId.Contains(i))
-                    poly.RemoveAt(i);
-
-            delId = new List<int>();
-            for (int i = 0; i < poly.Count; i++)
-            {
-                int nextId = i + 1 < poly.Count ? i + 1 : 0;
-                int prevId = i - 1 < 0 ? poly.Count - 1 : i - 1;
-                gbXYZ vec1 = poly[i] - poly[nextId];
-                gbXYZ vec2 = poly[i] - poly[prevId];
-
-                // The function VectorAngle will not check the minor value
-                // must make sure the input vectors are not residules extremely small
-                double angle = GBMethod.VectorAngle(vec1, vec2);
-                //Rhino.RhinoApp.WriteLine("Check the redundant point: " + angle.ToString());
-
-                if (Math.Abs(180 - angle) < tolAngle || Math.Abs(0 - angle) < tolAngle || Math.Abs(360 - angle) < tolAngle)
+                for (int i = 0; i < poly.Count; i++)
                 {
-                    //Rhino.RhinoApp.WriteLine("Remove point: " + poly[i].ToString());
-                    delId.Add(i);
+                    int nextId = i + 1 < poly.Count ? i + 1 : 0;
+                    if (poly[i].DistanceTo(poly[nextId]) < tolLength)
+                        delId.Add(i);
+                }
+                for (int i = poly.Count - 1; i >= 0; i--)
+                    if (delId.Contains(i))
+                        poly.RemoveAt(i);
+            }
+
+            if (removeAbrupt || removeRelay)
+            {
+                delId = new List<int>();
+                for (int i = 0; i < poly.Count; i++)
+                {
+                    int nextId = i + 1 < poly.Count ? i + 1 : 0;
+                    int prevId = i - 1 < 0 ? poly.Count - 1 : i - 1;
+                    gbXYZ vec1 = poly[i] - poly[nextId];
+                    gbXYZ vec2 = poly[i] - poly[prevId];
+
+                    // The function VectorAngle will not check the minor value
+                    // must make sure the input vectors are not residules extremely small
+                    double angle = GBMethod.VectorAngle(vec1, vec2);
+
+                    if (removeAbrupt)
+                        if (Math.Abs(0 - angle) < tolAngle || Math.Abs(360 - angle) < tolAngle)
+                            delId.Add(i);
+                    if (removeRelay)
+                        if (Math.Abs(180 - angle) < tolAngle)
+                            delId.Add(i);
                 }
             }
-            for (int i = poly.Count - 1; i >= 0; i--)
-                if (delId.Contains(i))
-                    poly.RemoveAt(i);
-        }
-        public static void RemoveOverlapPts(List<gbXYZ> poly, double tolLength = 0.0000001)
-        {
-            List<int> delId = new List<int>();
-            for (int i = 0; i < poly.Count; i++)
-            {
-                int nextId = i + 1 < poly.Count ? i + 1 : 0;
-                if (poly[i].DistanceTo(poly[nextId]) < tolLength)
-                    delId.Add(i);
-            }
+            
             for (int i = poly.Count - 1; i >= 0; i--)
                 if (delId.Contains(i))
                     poly.RemoveAt(i);
