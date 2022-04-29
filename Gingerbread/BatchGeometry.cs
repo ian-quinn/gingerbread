@@ -526,46 +526,46 @@ namespace Gingerbread
                             else
                             {
                                 // --------------------comment out the lines in between when testing ROOMVENT model----------------
-                                //CurtainGrid cg = wall.CurtainGrid;
+                                CurtainGrid cg = wall.CurtainGrid;
 
-                                //if (cg != null)
-                                //{
-                                //    List<XYZ> boundaryPts = new List<XYZ>();
-                                //    Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
-                                //    cwOpt.IncludeNonVisibleObjects = true;
-                                //    GeometryElement geomElem = wall.get_Geometry(cwOpt);
+                                if (cg != null)
+                                {
+                                    List<XYZ> boundaryPts = new List<XYZ>();
+                                    Options cwOpt = wall.Document.Application.Create.NewGeometryOptions();
+                                    cwOpt.IncludeNonVisibleObjects = true;
+                                    GeometryElement geomElem = wall.get_Geometry(cwOpt);
 
-                                //    foreach (GeometryObject go in geomElem)
-                                //    {
-                                //        Curve anyCrv = go as Curve;
-                                //        if (anyCrv != null)
-                                //        {
-                                //            XYZ start = anyCrv.GetEndPoint(0);
-                                //            XYZ end = anyCrv.GetEndPoint(1);
-                                //            // the curtain wall my span over multiple levels
-                                //            // only taking the bottom line is not an ideal choice
-                                //            if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
-                                //            {
-                                //                boundaryPts.Add(anyCrv.GetEndPoint(0));
-                                //                boundaryPts.Add(anyCrv.GetEndPoint(1));
-                                //            }
-                                //        }
-                                //    }
+                                    foreach (GeometryObject go in geomElem)
+                                    {
+                                        Curve anyCrv = go as Curve;
+                                        if (anyCrv != null)
+                                        {
+                                            XYZ start = anyCrv.GetEndPoint(0);
+                                            XYZ end = anyCrv.GetEndPoint(1);
+                                            // the curtain wall my span over multiple levels
+                                            // only taking the bottom line is not an ideal choice
+                                            if (Math.Abs(start.Z - end.Z) < 0.00001 && Math.Abs(start.Z - levels[i].elevation) < 0.5)
+                                            {
+                                                boundaryPts.Add(anyCrv.GetEndPoint(0));
+                                                boundaryPts.Add(anyCrv.GetEndPoint(1));
+                                            }
+                                        }
+                                    }
 
-                                //    //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
-                                //    if (boundaryPts.Count >= 2)
-                                //    {
-                                //        boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
-                                //        boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
-                                //        temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
-                                //        //Debug.Print($"BatchGeometry:: new baseline updated");
-                                //    }
-                                //    else
-                                //    {
-                                //        //Debug.Print("BatchGeometry:: empty panelPts");
-                                //        temps = new List<gbSeg>();
-                                //    }
-                                //}
+                                    //Debug.Print($"BatchGeometry:: Piling altogether {panelPts.Count} points");
+                                    if (boundaryPts.Count >= 2)
+                                    {
+                                        boundaryPts = boundaryPts.OrderBy(p => p.X).ToList();
+                                        boundaryPts = boundaryPts.OrderBy(p => p.Y).ToList();
+                                        temps = new List<gbSeg>() { new gbSeg(Util.gbXYZConvert(boundaryPts[0]), Util.gbXYZConvert(boundaryPts.Last())) };
+                                        //Debug.Print($"BatchGeometry:: new baseline updated");
+                                    }
+                                    else
+                                    {
+                                        //Debug.Print("BatchGeometry:: empty panelPts");
+                                        temps = new List<gbSeg>();
+                                    }
+                                }
                                 // --------------------comment out the lines in between when testing ROOMVENT model----------------
 
                                 dictCurtain[i].AddRange(temps);

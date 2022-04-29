@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="CenterScreen"
              Background="White"
-             Height="540" Width="930"
+             Height="560" Width="930"
              SizeToContent="WidthAndHeight"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -145,6 +145,11 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
                 </GroupBox>
 
                 <StackPanel Margin="0 10 5 5">
+                    <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
+                              Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked"  Margin="0 0 0 5" 
+                              ToolTip="Retrieve geometry from all linked .rvt files. There should not be any component&#x0a;
+duplicated among documents. All documents must share the same&#x0a;Cartesian coordinate globally.">
+                        Include linked Revit model</CheckBox>
                     <CheckBox x:Name="ExportStruct" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=exportStruct, Mode=TwoWay}"
                               Checked ="ExportStruct_Checked" Unchecked ="ExportStruct_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Export additional information for HVAC automatic design. Including: &#x0a;
@@ -154,16 +159,16 @@ locations of columns and beams, floor multipliers for model simplification, &#x0
                               Checked ="ExportShade_Checked" Unchecked ="ExportShade_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Export shading surface modeled as walls or floor slabs.">
                         Export shading surface</CheckBox>
-                    <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
-                              Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked"  Margin="0 0 0 5" 
-                              ToolTip="Retrieve geometry from all linked .rvt files. There should not be any component&#x0a;
-duplicated among documents. All documents must share the same&#x0a;Cartesian coordinate globally.">
-                        Include linked Revit model</CheckBox>
                     <CheckBox x:Name="ShadowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=shadowPrev, Mode=TwoWay}"
-                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" 
+                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Align the floorplan boundary shadowing the previous floorplan. This could&#x0a;
 reduce the surface debris but may cause space or surface matching failures.">
                         Shadow previous floorplan</CheckBox>
+                    <CheckBox x:Name="PunchMass" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=punchMass, Mode=TwoWay}"
+                              Checked ="PunchMass_Checked" Unchecked ="PunchMass_Unchecked" 
+                              ToolTip="If you want holes exist in your building massing, check this box. This will&#x0a;
+substract the atrium or shaft from your massing if it is exposed to outdoors.">
+                        Punctuate building mass</CheckBox>
                 </StackPanel>
 
                 <Grid Margin="0 10 0 0">

@@ -383,7 +383,14 @@ namespace Gingerbread.Core
             this.tilt = tilt;
             // the azimuth is the angle (0-360) from the north axis (0, 1, 0) to the normal vector
             // the azimuth should follow the clockwise sequence. north-0, east-90, south-180, west-270
-            azimuth = GBMethod.VectorAngle(new gbXYZ(0, 1, 0), GBMethod.GetPolyNormal(loop));
+            gbXYZ normal = GBMethod.GetPolyNormal(loop);
+            azimuth = GBMethod.VectorAngle(new gbXYZ(0, 1, 0), normal);
+            // no specific regulations on the azimuth of horizontal plane?
+            // simply assign them all with 0 azimuth, for now
+            if (Math.Abs(Math.Abs(normal.Z) - 1) < 1.0e-9)
+                azimuth = 0;
+                    
+                
             area = GBMethod.GetPolyArea3d(loop);
             openings = new List<gbOpening>();
             openingArea = 0;

@@ -309,7 +309,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound windows detected on {srf.id}");
                         }
-                        RegionTessellate.SimplifyPoly(rectifiedOpening, true, true, false, 0.000001);
+                        RegionTessellate.SimplifyPoly(rectifiedOpening);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -499,7 +499,7 @@ namespace Gingerbread.Core
                             //Debug.Print("Did boolean operation");
                             Util.LogPrint($"Opening: Outbound doors detected on {srf.id}");
                         }
-                        RegionTessellate.SimplifyPoly(rectifiedOpening, true, true, false, 0.000001);
+                        RegionTessellate.SimplifyPoly(rectifiedOpening);
                         double openingArea = GBMethod.GetPolyArea(rectifiedOpening);
                         if (openingArea < 0.001)
                         {
@@ -600,7 +600,7 @@ namespace Gingerbread.Core
                             // the existance of zone.loop has been checked before
                             // consider to add another check here
                             List<gbXYZ> dupPoly = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(zone.loop));
-                            RegionTessellate.SimplifyPoly(dupPoly, true, true, false, 0.000001);
+                            RegionTessellate.SimplifyPoly(dupPoly);
                             dupPoly.Reverse();
 
                             gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupPoly, 180);
@@ -621,7 +621,7 @@ namespace Gingerbread.Core
                                 }
 
                                 List<gbXYZ> dupTile = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(tile));
-                                RegionTessellate.SimplifyPoly(dupTile, true, true, false, 0.000001);
+                                RegionTessellate.SimplifyPoly(dupTile);
                                 dupTile.Reverse();
 
                                 gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupTile, 180);
@@ -652,7 +652,7 @@ namespace Gingerbread.Core
                         //                skyLights.Add(loop);
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
-                            RegionTessellate.SimplifyPoly(tile, true, true, false, 0.000001);
+                            RegionTessellate.SimplifyPoly(tile);
                             List<gbXYZ> tilePoly = GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.height));
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
                                 tilePoly, 0);
@@ -682,7 +682,7 @@ namespace Gingerbread.Core
 
                     // offset roof check
                     // clip the zone tiles then translate them to surfaces
-                    // note that a level may include multiple block shells
+                    // note that a level may include multiple block shells  
                     if (level.id != levels.Count - 2 && dictShell.ContainsKey(level.nextId))
                     {
                         int containmentCounter = 0;
@@ -708,7 +708,7 @@ namespace Gingerbread.Core
                                 for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
                                     List<gbXYZ> rawLoop = sectLoops[j];
-                                    RegionTessellate.SimplifyPoly(rawLoop, true, true, false, 0.000001);
+                                    RegionTessellate.SimplifyPoly(rawLoop);
                                     if (rawLoop.Count != 0)
                                     {
                                         // always keep the loop closed
@@ -722,12 +722,12 @@ namespace Gingerbread.Core
                                 {
                                     bool checker3 = GBMethod.IsConvex(mcrs[j][0]);
                                     if (mcrs[j].Count == 0) continue;
-                                    if (mcrs[j].Count == 1)
+                                    if (mcrs[j].Count == 1 && mcrs[j][0].Count != 0)
                                     {
                                         // for a simply connected region
                                         // no big deal if it is convex or concave
                                         List<gbXYZ> tilePoly = GBMethod.ReorderPoly(
-                                        GBMethod.ElevatePts(sectLoops[j], level.elevation + level.height));
+                                            GBMethod.ElevatePts(mcrs[j][0], level.elevation + level.height));
                                         gbSurface splitCeil = new gbSurface(zone.id + "::Ceil_" + zone.ceilings.Count, zone.id,
                                             tilePoly, 0);
                                         splitCeil.adjSrfId = "Outside";
@@ -785,7 +785,7 @@ namespace Gingerbread.Core
                                 for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
                                     List<gbXYZ> rawLoop = sectLoops[j];
-                                    RegionTessellate.SimplifyPoly(rawLoop, true, true, false, 0.000001);
+                                    RegionTessellate.SimplifyPoly(rawLoop);
                                     if (rawLoop.Count != 0)
                                     {
                                         // always keep the loop closed
@@ -799,7 +799,7 @@ namespace Gingerbread.Core
                                 {
                                     bool checker3 = GBMethod.IsConvex(mcrs[j][0]);
                                     if (mcrs[j].Count == 0) continue;
-                                    if (mcrs[j].Count == 1 && GBMethod.IsConvex(mcrs[j][0]))
+                                    if (mcrs[j].Count == 1 && GBMethod.IsConvex(mcrs[j][0]) && mcrs[j][0].Count != 0)
                                     {
                                         // for a convex AND simply connected region
                                         List<gbXYZ> revLoop = GBMethod.ReorderPoly(
@@ -871,7 +871,7 @@ namespace Gingerbread.Core
                                 continue;
                             for (int j = 0; j < sectLoops.Count; j++)
                             {
-                                RegionTessellate.SimplifyPoly(sectLoops[j], true, true, false, 0.000001);
+                                RegionTessellate.SimplifyPoly(sectLoops[j]);
                                 if (sectLoops[j].Count <= 2)
                                     continue;
                                 // the name does not matter
@@ -968,7 +968,7 @@ namespace Gingerbread.Core
                                         shellClippers, ClipType.ctDifference);
                                     foreach (List<gbXYZ> result in results)
                                     {
-                                        RegionTessellate.SimplifyPoly(result, true, true, true, 0.01);
+                                        RegionTessellate.SimplifyPoly(result);
                                         if (result.Count == 0 || GBMethod.GetPolyArea(result) < 1 || GBMethod.IsClockwise(result))
                                             continue;
                                         gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
@@ -1008,7 +1008,7 @@ namespace Gingerbread.Core
                                     shellClippers, ClipType.ctDifference);
                                 foreach (List<gbXYZ> result in results)
                                 {
-                                    RegionTessellate.SimplifyPoly(result, true, true, true, 0.01);
+                                    RegionTessellate.SimplifyPoly(result);
                                     //Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
                                     double area = GBMethod.GetPolyArea(result);
                                     if (area < 1 || result.Count == 0 || GBMethod.IsClockwise(result))
@@ -1045,31 +1045,35 @@ namespace Gingerbread.Core
                 // critial process to summarize the information
                 zones[i].Summarize();
                 // try to locate all spaces exposed to outdoor
-                if (zones[i].isExposedAbove)
+                // trigger this process ONLY if the user demands to
+                if (Properties.Settings.Default.punchMass)
                 {
-                    foreach (gbSurface ceiling in zones[i].ceilings)
+                    if (zones[i].isExposedAbove)
                     {
-                        if (ceiling.type == surfaceTypeEnum.Roof)
+                        foreach (gbSurface ceiling in zones[i].ceilings)
                         {
-                            delZones.Add(zones[i]);
-                            delZoneIds.Add(zones[i].id);
-                            foreach (gbSurface delSrf in zones[i].faces)
-                                delSurfaceIds.Add(delSrf.id);
-                            break;
-                            // delAction = true;
-                        }
-                        // delZones list is expanding, avoid using foreach..
-                        for (int j = 0; j < delZones.Count; j++)
-                        {
-                            foreach (gbSurface floor in delZones[j].floors)
+                            if (ceiling.type == surfaceTypeEnum.Roof)
                             {
-                                if (ceiling.adjSrfId == floor.id && 
-                                    !delZoneIds.Contains(zones[i].id))
+                                delZones.Add(zones[i]);
+                                delZoneIds.Add(zones[i].id);
+                                foreach (gbSurface delSrf in zones[i].faces)
+                                    delSurfaceIds.Add(delSrf.id);
+                                break;
+                                // delAction = true;
+                            }
+                            // delZones list is expanding, avoid using foreach..
+                            for (int j = 0; j < delZones.Count; j++)
+                            {
+                                foreach (gbSurface floor in delZones[j].floors)
                                 {
-                                    delZones.Add(zones[i]);
-                                    delZoneIds.Add(zones[i].id);
-                                    foreach (gbSurface delSrf in zones[i].faces)
-                                        delSurfaceIds.Add(delSrf.id);
+                                    if (ceiling.adjSrfId == floor.id &&
+                                        !delZoneIds.Contains(zones[i].id))
+                                    {
+                                        delZones.Add(zones[i]);
+                                        delZoneIds.Add(zones[i].id);
+                                        foreach (gbSurface delSrf in zones[i].faces)
+                                            delSurfaceIds.Add(delSrf.id);
+                                    }
                                 }
                             }
                         }

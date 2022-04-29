@@ -1269,7 +1269,7 @@ namespace Gingerbread.Core
         }
 
         /// <summary>
-        /// Get the normal of a polygon by Left-hand order
+        /// Get the normal of a polygon by Left-hand order (normalized)
         /// </summary>
         public static gbXYZ GetPolyNormal(List<gbXYZ> pts)
         {

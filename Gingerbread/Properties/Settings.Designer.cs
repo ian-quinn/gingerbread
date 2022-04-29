@@ -322,5 +322,17 @@ namespace Gingerbread.Properties {
                 this["projAzimuth"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool punchMass {
+            get {
+                return ((bool)(this["punchMass"]));
+            }
+            set {
+                this["punchMass"] = value;
+            }
+        }
     }
 }

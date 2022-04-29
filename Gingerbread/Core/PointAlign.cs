@@ -182,7 +182,7 @@ namespace Gingerbread.Core
                         {
                             for (int j = transIdx.Count - 1; j >= 0; j--)
                             {
-                                if (Math.Abs(transPts[tempIdGroup[i]].Y - transPts[transIdx[j]].Y) < 0.000001)
+                                if (transPts[tempIdGroup[i]].Y == transPts[transIdx[j]].Y)
                                 {
                                     tempIdGroup.Add(transIdx[j]);
                                     transIdx.RemoveAt(j);

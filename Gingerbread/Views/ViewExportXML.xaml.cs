@@ -94,6 +94,16 @@ namespace Gingerbread.Views
             txtState.Text = "Reset to default value.";
         }
 
+        private void IncludeRef_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.includeRef = true;
+        }
+        private void IncludeRef_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.includeRef = false;
+        }
         private void ExportStruct_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
@@ -114,11 +124,7 @@ namespace Gingerbread.Views
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.exportShade = false;
         }
-        private void IncludeRef_Checked(object sender, RoutedEventArgs e)
-        {
-            CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.includeRef = true;
-        }
+        
         private void ShadowPrev_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
@@ -129,11 +135,17 @@ namespace Gingerbread.Views
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.shadowPrev = true;
         }
-        private void IncludeRef_Unchecked(object sender, RoutedEventArgs e)
+        private void PunchMass_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.includeRef = false;
+            Properties.Settings.Default.punchMass = false;
         }
+        private void PunchMass_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.punchMass = true;
+        }
+        
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {

@@ -961,6 +961,8 @@ namespace Gingerbread
             foreach (gbRegion region in regions)
             {
                 string loopString = "";
+                if (region.loop == null || region.loop.Count == 0)
+                    continue;
                 foreach (gbXYZ pt in region.loop)
                 {
                     loopString += $"{{{pt.X}, {pt.Y}, {pt.Z}}}#";
