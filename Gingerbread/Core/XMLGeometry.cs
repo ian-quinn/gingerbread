@@ -588,7 +588,7 @@ namespace Gingerbread.Core
                     {
                         surfaceTypeEnum surfaceTypeDef = surfaceTypeEnum.SlabOnGrade;
                         //if (zone.level.elevation - 0 > 0.1)
-                        //    surfaceTypeDef = surfaceTypeEnum.ExposedFloor;
+                        //    surfaceTypeDef = surfaceTypeEnum.RaisedFloor;
 
                         // to prevent empty tesselaltion
                         if (zone.tiles == null)
@@ -808,7 +808,7 @@ namespace Gingerbread.Core
                                         gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                             revLoop, 180);
                                         splitFloor.adjSrfId = "Outside";
-                                        splitFloor.type = surfaceTypeEnum.ExposedFloor;
+                                        splitFloor.type = surfaceTypeEnum.RaisedFloor;
                                         zone.floors.Add(splitFloor);
                                     }
                                     else
@@ -824,7 +824,7 @@ namespace Gingerbread.Core
                                             gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                                 revLoop, 180);
                                             splitFloor.adjSrfId = "Outside";
-                                            splitFloor.type = surfaceTypeEnum.ExposedFloor;
+                                            splitFloor.type = surfaceTypeEnum.RaisedFloor;
                                             zone.floors.Add(splitFloor);
                                         }
                                     }
@@ -882,9 +882,10 @@ namespace Gingerbread.Core
                                 // the ceiling here mean the shadowing floor, so the tilt is still 180
                                 List<gbXYZ> dupLoop = GBMethod.ReorderPoly(
                                     GBMethod.ElevatePts(sectLoops[j], adjZone.level.elevation));
+                                dupLoop.Reverse();
 
-                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, dupLoop, 0);
-                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, dupLoop, 0);
+                                gbSurface splitCeil = new gbSurface(splitCeilId, zone.id, dupLoop, 180);
+                                gbSurface splitFloor = new gbSurface(splitFloorId, adjZone.id, dupLoop, 180);
 
                                 splitCeil.adjSrfId = splitFloorId;
                                 splitCeil.type = surfaceTypeEnum.InteriorFloor;
@@ -1104,7 +1105,7 @@ namespace Gingerbread.Core
                     if (surfaces[i].type == surfaceTypeEnum.InteriorFloor)
                     {
                         if (surfaces[i].tilt == 180)
-                            surfaces[i].type = surfaceTypeEnum.ExposedFloor;
+                            surfaces[i].type = surfaceTypeEnum.RaisedFloor;
                         if (surfaces[i].tilt == 0)
                             surfaces[i].type = surfaceTypeEnum.Roof;
                     }       
