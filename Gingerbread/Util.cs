@@ -1000,6 +1000,21 @@ namespace Gingerbread
             return IsZero(b - a, tolerance);
         }
 
+        // bubble sort two spans and return the length of their overlap
+        public static double SpanOverlap(double a, double b, double c, double d)
+        {
+            if (a > b) Swap(ref a, ref b);
+            if (c > d) Swap(ref c, ref d);
+            if (b < c || a > d) return 0;
+
+            double[] arr = new double[4] { a, b, c, d };
+            for (int i = 0; i < 4; i++)
+                for (int j = 0; j < 3 - i; j++)
+                    if (arr[j] > arr[j + 1])
+                        Swap(ref arr[j], ref arr[j + 1]);
+            return arr[2] - arr[1];
+        }
+
         /// <summary>
         /// Log the debug information
         /// </summary>

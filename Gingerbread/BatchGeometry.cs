@@ -496,15 +496,20 @@ namespace Gingerbread
 
                     // mark the hosting level of a wall only by its geometry irrelevant to its level attribute
                     // this could be dangerous. PENDING for updates
-                    if (//wall.LevelId == levels[i].id || 
-                       (summit >= levels[i].elevation + 0.5 * levels[i].height &&
-                       bottom <= levels[i].elevation + 0.1 * levels[i].height))
+                    // previous statement: (revised on 2022-?)
+                    //wall.LevelId == levels[i].id || 
+
+                    // previous statement: (revised on 2022-08-10)
+                    //summit >= levels[i].elevation + 0.5 * levels[i].height &&
+                    //bottom <= levels[i].elevation + 0.1 * levels[i].height)
+                    if (Util.SpanOverlap(bottom, summit, levels[i].elevation, 
+                        levels[i].elevation + levels[i].height) > 0.5 * levels[i].height)
                     {
                         // if the WallType is curtainwall, append it to dictCurtain
                         if (wall.WallType.Kind == WallKind.Curtain)
                         {
-                            // check if the curtain is not acting like a window
-                            // the height of the curtain wall should almost equal
+                            // check if the curtain acts like a window
+                            // the height of the curtain wall should be almost equal
                             // or over the height of this level
                             // 0.2m gap ensures the strength of the structure, practical value
                             // this value may vary with projects, so PENDING mark
@@ -520,8 +525,10 @@ namespace Gingerbread
                                         locationPt, width.ToString() + " x " + height.ToString());
                                     dictWindow[i].Add(winPanel);
                                 }
+                                // overload the centerlines
+                                dictCurtain[i].AddRange(temps);
                             }
-                            // if the curtain wall do surpass the height of level
+                            // if the curtain wall does surpass the height of level
                             // it may function like a normal curtain wall
                             else
                             {
