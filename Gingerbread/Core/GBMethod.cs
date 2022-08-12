@@ -1160,6 +1160,29 @@ namespace Gingerbread.Core
             }
             return true;
         }
+
+        public static bool IsPolyOutPoly(List<gbXYZ> polyA, List<gbXYZ> polyB)
+        {
+            // if any vertex of polygon A inside polygon B, deny it
+            foreach (gbXYZ pt in polyA)
+                if (IsPtInPoly(pt, polyB, false))
+                    return false;
+            // if any edge of polygon A intersects with polygon B, deny it
+            for (int i = 0; i < polyA.Count - 1; i++)
+            {
+                gbSeg edgeA = new gbSeg(polyA[i], polyA[i + 1]);
+                for (int j = 0; j < polyB.Count - 1; j++)
+                {
+                    gbSeg edgeB = new gbSeg(polyB[j], polyB[j + 1]);
+                    segIntersectEnum intersectEnum = SegIntersection(edgeA, edgeB, _eps,
+                        out gbXYZ sectPt, out double t1, out double t2);
+                    if (intersectEnum == segIntersectEnum.IntersectOnBoth)
+                        return false;
+                }
+            }
+            return true;
+        }
+
         // 
         /// <summary>
         /// Should this method include situation that two polys are adjacent on edge?

@@ -938,7 +938,7 @@ namespace Gingerbread.Core
 
                     Util.LogPrint($"----------------Shape the shade on Level-{level.id}----------------");
 
-                    // shadings are from dictShade (orphan floor slab or roof) and dictFloor
+                    // shadings are from dictShade (orphan floor slab, roof or wall) and dictFloor
                     List<List<gbXYZ>> shellClippers = new List<List<gbXYZ>>();
                     if (dictShell.ContainsKey(level.id))
                         shellClippers = dictShell[level.id];
@@ -955,6 +955,17 @@ namespace Gingerbread.Core
                         {
                             foreach (List<gbXYZ> shade in dictShade[level.id])
                             {
+                                // if the shade is vertical and has 4 vertice
+                                // convert it directly as a shading surface
+                                if (shade.Count == 4 && shade[2].Z - shade[1].Z > 0.0001)
+                                {
+                                    gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}", "Void", shade, 0);
+                                    shading.type = surfaceTypeEnum.Shade;
+                                    surfaces.Add(shading);
+                                    shadeCounter++;
+                                    continue;
+                                }
+                                // else you need to clip it with floorplan to avoid collision
                                 int containmentCounter = 0;
                                 foreach (List<gbXYZ> clipper in shellClippers)
                                     if (GBMethod.IsPolyInPoly(GBMethod.ElevatePts(shade, 0), clipper))
@@ -999,9 +1010,23 @@ namespace Gingerbread.Core
                         foreach (List<gbXYZ> slabShell in slabShells)
                         {
                             int containmentCounter = 0;
+                            int isolationCounter = shellClippers.Count;
                             foreach (List<gbXYZ> clipper in shellClippers)
+                            {
                                 if (GBMethod.IsPolyInPoly(GBMethod.ElevatePts(slabShell, 0), clipper))
                                     containmentCounter++;
+                                if (GBMethod.IsPolyOutPoly(GBMethod.ElevatePts(slabShell, 0), clipper))
+                                    isolationCounter--;
+                            }
+                            if (isolationCounter == 0)
+                            {
+                                gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
+                                    "Void", GBMethod.ReorderPoly(slabShell), 0);
+                                shading.type = surfaceTypeEnum.Shade;
+                                surfaces.Add(shading);
+                                shadeCounter++;
+                                Util.LogPrint($"Shading: Floor/roof slabs cast as shade {{{shading.loop[0]}}}");
+                            }
                             if (containmentCounter == 0)
                             {
                                 List<List<gbXYZ>> results = GBMethod.ClipPoly(

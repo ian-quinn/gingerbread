@@ -502,11 +502,12 @@ namespace Gingerbread
                     // previous statement: (revised on 2022-08-10)
                     //summit >= levels[i].elevation + 0.5 * levels[i].height &&
                     //bottom <= levels[i].elevation + 0.1 * levels[i].height)
-                    if (Util.SpanOverlap(bottom, summit, levels[i].elevation, 
-                        levels[i].elevation + levels[i].height) > 0.5 * levels[i].height)
+                    double spanCheck = Util.SpanOverlap(bottom, summit, levels[i].elevation,
+                        levels[i].elevation + levels[i].height);
+                    if (spanCheck > 0.5 * levels[i].height)
                     {
-                        // if the WallType is curtainwall, append it to dictCurtain
-                        if (wall.WallType.Kind == WallKind.Curtain)
+                            // if the WallType is curtainwall, append it to dictCurtain
+                            if (wall.WallType.Kind == WallKind.Curtain)
                         {
                             // check if the curtain acts like a window
                             // the height of the curtain wall should be almost equal
@@ -583,6 +584,27 @@ namespace Gingerbread
                         else
                             dictWall[i].AddRange(temps);
                     }
+                    // if a wall has no assignment to any level, make it a shading surface
+                    else
+                    {
+                        int levelMark = -1;
+                        if (spanCheck > 0.1 * levels[i].height)
+                            levelMark = i;
+                        else if (summit > levels[levels.Count - 1].elevation)
+                            levelMark = levels.Count - 1;
+                        if (levelMark >= 0)
+                        {
+                            foreach (gbSeg temp in temps)
+                            {
+                                List<gbXYZ> vertice = new List<gbXYZ>();
+                                vertice.Add(temp.Start);
+                                vertice.Add(temp.End);
+                                vertice.Add(temp.End + new gbXYZ(0, 0, Util.FootToM(summit - bottom)));
+                                vertice.Add(temp.Start + new gbXYZ(0, 0, Util.FootToM(summit - bottom)));
+                                dictShade[levelMark].Add(vertice);
+                            }
+                        }
+                    }
                 }
             }
 
@@ -630,12 +652,20 @@ namespace Gingerbread
                                     // the boundary loop can be clockwise or counter-clockwise
                                     // the clockwise loop always represents the boundary of a single slab
                                     // the counter-clockwise loop represents the boundary of inner holes
+                                    // 20220812 note: may not be true. the hole can be clockwise represented
                                     floorSlab.Add(boundaryLoop);
                                     levelMark = i;
                                 }
+                                // if marked as a Floor, it cannot be a Shade
+                                break;
                             }
-                            else if (deltaZ > 0 && deltaZ < levels[i].height)
+                            // check if the slab is within the span of the previous level
+                            else if (i > 0 && deltaZ < 0 && Math.Abs(deltaZ) < levels[i - 1].height)
                             {
+                                double maxArea = -1;
+                                int maxIndex = -1;
+                                int loopCounter = 0;
+                                List<List<gbXYZ>> tempLoops = new List<List<gbXYZ>>();
                                 foreach (EdgeArray edgeArray in topFace.EdgeLoops)
                                 {
                                     List<gbXYZ> boundaryLoop = new List<gbXYZ>();
@@ -645,11 +675,21 @@ namespace Gingerbread
                                         boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
                                     boundaryLoop.Add(boundaryLoop[0]);
-                                    // as to shading surface, only the outer, counter-clockwise loop is neede
-                                    if (!GBMethod.IsClockwise(boundaryLoop))
-                                        shadeSlabs.Add(boundaryLoop);
-                                    levelMark = i;
+                                    tempLoops.Add(boundaryLoop);
+                                    double area = Math.Abs(GBMethod.GetPolyArea(boundaryLoop));
+                                    if (area > maxArea)
+                                    {
+                                        maxArea = area;
+                                        maxIndex = loopCounter;
+                                    }
+                                    loopCounter++;
+                                    // as to shading surface, only the outer, counter-clockwise loop is needed
+                                    //if (!GBMethod.IsClockwise(boundaryLoop))
+                                    //    shadeSlabs.Add(boundaryLoop);
                                 }
+                                // the loop with the maximum unsigned area will be the outer loop
+                                shadeSlabs.Add(tempLoops[maxIndex]);
+                                levelMark = i - 1;
                             }
                         }
                     }
