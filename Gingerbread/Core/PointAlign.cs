@@ -121,7 +121,7 @@ namespace Gingerbread.Core
                 ptIdPool.RemoveAt(0);
 
                 // Generate each group of points almost in line
-                // use the scanRay to scan all points and find those within the treshold delta
+                // use the scanRay to scan all points and find those within the threshold delta
                 for (int i = 0; i < ptGroup.Count; i++)
                 {
                     for (int j = ptPool.Count - 1; j >= 0; j--)
@@ -172,7 +172,7 @@ namespace Gingerbread.Core
                     // similar process with the previous cluster process
                     // but to check all points with the same Y axis
                     // then generate the axis by the most co-lined points
-                    // these can be recoded to something with LINQ
+                    // these can be re-coded to something with LINQ
                     List<List<int>> tempIdGroups = new List<List<int>>();
                     while (transIdx.Count > 0)
                     {
@@ -356,7 +356,7 @@ namespace Gingerbread.Core
 
                         // t value between 0 - 1 means the point moves onto the axis
                         // if the moving point has an outward vector that represents the moving direction
-                        // remove that vector (the pused-to-the-wall situation)
+                        // remove that vector (the pushed-to-the-wall situation)
                         if (t >= 0 && t <= 0)
                         {
                             //
@@ -408,7 +408,7 @@ namespace Gingerbread.Core
             }
 
             // DEBUG REGION
-            //Rhino.RhinoApp.WriteLine("Alignement check: {0} - {1} - {2}",
+            //Rhino.RhinoApp.WriteLine("Alignment check: {0} - {1} - {2}",
             //  ptAfter.Count, vecList.Count, vecTrans.Count);
 
             // merge coincident points to an anchor

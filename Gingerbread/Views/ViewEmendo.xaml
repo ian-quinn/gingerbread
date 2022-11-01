@@ -35,7 +35,7 @@
                         <ColumnDefinition Width="1*"/>
                     </Grid.ColumnDefinitions>
                     
-                    <Button Grid.Column="0" Content="Fix" Margin="0 5 5 0" IsEnabled="False"/>
+                    <Button Grid.Column="0" Content="Show" Margin="0 5 5 0" IsEnabled="True" Click="BtnShow"/>
                     <Button Grid.Column="1" Content="Check" Margin="5 5 0 0" Click="BtnCheck"/>
                 </Grid>
 
@@ -48,7 +48,11 @@
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
                         </DataTemplate>
                     </GroupBox.HeaderTemplate>
-                    <Grid Height="200"></Grid>
+                    <Grid Height="200">
+                        <Canvas Height="200" Width="300" Name="friPan">
+                            
+                        </Canvas>
+                    </Grid>
                 </GroupBox>
                 <GroupBox Header="Info" Margin="5 0 0 0" Padding="0" Width="420">
                     <GroupBox.HeaderTemplate>

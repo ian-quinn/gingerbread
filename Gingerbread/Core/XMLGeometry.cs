@@ -56,7 +56,7 @@ namespace Gingerbread.Core
             // 0000 x 0000 is the default naming for all opening family types, for now
             string sizeMockup = @"\d+";
 
-            // 1st loop to add spaces, walls, adjacencies and adhering openings
+            // 1st loop to add spaces, walls, adjacency and adhering openings
             foreach (gbLevel level in levels)
             {
                 Util.LogPrint($"----------------Shape the wall on Level-{level.id}----------------");
@@ -137,7 +137,7 @@ namespace Gingerbread.Core
                             }
                         }
 
-                        // as a substitue, if there is no labeling, Shaft/Stair will be assigned
+                        // as a substitute, if there is no labeling, Shaft/Stair will be assigned
                         // to the void region where the floor has a hole
                         if (newZone.function == null)
                             foreach (Tuple<gbXYZ, double> hollow in hollows)
@@ -565,7 +565,7 @@ namespace Gingerbread.Core
                 }
             }
 
-            // 2nd loop solve adjacencies among floors
+            // 2nd loop solve the adjacency among floors
             // perform on already created zones
             // prepare a counter for shadowing level indexation
             int shadowingCounter = 0;
@@ -590,14 +590,14 @@ namespace Gingerbread.Core
                         //if (zone.level.elevation - 0 > 0.1)
                         //    surfaceTypeDef = surfaceTypeEnum.RaisedFloor;
 
-                        // to prevent empty tesselaltion
+                        // to prevent empty tessellation
                         if (zone.tiles == null)
                         {
                             //Debug.Print("XMLGeometry:: WARNING No tiles due to MCR tessellation failure!");
                         }
                         else if (zone.tiles.Count == 1)
                         {
-                            // the existance of zone.loop has been checked before
+                            // the existence of zone.loop has been checked before
                             // consider to add another check here
                             List<gbXYZ> dupPoly = GBMethod.ReorderPoly(GBMethod.GetDuplicatePoly(zone.loop));
                             RegionTessellate.SimplifyPoly(dupPoly);
@@ -905,7 +905,7 @@ namespace Gingerbread.Core
                 zones.AddRange(dictZone[level.id]);
 
                 // mark the next floor as shadowing if the similarity index satisfied
-                //Debug.Print($"XMLGeometry:: similarity check at level-{level.nextId}: {Util.SumDoubles(sumSimilarity) / sumSimilarity.Count}");
+                Debug.Print($"XMLGeometry:: similarity check at level-{level.nextId}: {Util.SumDoubles(sumSimilarity) / sumSimilarity.Count}");
                 if (Util.SumDoubles(sumSimilarity) / sumSimilarity.Count > 0.95)
                 {
                     shadowingCounter++;
@@ -955,7 +955,7 @@ namespace Gingerbread.Core
                         {
                             foreach (List<gbXYZ> shade in dictShade[level.id])
                             {
-                                // if the shade is vertical and has 4 vertice
+                                // if the shade is vertical and has 4 vertices
                                 // convert it directly as a shading surface
                                 if (shade.Count == 4 && shade[2].Z - shade[1].Z > 0.0001)
                                 {
@@ -1068,7 +1068,7 @@ namespace Gingerbread.Core
             List<string> delSurfaceIds = new List<string>();
             for (int i = zones.Count - 1; i >= 0; i--)
             {
-                // critial process to summarize the information
+                // critical process to summarize the information
                 zones[i].Summarize();
                 // try to locate all spaces exposed to outdoor
                 // trigger this process ONLY if the user demands to
@@ -1178,7 +1178,7 @@ namespace Gingerbread.Core
                 int counter = 0;
                 foreach (Tuple<gbSeg, string> label in kvp.Value)
                 {
-                    //Debug.Print($"XMLGeometry:: Checking beam existance... {label.Item2}");
+                    //Debug.Print($"XMLGeometry:: Checking beam existence... {label.Item2}");
                     List<double> sizes = new List<double>();
                     foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
                     {

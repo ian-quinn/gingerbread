@@ -47,7 +47,7 @@ namespace Gingerbread.Core
             int counter = 0;
             while (counter < 50)
             {
-                //Debug.Print("RegionTessellate:: Tesselation initializing.. MCR with {0} loops", mcr.Count);
+                //Debug.Print("RegionTessellate:: Tessellation initializing.. MCR with {0} loops", mcr.Count);
 
                 //if (counter == 0)
                 //{
@@ -207,7 +207,7 @@ namespace Gingerbread.Core
         /// <summary>
         /// Remove the redundant point of a polygon or polyline. The input must not be a closed polyloop, 
         /// or else the duplicate point will be removed as well. Here we check if the two outgoing vectors 
-        /// of a vertice are co-lined. 
+        /// of a vertices are co-lined. 
         /// </summary>
         public static void SimplifyPoly(List<gbXYZ> poly, 
             bool removeOverlap = true, 
@@ -240,7 +240,7 @@ namespace Gingerbread.Core
                     gbXYZ vec2 = poly[i] - poly[prevId];
 
                     // The function VectorAngle will not check the minor value
-                    // must make sure the input vectors are not residules extremely small
+                    // must make sure the input vectors are not residues extremely small
                     double angle = GBMethod.VectorAngle(vec1, vec2);
 
                     if (removeAbrupt)

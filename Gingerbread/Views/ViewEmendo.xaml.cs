@@ -3,6 +3,8 @@ using System.IO;
 using System.Xml;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Shapes;
+using System.Windows.Media;
 using System.Diagnostics;
 
 using Autodesk.Revit.DB;
@@ -44,6 +46,21 @@ namespace Gingerbread.Views
         private void BtnCheck(object sender, RoutedEventArgs e)
         {
             ExEvent.Raise();
+        }
+
+        private void BtnShow(object sender, RoutedEventArgs e)
+        {
+            Polygon p = new Polygon();
+            p.Stroke = Brushes.Black;
+            p.Fill = Brushes.LightBlue;
+            p.StrokeThickness = 1;
+            p.HorizontalAlignment = HorizontalAlignment.Left;
+            p.VerticalAlignment = VerticalAlignment.Center;
+            p.Points = new PointCollection() {
+                new System.Windows.Point(10, 10),
+                new System.Windows.Point(50, 50),
+                new System.Windows.Point(100, 100)};
+            friPan.Children.Add(p);
         }
     }
 }

@@ -13,7 +13,7 @@ namespace Gingerbread.Core
     class CurveSimplify
     {
         /// <summary>
-        /// Coonvert curve to polyline by curvature
+        /// Convert curve to polyline by curvature
         /// </summary>
         /// <param name="crv"></param>
         /// <returns></returns>
@@ -24,10 +24,10 @@ namespace Gingerbread.Core
         }
 
 
-        // -------------------- Douglas Peucker Reduction -------------------------
+        // -------------------- Douglas-Peucker Reduction -------------------------
 
         /// <summary>
-        /// Uses the Douglas Peucker algorithm to reduce the number of pts.
+        /// Uses the Douglas-Peucker algorithm to reduce the number of pts.
         /// </summary>
         /// <param name="pts">The pts.</param>
         /// <param name="Tolerance">The tolerance.</param>
@@ -84,7 +84,7 @@ namespace Gingerbread.Core
 
 
         /// <summary>
-        /// Douglases the peucker reduction.
+        /// Douglas-peucker reduction.
         /// </summary>
         /// <param name="pts">The pts.</param>
         /// <param name="firstPoint">The first point.</param>
@@ -293,7 +293,7 @@ namespace Gingerbread.Core
         {
             if (id < 0 || id > (nums.Count)) return;
             var posInOrderedId = BinarySearchLargestLT(ordNums, newElement) + 1;
-            //increase +1 all indices for indice>=id
+            //increase +1 all indices for index >= id
             for (int i = id; i < pos_numsID_In_ordNumsIds.Count; i++)
             {
                 ordNumsIds[pos_numsID_In_ordNumsIds[i]]++;

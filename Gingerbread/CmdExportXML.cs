@@ -2,11 +2,15 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Windows.Media;
+using System.Windows.Shapes;
 
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+
+using Gingerbread.Core;
 #endregion
 
 namespace Gingerbread
@@ -40,9 +44,9 @@ namespace Gingerbread
             Properties.Settings.Default.projNumber = projectInfo.Number;
             Properties.Settings.Default.Save();
 
-            Properties.Settings.Default.spiderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Spider\main.html";
+            Properties.Settings.Default.spiderPath = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + @"\Spider\main.html";
 
-            Views.ViewExportXML generator = new Views.ViewExportXML();
+            Views.ViewExportXML generator = new Views.ViewExportXML(); // add some variables here
 
             System.Windows.Interop.WindowInteropHelper mainUI = new System.Windows.Interop.WindowInteropHelper(generator);
             mainUI.Owner = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;

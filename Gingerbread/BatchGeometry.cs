@@ -12,11 +12,14 @@ using Autodesk.Revit.UI.Selection;
 using Gingerbread.Core;
 #endregion
 
+// PENDING      - functions saved for a happy day
+// ABANDONED    - obsolete functions 
+
 namespace Gingerbread
 {
     class BatchGeometry
     {
-        // declare levelPack class for private use
+        // Private class, levelPack for convenient
         private class levelPack
         {
             public ElementId id;
@@ -66,6 +69,8 @@ namespace Gingerbread
             List<Document> refDocs = new List<Document>();
             if (Properties.Settings.Default.includeRef)
                 refDocs = Util.GetLinkedDocuments(doc).ToList();
+            List<Document> allDocs = new List<Document>() { doc };
+            allDocs.AddRange(refDocs);
 
             // batch levels for iteration
             List<levelPack> levels = new List<levelPack>();
@@ -82,7 +87,7 @@ namespace Gingerbread
                 string name = f.Name;
                 FamilySymbol fs = f.Symbol;
                 double height = fs.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble();
-                properties.Add(new Tuple<string, double>("heitht", height));
+                properties.Add(new Tuple<string, double>("height", height));
                 double width = fs.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble();
                 properties.Add(new Tuple<string, double>("width", width));
                 if (fs.HasThermalProperties())
@@ -126,7 +131,7 @@ namespace Gingerbread
                 string name = f.Name;
                 FamilySymbol fs = f.Symbol;
                 double height = fs.get_Parameter(BuiltInParameter.DOOR_HEIGHT).AsDouble();
-                properties.Add(new Tuple<string, double>("heitht", height));
+                properties.Add(new Tuple<string, double>("height", height));
                 double width = fs.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble();
                 properties.Add(new Tuple<string, double>("width", width));
                 if (fs.HasThermalProperties())
@@ -162,33 +167,82 @@ namespace Gingerbread
 
             // prefix the variables that are elements with e-. same rule to the rest
             // get all floors
-            IList<Element> _eFloors = new FilteredElementCollector(doc)
-                .OfCategory(BuiltInCategory.OST_Floors)
-                .WhereElementIsNotElementType()
-                .ToElements();
-            foreach (Element e in _eFloors)
+
+            //IList<Element> _eFloors = new FilteredElementCollector(doc)
+            //    .OfCategory(BuiltInCategory.OST_Floors)
+            //    .WhereElementIsNotElementType()
+            //    .ToElements();
+
+            //foreach (Element e in _eFloors)
+            //{
+            //    Level level = doc.GetElement(e.LevelId) as Level;
+            //    if (level == null)
+            //        continue;
+            //    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+            //    if (!levels.Contains(l))
+            //        levels.Add(l);
+            //}
+
+            // get all roof bases
+
+            //IList<Element> _eRoofs = new FilteredElementCollector(doc)
+            //    .OfCategory(BuiltInCategory.OST_Roofs)
+            //    .WhereElementIsNotElementType()
+            //    .ToElements();
+
+            //foreach (Element e in _eRoofs)
+            //{
+            //    Level level = doc.GetElement(e.LevelId) as Level;
+            //    if (level == null)
+            //        continue;
+            //    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+            //    if (!levels.Contains(l))
+            //        levels.Add(l);
+            //}
+
+            List<double> elevationCache = new List<double>() { };
+
+            foreach (Document someDoc in allDocs)
             {
-                Level level = doc.GetElement(e.LevelId) as Level;
-                levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
-                if (!levels.Contains(l))
-                    levels.Add(l);
+                IList<Element> _eFloors = new FilteredElementCollector(someDoc)
+                    .OfCategory(BuiltInCategory.OST_Floors)
+                    .WhereElementIsNotElementType()
+                    .ToElements();
+                foreach (Element e in _eFloors)
+                {
+                    Level level = someDoc.GetElement(e.LevelId) as Level;
+                    if (level == null)
+                        continue;
+                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+                    if (!levels.Contains(l) && CheckSimilarity(level.Elevation, Util.MmToFoot(100), elevationCache))
+                    {
+                        levels.Add(l);
+                        elevationCache.Add(level.Elevation);
+                    }
+                }
+
+                IList<Element> _eRoofs = new FilteredElementCollector(someDoc)
+                    .OfCategory(BuiltInCategory.OST_Roofs)
+                    .WhereElementIsNotElementType()
+                    .ToElements();
+                foreach (Element e in _eRoofs)
+                {
+                    Level level = someDoc.GetElement(e.LevelId) as Level;
+                    if (level == null)
+                        continue;
+                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+                    if (!levels.Contains(l) && CheckSimilarity(level.Elevation, Util.MmToFoot(100), elevationCache))
+                    {
+                        levels.Add(l);
+                        elevationCache.Add(level.Elevation);
+                    }
+                }
             }
 
-            // get all roofbases
-            IList<Element> _eRoofs = new FilteredElementCollector(doc)
-                .OfCategory(BuiltInCategory.OST_Roofs)
-                .WhereElementIsNotElementType()
-                .ToElements();
-            foreach (Element e in _eRoofs)
-            {
-                Level level = doc.GetElement(e.LevelId) as Level;
-                levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
-                if (!levels.Contains(l))
-                    levels.Add(l);
-            }
-            levels = levels.OrderBy(z => z.elevation).ToList(); //升序
-            // assign height to each level (only > 2500 mm )
-            // note that the embeded unit of Revit is foot, so you must do the conversion
+            
+            levels = levels.OrderBy(z => z.elevation).ToList(); // ascending order
+            // assign height to each level (only > 2000 mm )
+            // note that the embedded unit of Revit is foot, so you must do the conversion
             for (int i = 0; i < levels.Count - 1; i++)
             {
                 double deltaZ = levels[i + 1].elevation - levels[i].elevation;
@@ -254,17 +308,19 @@ namespace Gingerbread
                 .OfCategory(BuiltInCategory.OST_RoomTags)
                 .ToElements();
 
-            // iterate each floor to append familyinstance information to the dictionary
+            // iterate each floor to append the FamilyInstance information to the dictionary
+            // targeting: dictElevation, dictDoor, dictSeparationline, dictRoom, dictCurtaSystem
             for (int z = 0; z < levels.Count; z++)
             {
                 // reusable filters are declared here (level filter for example)
                 ElementLevelFilter levelFilter = new ElementLevelFilter(levels[z].id);
 
-                // append to dictElevation
+                // populate the dictElevation
                 dictElevation.Add(z, new Tuple<string, double>(
                     levels[z].name,
                     Math.Round(Util.FootToM(levels[z].elevation), 3)
                     ));
+                // initiate other dictionaries
                 dictWall.Add(z, new List<gbSeg>());
                 dictColumn.Add(z, new List<Tuple<List<gbXYZ>, string>>());
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
@@ -275,31 +331,29 @@ namespace Gingerbread
                 // initiation of the dictCurtaSystem is at the end of the loop
 
 
-                /* // append to dictWindow
-                 List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
-                 IList<Element> eWindows = new FilteredElementCollector(doc)
-                     .OfClass(typeof(FamilyInstance))
-                     .OfCategory(BuiltInCategory.OST_Windows)
-                     .WherePasses(levelFilter)
-                     .ToElements();
-                 foreach (Element e in eWindows)
-                 {
-                     FamilyInstance w = e as FamilyInstance;
-                     FamilySymbol ws = w.Symbol;
-                     double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
-                     double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
-                     XYZ lp = Util.GetFamilyInstanceLocation(w);
-                     if (lp is null)
-                         continue;
-                     windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
-                 }
-                 dictWindow.Add(z, windowLocs);
-                */
-
-                
+                // ABANDONED
+                // populate the dictWindow
+                //List<Tuple<gbXYZ, string>> windowLocs = new List<Tuple<gbXYZ, string>>();
+                //IList<Element> eWindows = new FilteredElementCollector(doc)
+                //    .OfClass(typeof(FamilyInstance))
+                //    .OfCategory(BuiltInCategory.OST_Windows)
+                //    .WherePasses(levelFilter)
+                //    .ToElements();
+                //foreach (Element e in eWindows)
+                //{
+                //    FamilyInstance w = e as FamilyInstance;
+                //    FamilySymbol ws = w.Symbol;
+                //    double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                //    double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+                //    XYZ lp = Util.GetFamilyInstanceLocation(w);
+                //    if (lp is null)
+                //        continue;
+                //    windowLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                //}
+                //dictWindow.Add(z, windowLocs);
 
 
-                // append to dictDoor
+                // populate the dictDoor
                 // doors spanning multiple levels are not allowed
                 List<Tuple<gbXYZ, string>> doorLocs = new List<Tuple<gbXYZ, string>>();
                 IList<Element> eDoors = new FilteredElementCollector(doc)
@@ -326,7 +380,7 @@ namespace Gingerbread
                 dictDoor.Add(z, doorLocs);
 
 
-                // add separation lines
+                // populate the room separation lines
                 List<gbSeg> separationlineLocs = new List<gbSeg>();
                 IList<Element> eSeparationlines = new FilteredElementCollector(doc)
                     .OfCategory(BuiltInCategory.OST_RoomSeparationLines)
@@ -348,9 +402,9 @@ namespace Gingerbread
                 dictSeparationline.Add(z, separationlineLocs);
 
 
-                // add room location and label, still PENDING
-                // before the function of visual centeroid of polygon is set
-                // use the polygon boundary to represent the room
+                // add room location and label
+                // better use the polygon boundary to represent the room
+                // there can be risks using the visual centroid of a polygon
                 List<Tuple<List<List<gbXYZ>>, string>> roomlocs = new List<Tuple<List<List<gbXYZ>>, string>>();
                 List<Element> eRooms = new List<Element>();
                 foreach (Element eTag in eRoomTags)
@@ -367,8 +421,8 @@ namespace Gingerbread
                         if (roomBoundaries.Count == 0)
                             continue;
                         // the boundary of a room is a nested list of points
-                        // representing a simply connected region (count == 1) or
-                        // multiply connected region (count > 1)
+                        // representing a simply connected region (List.count == 1) or
+                        // multiply connected region (List.count > 1)
                         // considering the situation of corridor, it is better to 
                         // cache multiple loops inside one list, as representation of a room
                         foreach (var nestedSegments in roomBoundaries)
@@ -386,16 +440,17 @@ namespace Gingerbread
                         roomlocs.Add(new Tuple<List<List<gbXYZ>>, string>(boundaryLoops, tagName));
                     }
                 }
-                //IList<Element> eRooms = new FilteredElementCollector(doc)
-                //    .OfCategory(BuiltInCategory.OST_Rooms)
-                //    .WherePasses(levelFilter)
-                //    .ToElements();
-                //foreach (Element e in eRooms)
-                //{
-                //    LocationPoint lp = e.Location as LocationPoint;
-                //    XYZ pt = lp.Point;
-                //    roomlocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(pt), "office"));
-                //}
+                // ABANDONED
+                /*IList<Element> eRooms = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Rooms)
+                    .WherePasses(levelFilter)
+                    .ToElements();
+                foreach (Element e in eRooms)
+                {
+                    LocationPoint lp = e.Location as LocationPoint;
+                    XYZ pt = lp.Point;
+                    roomlocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(pt), "office"));
+                }*/
                 dictRoom.Add(z, roomlocs);
 
 
@@ -421,7 +476,7 @@ namespace Gingerbread
                         if (gridEnd.Z > levels[z].elevation + levels[z].height / 2 &&
                             gridStart.Z < levels[z].elevation || Util.IsZero(gridStart.Z - levels[z].elevation))
                         {
-                            // when it comes to nurb surface, you may need the following method to calculate
+                            // when it comes to NURBS, you may need the following method to calculate
                             // the intersection between the plane and the curve. as robust as possible
                             //IntersectionResultArray ir = Basic.PlaneCurveIntersection(floorPlane, grid);
                             XYZ intersectPt = Basic.LineIntersectPlane(gridStart, gridEnd, levels[z].elevation);
@@ -435,7 +490,7 @@ namespace Gingerbread
 
                     if (lcPts.Count > 1)
                     {
-                        // when it comes to nurb surface, you need a polyline connecting each intersection point
+                        // when it comes to NURBS, you need a polyline connecting each intersection point
                         //for (int i = 0; i < lcPts.Count - 1; i++)
                         //    lcCrvs.Add(new gbSeg(lcPts[i], lcPts[i + 1]));
 
@@ -446,20 +501,31 @@ namespace Gingerbread
                 dictCurtaSystem.Add(z, lcCrvs);
             }
 
+            // others are sorted by their actual geometry
+            // not by the level attribute assigned to
 
-
-            // allocate wall information to each floor
+            // find the corresponding level for each wall
             IList<Element> eWalls = new FilteredElementCollector(doc)
                 .OfClass(typeof(Wall))
                 .OfCategory(BuiltInCategory.OST_Walls)
                 .ToElements();
+            Debug.Print($"original wall number: {eWalls.Count}");
 
-            foreach (Element e in eWalls)
+            List<Element> eWallsPlus = eWalls.ToList();
+
+            foreach (Document refDoc in refDocs)
+            {
+                IList<Element> _eWalls = new FilteredElementCollector(refDoc)
+                    .OfClass(typeof(Wall))
+                    .OfCategory(BuiltInCategory.OST_Walls)
+                    .ToElements();
+                eWallsPlus.AddRange(_eWalls);
+            }
+
+            foreach (Element e in eWallsPlus)
             {
                 List<gbSeg> temps = new List<gbSeg>();
-
                 Wall wall = e as Wall;
-
 
                 // access baseline by LocationCurve
                 LocationCurve lc = wall.Location as LocationCurve;
@@ -471,10 +537,11 @@ namespace Gingerbread
                 else
                 {
                     List<XYZ> pts = new List<XYZ>(lc.Curve.Tessellate());
-                    //List<XYZ> pts = new List<XYZ>();
-                    //for (int i = 0; i < 3; i++)
-                    //    pts.Add(lc.Curve.Evaluate(0.5 * i, true));
-                    //List<XYZ> midPts = pts;
+                    // or more easier you may tessellate it manually
+                    /*List<XYZ> pts = new List<XYZ>();
+                    for (int i = 0; i < 3; i++)
+                        pts.Add(lc.Curve.Evaluate(0.5 * i, true));
+                    List<XYZ> midPts = pts;*/
                     List<XYZ> midPts = CurveSimplify.DouglasPeuckerReduction(pts, Util.MmToFoot(500));
                     for (int i = 0; i < midPts.Count - 1; i++)
                         temps.Add(
@@ -494,10 +561,10 @@ namespace Gingerbread
                     //Debug.Print($"summit {summit} bottom {bottom} vs. lv^ " +
                     //    $"{levels[i].elevation + 0.8 * levels[i].height} lv_ {levels[i].elevation + 0.2 * levels[i].height}");
 
-                    // mark the hosting level of a wall only by its geometry irrelevant to its level attribute
-                    // this could be dangerous. PENDING for updates
+                    // mark the hosting level of a wall only by its geometry regardless of its level attribute
+                    // PENDING  - this could be dangerous
                     // previous statement: (revised on 2022-?)
-                    //wall.LevelId == levels[i].id || 
+                    //wall.LevelId == levels[i].id || blahblah
 
                     // previous statement: (revised on 2022-08-10)
                     //summit >= levels[i].elevation + 0.5 * levels[i].height &&
@@ -506,14 +573,14 @@ namespace Gingerbread
                         levels[i].elevation + levels[i].height);
                     if (spanCheck > 0.5 * levels[i].height)
                     {
-                            // if the WallType is curtainwall, append it to dictCurtain
+                            // if the WallType is CurtainWall, append it to dictCurtain
                             if (wall.WallType.Kind == WallKind.Curtain)
                         {
                             // check if the curtain acts like a window
                             // the height of the curtain wall should be almost equal
                             // or over the height of this level
                             // 0.2m gap ensures the strength of the structure, practical value
-                            // this value may vary with projects, so PENDING mark
+                            // PENDING  - this value may vary with projects
                             if (summit - bottom < levels[i].height - Util.MToFoot(0.2))
                             {
                                 Debug.Print($"BatchGeometry:: Panel Level{i}-{levels[i].height - Util.MToFoot(0.1)} u:{summit} b:{bottom}");
@@ -530,7 +597,7 @@ namespace Gingerbread
                                 dictCurtain[i].AddRange(temps);
                             }
                             // if the curtain wall does surpass the height of level
-                            // it may function like a normal curtain wall
+                            // it may function like a normal one
                             else
                             {
                                 // --------------------comment out the lines in between when testing ROOMVENT model----------------
@@ -584,7 +651,7 @@ namespace Gingerbread
                         else
                             dictWall[i].AddRange(temps);
                     }
-                    // if a wall has no assignment to any level, make it a shading surface
+                    // if a wall belongs to no level, make it a shading surface
                     else
                     {
                         int levelMark = -1;
@@ -608,13 +675,22 @@ namespace Gingerbread
                 }
             }
 
-            // append to dictFloor
+            // allocate the floor to each level
             IList<Element> eFloors = new FilteredElementCollector(doc)
                  .OfCategory(BuiltInCategory.OST_Floors)
                  .WhereElementIsNotElementType()
                  .ToElements();
+            List<Element> eFloorsPlus = eFloors.ToList();
+            foreach (Document refDoc in refDocs)
+            {
+                IList<Element> eFloorsRef = new FilteredElementCollector(refDoc)
+                    .OfCategory(BuiltInCategory.OST_Floors)
+                    .WhereElementIsNotElementType()
+                    .ToElements();
+                eFloorsPlus.AddRange(eFloorsRef);
+            }
 
-            foreach (Element e in eFloors)
+            foreach (Element e in eFloorsPlus)
             {
                 int levelMark = -1;
                 List<List<gbXYZ>> floorSlab = new List<List<gbXYZ>>();
@@ -630,9 +706,8 @@ namespace Gingerbread
                     var reference = references[0];
                     GeometryObject topFaceGeo = floor.GetGeometryObjectFromReference(reference);
                     PlanarFace topFace = topFaceGeo as PlanarFace;
-                    // assuming that the floor slab clings to the level plane, 
-                    // which is a mandatory rule in BIM
-                    // other slabs violate this rule will be moved to a list of shading srfs
+                    // assuming that the floor slab clings to the level plane, a mandatory rule of BIM
+                    // slabs not within the ±0.2m range of the level elevation will be cast as shadings
                     if (topFace != null)
                     {
                         for (int i = 0; i < levels.Count; i++)
@@ -694,7 +769,7 @@ namespace Gingerbread
                         }
                     }
                 }
-                // here, floorSlab may include multiple slabs
+                // here, a floorSlab may include multiple solids
                 // but they are all bundled within one mass
                 if (levelMark > -1)
                 {
@@ -707,8 +782,19 @@ namespace Gingerbread
                 .OfCategory(BuiltInCategory.OST_Roofs)
                 .WhereElementIsNotElementType()
                 .ToElements();
+
+            List<Element> eRoofsPlus = eRoofs.ToList();
+            foreach (Document refDoc in refDocs)
+            {
+                IList<Element> eRoofsRef = new FilteredElementCollector(refDoc)
+                    .OfCategory(BuiltInCategory.OST_Roofs)
+                    .WhereElementIsNotElementType()
+                    .ToElements();
+                eRoofsPlus.AddRange(eRoofsRef);
+            }
+
             List<List<List<gbXYZ>>> roofSlabs = new List<List<List<gbXYZ>>>();
-            foreach (Element e in eRoofs)
+            foreach (Element e in eRoofsPlus)
             {
                 int levelMark = -1;
                 List<List<gbXYZ>> roofSlab = new List<List<gbXYZ>>();
@@ -752,7 +838,8 @@ namespace Gingerbread
                 dictFloor[levelMark].Add(roofSlab);
             }
 
-            // allocate window information to each floor
+            // allocate window information to each level
+            // note that the window may span over multiple levels
             IList<Element> eWindows = new FilteredElementCollector(doc)
                 .OfClass(typeof(FamilyInstance))
                 .OfCategory(BuiltInCategory.OST_Windows)
@@ -861,7 +948,7 @@ namespace Gingerbread
                                 colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
                             }
                             // we are expecting rectangular columns but
-                            // there will always be special-shaped and round ones
+                            // there will always be special-shaped or cylindrical ones
                             else
                             {
                                 List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
@@ -917,7 +1004,6 @@ namespace Gingerbread
                 if (null == lc)
                     continue;
 
-
                 Options op = fi.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = fi.get_Geometry(op);
                 double summit = ge.GetBoundingBox().Max.Z;
@@ -938,9 +1024,10 @@ namespace Gingerbread
                 }
             }
 
+            // ABANDONED. now
             // add the roof level at last (almost with no info)
             //dictElevation.Add(dictElevation.Count, new Tuple<string, double>("Roof",
-            //    Util.FootToM(levels.Last().elevation + levels.Last().height) ));
+            //    Util.FootToM(levels.Last().elevation + levels.Last().height)));
 
             // DEBUG
             checkInfo = "";
@@ -1043,11 +1130,24 @@ namespace Gingerbread
                     }
                 }
             }
-
             // else
             // doing nothing and return the empty list
-
             return footprints;
+        }
+
+        // compare to a list of values to check if there are similar ones
+        static bool CheckSimilarity(double value, double threshold, List<double> nums)
+        {
+            if (nums.Count == 0)
+                return true;
+            foreach (double num in nums)
+            {
+                if (Math.Abs(value - num) < threshold)
+                {
+                    return false;
+                }
+            }
+            return true;
         }
     }
 }

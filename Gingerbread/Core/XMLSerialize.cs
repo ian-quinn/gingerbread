@@ -39,7 +39,7 @@ namespace Gingerbread.Core
             cmp.Location = zeloc; // backward mapping
 
             // set default building area then revise it
-            // by defautl, a building class will allow 100 storeys and 10000 spaces
+            // by default, a building class will allow 100 stories and 10000 spaces
             // you may change this setting in the function MakeBuilding()
             cmp.Buildings[0] = MakeBuilding(10000, Properties.Settings.Default.projName, buildingTypeEnum.Office);
 
@@ -49,7 +49,7 @@ namespace Gingerbread.Core
                 cmp.Buildings[0].bldgStories[i] = MakeStorey(floors[i].level, floors[i].loop);
 
             // SPACE
-            // a list for space that is replacable by multipliers during energy simulation
+            // a list for space that is replaceable by multipliers during energy simulation
             List<string> spaceRemovableID = new List<string>();
             List<string> spaceVoidID = new List<string>();
             // PENDING use another way to generate the label
@@ -87,7 +87,7 @@ namespace Gingerbread.Core
             {
                 if (faces[i].loop.Count < 3)
                 {
-                    // the degenearte surface exludes triangles
+                    // the degenerate surface excludes triangles
                     //Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
                     Util.LogPrint($"Serialization: Degenerated surface removed at Surface_{i}");
                     continue;
@@ -261,7 +261,7 @@ namespace Gingerbread.Core
             bs.Name = "Story-" + level.id;
             bs.Level = level.elevation.ToString();
 
-            //there is only one plane per storey
+            //there is only one plane per story
             PlanarGeometry pg = new PlanarGeometry();
             pg.PolyLoop = PtsToPolyLoop(ptsLoop);
             bs.PlanarGeo = pg;
@@ -407,7 +407,7 @@ namespace Gingerbread.Core
             //surface.constructionIdRef = face.id; // back projection to some construction dict
 
             // there can only be two adjacent spaces for an interior wall
-            // this second boudnary split is mandantory for energy simulation
+            // this second boundary split is mandatory for energy simulation
             if (face.type != surfaceTypeEnum.Shade)
             {
                 AdjacentSpaceId adjspace1 = new AdjacentSpaceId();

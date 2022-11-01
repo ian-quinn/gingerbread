@@ -242,6 +242,13 @@ namespace Gingerbread
                 pts.Add(gbXYZConvert(gbPt));
             return pts;
         }
+        public static List<JsonSchema.UV> gbXYZ2Json(List<gbXYZ> gbPts)
+        {
+            List<JsonSchema.UV> pts = new List<JsonSchema.UV>();
+            foreach (gbXYZ gbPt in gbPts)
+                pts.Add(new JsonSchema.UV { coordU = Math.Round(gbPt.X, 4), coordV = Math.Round(gbPt.Y, 4)});
+            return pts;
+        }
         public static gbSeg gbSegConvert(Line line)
         {
             return new gbSeg(

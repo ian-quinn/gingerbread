@@ -28,7 +28,7 @@ namespace Gingerbread.Core
             List<gbSeg> HC = new List<gbSeg>(); // list of all shattered half-curves
             List<int> HCI = new List<int>(); // half curve indices
             List<int> HCO = new List<int>(); // half curve reversed
-            List<int> HCN = new List<int>(); // next index for each half-curve (conter-clockwise)
+            List<int> HCN = new List<int>(); // next index for each half-curve (counter-clockwise)
             List<int> HCV = new List<int>(); // vertex representing this half-curve
             List<int> HCF = new List<int>(); // half-curve face
             List<gbXYZ> HCPln = new List<gbXYZ>();
@@ -128,7 +128,7 @@ namespace Gingerbread.Core
 
             // this list contain the generated face with stray edge or polys not enclosed
             // which will be deleted. typically, a well trimmed and documented half line input
-            // will produce no orhpan faces. the F dictionary only contains a counter-clockwise
+            // will produce no orphan faces. the F dictionary only contains a counter-clockwise
             // outer shell and the rest clockwise enclosed regions.
             List<int> orphanId = new List<int>();
             // cycle through each half-curve
@@ -420,7 +420,7 @@ namespace Gingerbread.Core
 
             // this list contain the generated face with stray edge or polys not enclosed
             // which will be deleted. typically, a well trimmed and documented half line input
-            // will produce no orhpan faces. the F dictionary only contains a counter-clockwise
+            // will produce no orphan faces. the F dictionary only contains a counter-clockwise
             // outer shell and the rest clockwise enclosed regions.
             List<int> orphanId = new List<int>();
             // cycle through each half-curve
@@ -605,7 +605,7 @@ namespace Gingerbread.Core
                     if (GBMethod.GetPolyArea(nestedRegion[chain.Last()][0].loop) < 10)
                     {
                         // the nestRegion with only one region
-                        // one is the clockwise region and theother is the counter-clockwise shell
+                        // one is the clockwise region and the other is the counter-clockwise shell
                         nestedRegion[chain.Last()][0].loop = null;
                         nestedRegion[chain.Last()][1].loop = null;
                         nestedRegion[chain.Last()][0].isShell = false;
@@ -646,7 +646,7 @@ namespace Gingerbread.Core
                             if (region.loop.Count == 0)
                                 continue;
                             // check if the shell at this level is enclosed by any loop of the parent level
-                            // if ture, generate MCR and switch the current shell's isShell attribute to false
+                            // if true, generate MCR and switch the current shell's isShell attribute to false
                             if (GBMethod.IsPtInPoly(nestedRegion[chain[i]][0].loop[0], region.loop, false))
                             {
                                 // mcr.Add(region.loop); // add the parent loop

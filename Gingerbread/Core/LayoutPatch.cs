@@ -79,7 +79,7 @@ namespace Gingerbread.Core
             }
 
             // the internal curtain wall not projected to the hull boundary
-            // should be kept and acting as glazings (on interior surface)
+            // should be kept and acting as glazing (on interior surface)
             foreach (gbSeg curtain in thisCurtain)
             {
                 if (GBMethod.IsSegInPoly(curtain, contourIn))

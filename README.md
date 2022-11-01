@@ -2,6 +2,7 @@
 
 ![Revit API](https://img.shields.io/badge/Revit%20API-2022-green.svg)
 ![.NET](https://img.shields.io/badge/.NET-4.8-green.svg)
+[![wakatime](https://wakatime.com/badge/user/b04d35f7-79c6-4b67-9dd8-73bd60f22c2f/project/786ea6d5-5101-40cd-bd99-db2c2a0f428d.svg)](https://wakatime.com/badge/user/b04d35f7-79c6-4b67-9dd8-73bd60f22c2f/project/786ea6d5-5101-40cd-bd99-db2c2a0f428d)
 
 A lightweight gbXML export module for Revit, WIP. Sometimes we find the Revit model much too complex for an accurate and lightweight gbXML export. There may be broken space boundaries, shattered surfaces, or tiny twisted patches, thus leading to failures in the building energy simulation. Here in this toy project we try to create a simple BREP-like space crafting addin with fuzzy space detection and simplification, aside from the native gbXML export module either based on room/space definition or energy analysis model. However, we've just started and the algorithm needs many improvements.
 

@@ -334,5 +334,41 @@ namespace Gingerbread.Properties {
                 this["punchMass"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string geomInfo {
+            get {
+                return ((string)(this["geomInfo"]));
+            }
+            set {
+                this["geomInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool drawPrev {
+            get {
+                return ((bool)(this["drawPrev"]));
+            }
+            set {
+                this["drawPrev"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool drawWall {
+            get {
+                return ((bool)(this["drawWall"]));
+            }
+            set {
+                this["drawWall"] = value;
+            }
+        }
     }
 }
