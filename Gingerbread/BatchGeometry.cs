@@ -600,6 +600,8 @@ namespace Gingerbread
                             // it may function like a normal one
                             else
                             {
+                                // the intersection between curtian grid and floor plane fails on ROOMVENT and Georgia test
+                                // Revit component "curtain" may not have grid or the grid may not be complete, so do not trust it
                                 // --------------------comment out the lines in between when testing ROOMVENT model----------------
                                 CurtainGrid cg = wall.CurtainGrid;
 

@@ -91,6 +91,7 @@
     <Compile Include="ExtEmendo.cs" />
     <Compile Include="ExtExportXML.cs" />
     <Compile Include="Resources\lib\Clipper.cs" />
+    <Compile Include="UtilButton3DActive.cs" />
     <Compile Include="UtilElementOfClassSelectionFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
@@ -99,7 +100,7 @@
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
     <Compile Include="Util.cs" />
-    <Compile Include="UtilButtonSwitch.cs" />
+    <Compile Include="UtilButton3DGrayed.cs" />
     <Compile Include="Views\BaseWindow.cs" />
     <Compile Include="CmdExportXML.cs" />
     <Compile Include="Views\ViewEmendo.xaml.cs">

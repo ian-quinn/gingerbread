@@ -279,6 +279,61 @@ namespace Gingerbread
 
         #endregion
 
+        #region Revit Geometry Operations
+
+        /// <summary>
+        /// Get the boundary of the section shape between a given plane and a solid.
+        /// Return null if they are isolated.
+        /// </summary>
+        /// <returns></returns>
+        public static List<CurveLoop> GetSolidPlaneIntersectionCurve(Plane plane, Solid solid)
+        {
+            if (solid == null)
+                return null;
+            Solid cast = BooleanOperationsUtils.CutWithHalfSpace(solid, plane);
+            if (cast == null)
+            {
+                cast = BooleanOperationsUtils.CutWithHalfSpace(solid,
+                    Plane.CreateByNormalAndOrigin(-plane.Normal, plane.Origin));
+                if (cast == null)
+                    return null;
+            }
+            PlanarFace cutFace = null;
+            foreach (Face face in cast.Faces)
+            {
+                PlanarFace pf = face as PlanarFace;
+                if (pf == null) continue;
+                if (pf.FaceNormal.IsAlmostEqualTo(XYZ.BasisZ.Negate()) &&
+                    pf.Origin.Z == plane.Origin.Z)
+                {
+                    cutFace = pf;
+                }
+            }
+            if (cutFace == null) return null;
+            List<CurveLoop> boundary = cutFace.GetEdgesAsCurveLoops().ToList();
+            return boundary;
+        }
+
+        /// <summary>
+        /// A draft method for centerline extraction of a rectangle.
+        /// </summary>
+        /// <returns></returns>
+        public static Curve GetCenterlineOfRectangle(CurveLoop bound)
+        {
+            if (bound == null)
+                return null;
+            List<XYZ> pts = new List<XYZ>() { };
+            foreach (Curve crv in bound)
+                pts.Add(crv.GetEndPoint(0));
+            if (pts.Count != 4)
+                return null;
+            Curve crv1 = Line.CreateBound((pts[0] + pts[1]) / 2, (pts[2] + pts[3]) / 2);
+            Curve crv2 = Line.CreateBound((pts[1] + pts[2]) / 2, (pts[3] + pts[0]) / 2);
+            return crv1.Length > crv2.Length ? crv1 : crv2;
+        }
+
+        #endregion
+
         #region Sketch
         // USE WITHIN TRANSACTIONS
 
@@ -401,64 +456,120 @@ namespace Gingerbread
         }
 
         /// <summary>
-        /// Create a plane perpendicular to the given factor.
+        /// Create a sketch plane with the given normal and origin.
         /// </summary>
         public static SketchPlane PlaneNormal(Document doc, XYZ normal, XYZ origin)
         {
             return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(normal, origin));
         }
-
-        public static SketchPlane PlaneWorld(Document doc)
+        /// <summary>
+        /// Create a sketch plane based on the current view. If it is ViewPlan, return the 
+        /// sketch plane based on the current level. If else, return the world base plane.
+        /// </summary>
+        public static SketchPlane PlaneView(Document doc)
         {
-            return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(XYZ.BasisZ, XYZ.Zero));
+            View view = doc.ActiveView;
+            if (view is ViewPlan)
+            {
+                double activeViewElevation = view.Origin.Z;
+                IList<Element> eLevels = new FilteredElementCollector(doc)
+                    .OfCategory(BuiltInCategory.OST_Levels)
+                    .WhereElementIsNotElementType()
+                    .ToElements();
+                foreach (Element eLevel in eLevels)
+                {
+                    if (eLevel is Level)
+                    {
+                        Level lv = eLevel as Level;
+                        if (lv.Name == view.Name)
+                        {
+                            activeViewElevation = lv.Elevation;
+                        }
+                    }
+                }
+                return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(
+                    view.ViewDirection, new XYZ(0, 0, activeViewElevation)));
+            }
+            else
+            {
+                return SketchPlane.Create(doc, Plane.CreateByNormalAndOrigin(
+                    view.ViewDirection, view.Origin));
+            }
         }
 
 
         // ----------------------MODELLINE-------------------------
 
+        /// <summary>
+        /// Draw model curves based on co-plane curves. Note that the Model Curve are some 
+        /// kind of a direct shape in the document. It is irrelvant to the view (visible in 
+        /// 3D-view of course). If not shown, maybe it is off the current ViewPlan. Please 
+        /// make proper transformation before you apply this function.
+        /// </summary>
         public static void SketchCurves(Document doc, List<Curve> crvs)
         {
+            SketchPlane sp = PlaneView(doc);
+            double elevation = sp.GetPlane().Origin.Z;
             foreach(Curve crv in crvs)
-                doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+            {
+                XYZ pt = crv.GetEndPoint(0);
+                XYZ moveVector = new XYZ(0, 0, elevation - pt.Z);
+                Transform tf = Transform.CreateTranslation(moveVector);
+                Curve crv_proj = crv.CreateTransformed(tf);
+                doc.Create.NewModelCurve(crv_proj, sp);
+            }
+                
         }
         public static void SketchPtLoop(Document doc, List<XYZ> pts)
         {
-            List<XYZ> ptsOnWorldPlane = PtsFlatten(pts);
-            for (int i = 0; i < ptsOnWorldPlane.Count - 1; i++)
+            SketchPlane sp = PlaneView(doc);
+            double elevation = sp.GetPlane().Origin.Z;
+            List<XYZ> pts_proj = new List<XYZ>() { };
+            foreach (XYZ pt in pts)
             {
-                Curve edge = Line.CreateBound(ptsOnWorldPlane[i], ptsOnWorldPlane[i + 1]);
-                doc.Create.NewModelCurve(edge, PlaneWorld(doc));
+                pts_proj.Add(new XYZ(0, 0, elevation - pt.Z));
+            }
+            for (int i = 0; i < pts_proj.Count - 1; i++)
+            {
+                Curve edge = Line.CreateBound(pts_proj[i], pts_proj[i + 1]);
+                doc.Create.NewModelCurve(edge, sp);
             }
         }
         public static void SketchSegs(Document doc, List<gbSeg> segs)
         {
+            SketchPlane sp = PlaneView(doc);
+            double elevation = sp.GetPlane().Origin.Z;
+            XYZ pt = gbXYZConvert(segs[0].Start);
+            XYZ moveVector = new XYZ(pt.X, pt.Y, elevation - pt.Z);
+            Transform tf = Transform.CreateTranslation(moveVector);
             foreach (gbSeg seg in segs)
             {
                 // Curve does not accept zero length, not like Grasshopper
                 // so check if the length satisfies the tolerance first
                 if (seg.Length >= Properties.Settings.Default.ShortCurveTolerance)
                 {
-                    Curve crv = gbSegConvert(seg) as Curve;
-                    doc.Create.NewModelCurve(crv, PlaneWorld(doc));
+                    Curve crv = gbSegConvert(seg).CreateTransformed(tf);
+                    doc.Create.NewModelCurve(crv, sp);
                 }
             }
         }
         public static void SketchMarker(Document doc, XYZ pt, double size = 1, string style = "O")
         {
-            SketchPlane sketchPlane = PlaneWorld(doc);
-            XYZ flatPt = new XYZ(MToFoot(pt.X), MToFoot(pt.Y), 0);
+            SketchPlane sp = PlaneView(doc);
+            double elevation = sp.GetPlane().Origin.Z;
+            XYZ flatPt = new XYZ(MToFoot(pt.X), MToFoot(pt.Y), elevation);
             if (style == "O")
             {
-                XYZ xAxis = new XYZ(1, 0, 0);
-                XYZ yAxis = new XYZ(0, 1, 0);
-                doc.Create.NewModelCurve(Arc.Create(flatPt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
+                XYZ xAxis = new XYZ(1, 0, elevation);
+                XYZ yAxis = new XYZ(0, 1, elevation);
+                doc.Create.NewModelCurve(Arc.Create(flatPt, size, 0, 2 * Math.PI, xAxis, yAxis), sp);
             }
             if (style == "X")
             {
-                XYZ v = new XYZ(size, size, 0);
-                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
-                v = new XYZ(size, -size, 0);
-                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
+                XYZ v = new XYZ(size, size, elevation);
+                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sp);
+                v = new XYZ(size, -size, elevation);
+                doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sp);
             }
         }
         public static void SketchMarkers(Document doc, gbXYZ gbPt, double size = 1, string style = "O")
@@ -467,26 +578,13 @@ namespace Gingerbread
         }
         public static void SketchMarkers(Document doc, List<XYZ> pts, double size = 1, string style = "O")
         {
-            SketchPlane sketchPlane = PlaneWorld(doc);
-            foreach(XYZ pt in pts)
+            SketchPlane sp = PlaneView(doc);
+            foreach (XYZ pt in pts)
             {
-                XYZ flatPt = new XYZ(pt.X, pt.Y, 0);
-                if (style == "O")
-                {
-                    XYZ xAxis = new XYZ(1, 0, 0);
-                    XYZ yAxis = new XYZ(0, 1, 0);
-                    doc.Create.NewModelCurve(Arc.Create(flatPt, size, 0, 2 * Math.PI, xAxis, yAxis), sketchPlane);
-                }
-                if (style == "X")
-                {
-                    XYZ v = new XYZ(size, size, 0);
-                    doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
-                    v = new XYZ(size, -size, 0);
-                    doc.Create.NewModelCurve(Line.CreateBound(flatPt - v, flatPt + v), sketchPlane);
-                }
+                SketchMarker(doc, pt, size, style);
             }
         }
-        public static void SketchMarkers(Document doc, List<gbXYZ> pts, double size = 1, string style = "O")
+        public static void SketchMarkers(Document doc, List<gbXYZ> pts,double size = 1, string style = "O")
         {
             SketchMarkers(doc, gbXYZsConvert(pts), size, style);
         }
@@ -495,7 +593,9 @@ namespace Gingerbread
         // ----------------------DETAILLINE-------------------------
 
         /// <summary>
-        /// Draw detail curves based on List<Curve>
+        /// Draw detail curves on the ActiveView. Note that they must be planar curves 
+        /// but not necessarily on the current ViewPlan. The Create.NewDetailCurve() will 
+        /// project the curve on to the ActiveView automatically. (not working in 3D-view)
         /// </summary>
         public static void DrawDetailLines(Document doc, List<Curve> crvs, int weight = 2, string color = "red", string pattern = "")
         {
@@ -532,8 +632,11 @@ namespace Gingerbread
             using (Transaction tx = new Transaction(doc))
             {
                 tx.Start("Create Detail Curves");
+
                 foreach (Curve crv in crvs)
                 {
+                    if (crv is null)
+                        continue;
                     // Should do style setting here or...?
                     DetailCurve detailCrv = doc.Create.NewDetailCurve(view, crv);
                     GraphicsStyle gs = detailCrv.LineStyle as GraphicsStyle;

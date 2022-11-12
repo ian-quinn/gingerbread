@@ -32,26 +32,26 @@ namespace Gingerbread
             PushButtonData sketchLocation = new PushButtonData("sketchLocation", "Location",
                 thisAssemblyPath, "Gingerbread.CmdSketchLocation");
             sketchLocation.ToolTip = "Draw location curve/point of the component";
-            sketchLocation.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
+            sketchLocation.AvailabilityClassName = "Gingerbread.UtilButton3DGrayed";
             BitmapImage sketchLocImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/SketchLocation.ico", UriKind.Absolute));
             sketchLocation.Image = sketchLocImg;
 
             PushButtonData sketchFootprint = new PushButtonData("sketchFootprint", "Footprint",
                 thisAssemblyPath, "Gingerbread.CmdSketchFootprint");
             sketchFootprint.ToolTip = "Draw bottom face of the component";
-            sketchFootprint.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
+            sketchFootprint.AvailabilityClassName = "Gingerbread.UtilButton3DGrayed";
             BitmapImage sketchFootprintImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/SketchFootprint.ico", UriKind.Absolute));
             sketchFootprint.Image = sketchFootprintImg;
 
             PushButtonData sketchBoundingbox = new PushButtonData("sketchBounding", "BoundingBox",
                 thisAssemblyPath, "Gingerbread.CmdSketchBoundingbox");
             sketchBoundingbox.ToolTip = "Draw bounding box of the component";
-            sketchBoundingbox.AvailabilityClassName = "Gingerbread.UtilButtonSwitch";
+            sketchBoundingbox.AvailabilityClassName = "Gingerbread.UtilButton3DActive";
             BitmapImage sketchBoxImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/SketchBoundingbox.ico", UriKind.Absolute));
             sketchBoundingbox.Image = sketchBoxImg;
 
             IList<RibbonItem> stackedSketch = modelReduction.AddStackedItems(sketchLocation, sketchFootprint, sketchBoundingbox);
-            stackedSketch[2].Enabled = false;
+            //tackedSketch[2].Enabled = false;
 
             modelReduction.Enabled = true;
 
@@ -79,8 +79,8 @@ namespace Gingerbread
             runMaterial.Image = runExtrusionImg;
 
             IList<RibbonItem> stackedPreRun = modelExport.AddStackedItems(runShading, runViewer, runMaterial);
-            stackedPreRun[0].Enabled = false;
-            stackedPreRun[1].Enabled = false;
+            stackedPreRun[0].Enabled = true;
+            stackedPreRun[1].Enabled = true;
             stackedPreRun[2].Enabled = false;
 
 

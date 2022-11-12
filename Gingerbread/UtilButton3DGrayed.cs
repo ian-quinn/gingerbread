@@ -7,7 +7,7 @@ using Autodesk.Revit.UI;
 
 namespace Gingerbread
 {
-    public class UtilButtonSwitch : IExternalCommandAvailability
+    public class UtilButton3DGrayed : IExternalCommandAvailability
     {
         public bool IsCommandAvailable(UIApplication uiapp, CategorySet selectedCategories)
         {
