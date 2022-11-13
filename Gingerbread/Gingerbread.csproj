@@ -67,8 +67,10 @@
   <ItemGroup>
     <Compile Include="App.cs" />
     <Compile Include="BatchGeometry.cs" />
+    <Compile Include="CmdAragog.cs" />
     <Compile Include="CmdEmendo.cs" />
     <Compile Include="CmdSimplifyCurve.cs" />
+    <Compile Include="CmdPickShade.cs" />
     <Compile Include="CmdSketchBoundingbox.cs" />
     <Compile Include="CmdSketchFootprint.cs" />
     <Compile Include="CmdSketchLocation.cs" />
@@ -90,7 +92,9 @@
     <Compile Include="Core\XMLSerialize.cs" />
     <Compile Include="ExtEmendo.cs" />
     <Compile Include="ExtExportXML.cs" />
+    <Compile Include="ExtPickShade.cs" />
     <Compile Include="Resources\lib\Clipper.cs" />
+    <Compile Include="SelectionFilters.cs" />
     <Compile Include="UtilButton3DActive.cs" />
     <Compile Include="UtilElementOfClassSelectionFilter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -103,6 +107,9 @@
     <Compile Include="UtilButton3DGrayed.cs" />
     <Compile Include="Views\BaseWindow.cs" />
     <Compile Include="CmdExportXML.cs" />
+    <Compile Include="Views\ViewAragog.xaml.cs">
+      <DependentUpon>ViewAragog.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\ViewEmendo.xaml.cs">
       <DependentUpon>ViewEmendo.xaml</DependentUpon>
     </Compile>
@@ -110,6 +117,9 @@
       <DependentUpon>ViewExportXML.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\ProgressBarControl.cs" />
+    <Compile Include="Views\ViewPickShade.xaml.cs">
+      <DependentUpon>ViewPickShade.xaml</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Content Include="Gingerbread.addin" />
@@ -170,11 +180,19 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Views\ViewAragog.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\ViewEmendo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Views\ViewExportXML.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\ViewPickShade.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

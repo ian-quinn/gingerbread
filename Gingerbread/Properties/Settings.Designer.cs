@@ -370,5 +370,53 @@ namespace Gingerbread.Properties {
                 this["drawWall"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string shadeIds {
+            get {
+                return ((string)(this["shadeIds"]));
+            }
+            set {
+                this["shadeIds"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string shadeNames {
+            get {
+                return ((string)(this["shadeNames"]));
+            }
+            set {
+                this["shadeNames"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string shadeCurrent {
+            get {
+                return ((string)(this["shadeCurrent"]));
+            }
+            set {
+                this["shadeCurrent"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int shadeCurrentId {
+            get {
+                return ((int)(this["shadeCurrentId"]));
+            }
+            set {
+                this["shadeCurrentId"] = value;
+            }
+        }
     }
 }

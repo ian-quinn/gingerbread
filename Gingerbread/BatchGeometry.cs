@@ -878,6 +878,47 @@ namespace Gingerbread
                 }
             }
 
+            // ######################### USER DEFINED SHADE ############################
+            if (Properties.Settings.Default.shadeIds != "")
+            {
+                string[] serializedRefs = Properties.Settings.Default.shadeIds.Split('#');
+                foreach (string serializedRef in serializedRefs)
+                {
+                    Autodesk.Revit.DB.Reference faceRef = Autodesk.Revit.DB.Reference
+                        .ParseFromStableRepresentation(doc, serializedRef);
+                    if (faceRef == null) continue;
+
+                    GeometryObject geoObject = doc.GetElement(faceRef).GetGeometryObjectFromReference(faceRef);
+                    PlanarFace planarFace = geoObject as PlanarFace;
+                    // a planar face may have multiple loops representation, like MCR
+                    List<List<gbXYZ>> vertexLoops = new List<List<gbXYZ>>() { };
+                    foreach (CurveLoop loop in planarFace.GetEdgesAsCurveLoops())
+                    {
+                        List<gbXYZ> vertexLoop = new List<gbXYZ>() { };
+                        foreach (Curve edge in loop)
+                        {
+                            if (edge is Line)
+                            {
+                                vertexLoop.Add(Util.gbXYZConvert(edge.GetEndPoint(0)));
+                            }
+                            else
+                            {
+                                List<XYZ> ptsTessellated = new List<XYZ>(edge.Tessellate());
+                                // remove the end point so there will be no duplicate
+                                ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                                vertexLoop.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                            }
+                        }
+                        vertexLoops.Add(vertexLoop);
+                    }
+                    // currently, these shades will not be serialized
+                    // so add -1 key to mark them as absolete ones
+                    dictShade.Add(-1, vertexLoops);
+                }
+                
+            }
+            
+
 
             // ######################### STRUCTURE SECTION #############################
             // allocate column information to each floor

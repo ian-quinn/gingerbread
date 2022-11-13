@@ -965,6 +965,10 @@ namespace Gingerbread.Core
                                     shadeCounter++;
                                     continue;
                                 }
+
+                                // second scenario, tessellation of a general 3D MCR
+                                // -------------------pending for algorithms--------------------
+
                                 // else you need to clip it with floorplan to avoid collision
                                 int containmentCounter = 0;
                                 foreach (List<gbXYZ> clipper in shellClippers)

@@ -54,6 +54,7 @@ namespace Gingerbread
             //tackedSketch[2].Enabled = false;
 
             modelReduction.Enabled = true;
+            prefix.Enabled = false;
 
 
             ////////////
@@ -61,13 +62,14 @@ namespace Gingerbread
             RibbonPanel modelExport = ribbonPanel(a, "Gingerbread", "Energy Modeling");
 
             PushButtonData runShading = new PushButtonData("runShading", "Shading  ",
-                thisAssemblyPath, "Gingerbread.CmdZippo");
+                thisAssemblyPath, "Gingerbread.CmdPickShade");
             runShading.ToolTip = "Pickup custom surfaces as shades in gbXML";
+            runShading.AvailabilityClassName = "Gingerbread.UtilButton3DActive";
             BitmapImage runShadingImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunShading.ico", UriKind.Absolute));
             runShading.Image = runShadingImg;
 
             PushButtonData runViewer = new PushButtonData("runViewer", "Preview  ",
-                thisAssemblyPath, "Gingerbread.CmdZippo");
+                thisAssemblyPath, "Gingerbread.CmdAragog");
             runViewer.ToolTip = "Call up the Spider to check the gbXML";
             BitmapImage runViewerImg = new BitmapImage(new Uri("pack://application:,,,/Gingerbread;component/Resources/ico/RunViewer.ico", UriKind.Absolute));
             runViewer.Image = runViewerImg;
