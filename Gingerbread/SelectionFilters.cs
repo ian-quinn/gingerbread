@@ -141,4 +141,20 @@ namespace Gingerbread
             return geoObject != null && geoObject is PlanarFace;
         }
     }
+
+    public class DirectShapeFilter : ISelectionFilter
+    {
+        public bool AllowElement(Element element)
+        {
+            if (element.Category is null)
+                return false;
+            if (element.Category.Id.IntegerValue == (int)BuiltInCategory.OST_GenericModel)
+                return true;
+            return false;
+        }
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            return true;
+        }
+    }
 }

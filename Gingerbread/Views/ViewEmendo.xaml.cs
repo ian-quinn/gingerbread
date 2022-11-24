@@ -9,9 +9,6 @@ using System.Diagnostics;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
-using CefSharp.Wpf;
-using CefSharp;
-using CefSharp.SchemeHandler;
 
 namespace Gingerbread.Views
 {

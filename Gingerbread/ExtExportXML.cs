@@ -316,7 +316,7 @@ namespace Gingerbread
                         // the block shell is nested into regions as the first list element
                         //List<gbXYZ> regionShell;
                         List<List<gbSeg>> regionDebris;
-
+                        
                         Report(10 + z * 80 / levelNum, $"Processing floorplan on level {z} ...");
 
                         RegionDetect.GetRegion(lattice, z, b, g, out regions, out regionDebris);
@@ -388,6 +388,7 @@ namespace Gingerbread
             // the generated Json string will be cached in geomInfo properties for now
             List<JsonSchema.Level> jsLevels = new List<JsonSchema.Level>() { };
             List<gbXYZ> ptSwarm = new List<gbXYZ>() { };
+            // key indicates the index of current floor, List<> contains the regions in it
             foreach (KeyValuePair<int, List<gbRegion>> rooms in dictRegion)
             {
                 List<JsonSchema.Seg> jsSegs = new List<JsonSchema.Seg>() { };
@@ -411,7 +412,12 @@ namespace Gingerbread
                     }
                     jsPolys.Add(new JsonSchema.Poly { name = room.label, vertice = jsPts });
                 }
-                jsLevels.Add(new JsonSchema.Level { name = dictElevation[rooms.Key].Item1, rooms = jsPolys, walls = jsSegs});
+                jsLevels.Add(new JsonSchema.Level { 
+                    name = dictElevation[rooms.Key].Item1, 
+                    elevation = dictElevation[rooms.Key].Item2, 
+                    height = dictElevation[rooms.Key + 1].Item2 - dictElevation[rooms.Key].Item2, 
+                    rooms = jsPolys, 
+                    walls = jsSegs});
             }
 
             List<gbXYZ> boundingBox = OrthoHull.GetRectHull(ptSwarm);

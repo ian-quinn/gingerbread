@@ -9,7 +9,6 @@ using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 
-using Gingerbread.Core;
 using Gingerbread.Views;
 #endregion
 
@@ -38,7 +37,7 @@ namespace Gingerbread
                     try
                     {
                         Autodesk.Revit.DB.Reference faceRef = uidoc.Selection.PickObject(ObjectType.Face,
-                        new PlanarFaceFilter(doc), "Please pick a planar face as the shading surface. ESC for cancel.");
+                            new PlanarFaceFilter(doc), "Please pick a planar face as the shading surface. ESC for cancel.");
                         string refSerialized = "";
                         refSerialized = faceRef.ConvertToStableRepresentation(doc);
 

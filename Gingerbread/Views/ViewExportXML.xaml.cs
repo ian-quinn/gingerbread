@@ -7,17 +7,19 @@ using System.Diagnostics;
 using System.Text.Json;
 using System.Windows.Shapes;
 using System.Windows.Media;
+using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
 using Autodesk.Revit.UI;
+
 using CefSharp.Wpf;
 using CefSharp;
 using CefSharp.SchemeHandler;
-using System.Threading.Tasks;
-using System.Windows.Controls;
 
 using Gingerbread.Core;
-using System.Collections.Generic;
+
 
 namespace Gingerbread.Views
 {
@@ -169,6 +171,9 @@ namespace Gingerbread.Views
             btnCancel.Visibility = System.Windows.Visibility.Visible;
             txtUpdate.Visibility = System.Windows.Visibility.Visible;
             txtState.Visibility = System.Windows.Visibility.Collapsed;
+            prevFloorplans = new Dictionary<string, List<Polygon>>();
+            prevPartitions = new Dictionary<string, List<System.Windows.Shapes.Line>>();
+            layerList.Items.Clear();
             ExEvent.Raise();
         }
 
@@ -354,6 +359,12 @@ namespace Gingerbread.Views
         {
             btnGenerate.Visibility = System.Windows.Visibility.Visible;
             btnCancel.Visibility = System.Windows.Visibility.Collapsed;
+        }
+
+        private void BtnOpenAragog(object sender, RoutedEventArgs e)
+        {
+            string urlToOpen = @"https://www.ladybug.tools/spider/gbxml-viewer/r14/gv-cor-core/gv-cor.html";
+            System.Diagnostics.Process.Start(urlToOpen);
         }
 
         public void BtnSaveAs(object sender, RoutedEventArgs e)

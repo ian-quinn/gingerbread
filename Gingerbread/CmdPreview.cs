@@ -12,16 +12,13 @@ using Autodesk.Revit.UI;
 namespace Gingerbread
 {
     [Transaction(TransactionMode.Manual)]
-    public class CmdAragog : IExternalCommand
+    public class CmdPreview : IExternalCommand
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
             UIApplication uiapp = commandData.Application;
 
-            //Properties.Settings.Default.url_install = UtilGetInstallPath.Execute(app);
-            Properties.Settings.Default.checkInfo = "";
-
-            Views.ViewAragog viewer = new Views.ViewAragog();
+            Views.ViewPreview viewer = new Views.ViewPreview();
 
             System.Windows.Interop.WindowInteropHelper mainUI = new System.Windows.Interop.WindowInteropHelper(viewer);
             mainUI.Owner = System.Diagnostics.Process.GetCurrentProcess().MainWindowHandle;

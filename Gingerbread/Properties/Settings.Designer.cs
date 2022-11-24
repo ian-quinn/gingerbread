@@ -418,5 +418,29 @@ namespace Gingerbread.Properties {
                 this["shadeCurrentId"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("-1")]
+        public int prevFloorId {
+            get {
+                return ((int)(this["prevFloorId"]));
+            }
+            set {
+                this["prevFloorId"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string prevSpaceIds {
+            get {
+                return ((string)(this["prevSpaceIds"]));
+            }
+            set {
+                this["prevSpaceIds"] = value;
+            }
+        }
     }
 }

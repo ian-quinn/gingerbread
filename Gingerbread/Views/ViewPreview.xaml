@@ -1,4 +1,4 @@
-﻿<src:BaseWindow x:Class="Gingerbread.Views.ViewPickShade"
+﻿<src:BaseWindow x:Class="Gingerbread.Views.ViewPreview"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -9,7 +9,7 @@
              WindowStartupLocation="Manual"
              Left="300" Top="300"
              Background="White"
-             Height="400" Width="250"
+             Height="420" Width="250"
              SizeToContent="Height"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -21,13 +21,13 @@
 
     <Border Background="#fff" Padding="3">
         <StackPanel>
-            <GroupBox Header="Shade list" Margin="3 0 3 0" Width="235" Height="365">
+            <GroupBox Header="Level list" Margin="3 0 3 0" Width="235" Height="345">
                 <GroupBox.HeaderTemplate>
                     <DataTemplate>
                         <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
                     </DataTemplate>
                 </GroupBox.HeaderTemplate>
-                <ListBox BorderThickness="0" Name="shadeList" SelectionMode="Single" PreviewMouseDown="shadeList_PreviewMouseDown">
+                <ListBox BorderThickness="0" Name="layerList" SelectionMode="Single" PreviewMouseDown="layerList_PreviewMouseDown">
                     <ListBox.ItemTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal">
@@ -37,6 +37,7 @@
                     </ListBox.ItemTemplate>
                 </ListBox>
             </GroupBox>
+            <TextBox Height="40" Name="statusBar" BorderThickness="0" Margin="5 5 5 0"></TextBox>
             <Grid Margin="5 5 5 5" Height="20">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*"/>
@@ -44,11 +45,8 @@
                     <ColumnDefinition Width="1*"/>
                 </Grid.ColumnDefinitions>
 
-                <StackPanel Grid.Column="0">
-                    <Button Content="Clear" Click="BtnClear" IsEnabled="True"/>
-                </StackPanel>
                 <StackPanel Grid.Column="2">
-                    <Button Content="Pick" Click="BtnPick" IsEnabled="True"/>
+                    <Button Content="Inspect" Click="BtnPick" Name="btnPick" IsEnabled="True"/>
                 </StackPanel>
             </Grid>
         </StackPanel>

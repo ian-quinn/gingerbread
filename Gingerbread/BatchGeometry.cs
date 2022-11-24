@@ -888,7 +888,10 @@ namespace Gingerbread
                         .ParseFromStableRepresentation(doc, serializedRef);
                     if (faceRef == null) continue;
 
-                    GeometryObject geoObject = doc.GetElement(faceRef).GetGeometryObjectFromReference(faceRef);
+                    Element eleRef = doc.GetElement(faceRef);
+                    if (eleRef is null) continue;
+                    GeometryObject geoObject = eleRef.GetGeometryObjectFromReference(faceRef);
+                    if (geoObject is null) continue;
                     PlanarFace planarFace = geoObject as PlanarFace;
                     // a planar face may have multiple loops representation, like MCR
                     List<List<gbXYZ>> vertexLoops = new List<List<gbXYZ>>() { };

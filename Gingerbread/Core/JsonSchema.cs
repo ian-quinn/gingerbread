@@ -27,6 +27,8 @@ namespace Gingerbread.Core
         public class Level
         {
             public string name { get; set; }
+            public double elevation { get; set; }
+            public double height { get; set; }
             public IList<Poly> rooms { get; set; }
             public IList<Seg> walls { get; set; }
         }
