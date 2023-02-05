@@ -25,10 +25,12 @@ namespace Gingerbread
             public ElementId id;
             public string name;
             public double elevation;
+            public double projElevation;
             public double height;
             // the levelPack caches data in Imperial not Metric
-            public levelPack(ElementId id, string name, double elevation)
-            { this.id = id; this.name = name; this.elevation = elevation; this.height = 0; }
+            public levelPack(ElementId id, string name, double elevation, double projElevation)
+            { this.id = id; this.name = name; this.elevation = elevation; 
+                this.projElevation = projElevation;  this.height = 0; }
         };
 
         public static void Execute(Document doc, 
@@ -213,7 +215,7 @@ namespace Gingerbread
                     Level level = someDoc.GetElement(e.LevelId) as Level;
                     if (level == null)
                         continue;
-                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation, level.ProjectElevation);
                     if (!levels.Contains(l) && CheckSimilarity(level.Elevation, Util.MmToFoot(100), elevationCache))
                     {
                         levels.Add(l);
@@ -230,7 +232,7 @@ namespace Gingerbread
                     Level level = someDoc.GetElement(e.LevelId) as Level;
                     if (level == null)
                         continue;
-                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation);
+                    levelPack l = new levelPack(e.LevelId, level.Name, level.Elevation, level.ProjectElevation);
                     if (!levels.Contains(l) && CheckSimilarity(level.Elevation, Util.MmToFoot(100), elevationCache))
                     {
                         levels.Add(l);
@@ -265,11 +267,14 @@ namespace Gingerbread
                 Level level = eLevel as Level;
                 if (Math.Abs(level.Elevation - levels.Last().elevation - levels.Last().height) < 0.01)
                 {
-                    levels.Add(new levelPack(level.Id, level.Name, level.Elevation));
+                    levels.Add(new levelPack(level.Id, level.Name, level.Elevation, level.ProjectElevation));
                     break;
                 }
             }
 
+            // calculat the offset from base level to internal origin (usually 0, but not always)
+            Properties.Settings.Default.offsetZ = levels[0].projElevation;
+            XYZ _bias = new XYZ(0, 0, Properties.Settings.Default.offsetZ);
 
             IList<Element> eCurtaSys = new FilteredElementCollector(doc)
                 .OfCategory(BuiltInCategory.OST_CurtaSystem)
@@ -370,7 +375,7 @@ namespace Gingerbread
                     Wall wall = d.Host as Wall;
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
-                        XYZ lp = Util.GetFamilyInstanceLocation(d);
+                        XYZ lp = Util.GetFamilyInstanceLocation(d) - _bias;
                         if (lp is null)
                             continue;
                         doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
@@ -392,8 +397,8 @@ namespace Gingerbread
                     if (lc.Curve is Line)
                     {
                         Line gridLine = lc.Curve as Line;
-                        XYZ p1 = gridLine.GetEndPoint(0);
-                        XYZ p2 = gridLine.GetEndPoint(1);
+                        XYZ p1 = gridLine.GetEndPoint(0) - _bias;
+                        XYZ p2 = gridLine.GetEndPoint(1) - _bias;
                         gbXYZ gbP1 = new gbXYZ(Util.FootToM(p1.X), Util.FootToM(p1.Y), Util.FootToM(p1.Z));
                         gbXYZ gbP2 = new gbXYZ(Util.FootToM(p2.X), Util.FootToM(p2.Y), Util.FootToM(p2.Z));
                         separationlineLocs.Add(new gbSeg(gbP1, gbP2));
@@ -431,7 +436,7 @@ namespace Gingerbread
                             foreach (BoundarySegment bs in nestedSegments)
                             {
                                 Curve bc = bs.GetCurve();
-                                XYZ pt = bc.GetEndPoint(0);
+                                XYZ pt = bc.GetEndPoint(0) - _bias;
                                 boundaryLoop.Add(Util.gbXYZConvert(pt));
                             }
                             boundaryLoop.Add(boundaryLoop[0]);
@@ -466,8 +471,8 @@ namespace Gingerbread
                     {
                         if (grid is null)
                             continue;
-                        XYZ gridStart = grid.GetEndPoint(0);
-                        XYZ gridEnd = grid.GetEndPoint(1);
+                        XYZ gridStart = grid.GetEndPoint(0) - _bias;
+                        XYZ gridEnd = grid.GetEndPoint(1) - _bias;
                         //Debug.Print($"BatchGeometry:: girdType- {grid.GetType()}");
 
                         // by default, the grid line starts from the bottom and ends at the top
@@ -552,8 +557,8 @@ namespace Gingerbread
                 // get the height of the wall by retrieving its geometry element
                 Options op = wall.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = wall.get_Geometry(op);
-                double summit = ge.GetBoundingBox().Max.Z;
-                double bottom = ge.GetBoundingBox().Min.Z;
+                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
 
                 for (int i = 0; i < levels.Count; i++)
                 {
@@ -722,7 +727,7 @@ namespace Gingerbread
                                     List<gbXYZ> boundaryLoop = new List<gbXYZ>();
                                     foreach (Edge edge in edgeArray)
                                     {
-                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0) - _bias;
                                         boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
                                     boundaryLoop.Add(boundaryLoop[0]);
@@ -748,7 +753,7 @@ namespace Gingerbread
                                     List<gbXYZ> boundaryLoop = new List<gbXYZ>();
                                     foreach (Edge edge in edgeArray)
                                     {
-                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0) - _bias;
                                         boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
                                     boundaryLoop.Add(boundaryLoop[0]);
@@ -822,7 +827,7 @@ namespace Gingerbread
                                     List<gbXYZ> boundaryLoop = new List<gbXYZ>();
                                     foreach (Edge edge in edgeArray)
                                     {
-                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0);
+                                        XYZ ptStart = edge.AsCurve().GetEndPoint(0) - _bias;
                                         boundaryLoop.Add(Util.gbXYZConvert(ptStart));
                                     }
                                     boundaryLoop.Add(boundaryLoop[0]);
@@ -850,7 +855,7 @@ namespace Gingerbread
             {
                 FamilyInstance w = e as FamilyInstance;
                 FamilySymbol ws = w.Symbol;
-                XYZ lp = Util.GetFamilyInstanceLocation(w);
+                XYZ lp = Util.GetFamilyInstanceLocation(w) - _bias;
                 if (lp == null)
                     continue;
 
@@ -859,8 +864,8 @@ namespace Gingerbread
 
                 Options op = w.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = w.get_Geometry(op);
-                double summit = ge.GetBoundingBox().Max.Z;
-                double bottom = ge.GetBoundingBox().Min.Z;
+                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
 
                 if (summit < bottom)
                     continue;
@@ -965,7 +970,7 @@ namespace Gingerbread
                 // FamilyInstance.Location.LocationPoint may not be XYZ
                 // PENDING come back to this later
                 // note that this method allows null as a return value
-                XYZ lp = Util.GetFamilyInstanceLocationPoint(fi);
+                XYZ lp = Util.GetFamilyInstanceLocationPoint(fi) - _bias;
                 if (null == lp)
                     continue;
                 
@@ -973,8 +978,8 @@ namespace Gingerbread
                 Options op = fi.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = fi.get_Geometry(op);
 
-                double summit = ge.GetBoundingBox().Max.Z;
-                double bottom = ge.GetBoundingBox().Min.Z;
+                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location point if the column lies within the range of this level
@@ -1052,8 +1057,8 @@ namespace Gingerbread
 
                 Options op = fi.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = fi.get_Geometry(op);
-                double summit = ge.GetBoundingBox().Max.Z;
-                double bottom = ge.GetBoundingBox().Min.Z;
+                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
                 //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
 
                 for (int i = 0; i < levels.Count; i++)

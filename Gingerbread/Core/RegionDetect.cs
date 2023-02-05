@@ -501,11 +501,19 @@ namespace Gingerbread.Core
             // iterate to find all containment relations
             for (int i = 0; i < nestedRegion.Count; i++)
             {
+                // nestedRegion[i].Count must > 1 to avoid [0] indexation incurs 'System.ArgumentOutOfRangeException'
+                if (nestedRegion[i].Count == 0)
+                    continue;
+
                 // to prevent null shells exist
                 if (nestedRegion[i][0].loop.Count == 0)
                     continue;
                 for (int j = i + 1; j < nestedRegion.Count; j++)
                 {
+                    // nestedRegion[j][0] may trigger 'System.ArgumentOutOfRangeException'
+                    if (nestedRegion[j].Count == 0)
+                        continue;
+
                     if (GBMethod.IsPtInPoly(nestedRegion[i][0].loop[0], nestedRegion[j][0].loop, false) == true)
                     {
                         containRef.Add(Tuple.Create(j, i));

@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="CenterScreen"
              Background="White"
-             Height="560" Width="930"
+             Height="585" Width="930"
              SizeToContent="WidthAndHeight"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -73,7 +73,7 @@
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Tolerance (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="110">
+                <GroupBox Header="Tolerance (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="135">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -89,6 +89,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock Grid.Row="0" Grid.Column="0" Text="tolGrouping" Margin="0 4 0 5" 
@@ -100,6 +101,8 @@ the boundary within this tolerance will be dragged onto that boundary."/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignment" Margin="0 4 0 5" 
                                     ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="tolRotation" Margin="0 4 0 5" 
+                                    ToolTip="The global rotation"/>
 
                         <TextBox Grid.Row="0" Grid.Column="1" Name="grouping" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGrouping, Mode=TwoWay}" Margin="0 2 0 2"/>
@@ -107,6 +110,8 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolPerimeter, Mode=TwoWay}" Margin="0 2 0 2"/>
                         <TextBox Grid.Row="2" Grid.Column="1" Name="alignment" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolAlignment, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Name="rotation" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=tolTheta, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 

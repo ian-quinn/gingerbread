@@ -16,6 +16,7 @@ namespace Gingerbread
     {
         public Result Execute(ExternalCommandData commandData, ref string message, ElementSet elements)
         {
+            // a port for testing functions
             System.Windows.MessageBox.Show("This button is still under construction.", "Hi there");
 
             return Result.Succeeded;

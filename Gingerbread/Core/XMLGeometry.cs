@@ -458,6 +458,10 @@ namespace Gingerbread.Core
                 foreach (gbSurface srf in thisSurface)
                 {
                     List<List<List<gbXYZ>>> loopClusters = GBMethod.PolyClusterByOverlap(srf.subLoops, true);
+
+                    // what if the subLoops are isolated from the host surface?
+                    // there might be mulfunctions in preprocessing 5/2/23
+
                     foreach (List<List<gbXYZ>> loopCluster in loopClusters)
                     {
                         if (loopCluster.Count > 1)
@@ -491,6 +495,10 @@ namespace Gingerbread.Core
                         else
                         {
                             List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfOffset, ClipType.ctIntersection);
+                            // boolean intersect between boundingBox and srfOffset may yield nothing
+                            if (section.Count == 0) // abandon boolean substraction
+                                continue;
+
                             rectifiedOpening = section[0];
                             //Debug.Write($"XMLGeometry:: Rectified");
                             //foreach (gbXYZ pt in rectifiedOpening)

@@ -442,5 +442,17 @@ namespace Gingerbread.Properties {
                 this["prevSpaceIds"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double offsetZ {
+            get {
+                return ((double)(this["offsetZ"]));
+            }
+            set {
+                this["offsetZ"] = value;
+            }
+        }
     }
 }

@@ -73,6 +73,7 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGrouping = double.Parse(grouping.Text);
             Properties.Settings.Default.tolPerimeter = double.Parse(perimeter.Text);
             Properties.Settings.Default.tolAlignment = double.Parse(alignment.Text);
+            Properties.Settings.Default.tolTheta = double.Parse(rotation.Text);
             Properties.Settings.Default.projName = projName.Text;
             Properties.Settings.Default.projAddress = projAddress.Text;
             Properties.Settings.Default.projNumber = projNumber.Text;
@@ -94,6 +95,7 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGrouping = 0.5;
             Properties.Settings.Default.tolPerimeter = 0.5;
             Properties.Settings.Default.tolAlignment = 0.11; 
+            Properties.Settings.Default.tolTheta = 0;
             Properties.Settings.Default.projName = "GingerbreadHouse";
             Properties.Settings.Default.projAddress = "Shanghai, China";
             Properties.Settings.Default.projNumber = projNumber.Text;

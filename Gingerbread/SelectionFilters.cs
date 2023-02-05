@@ -157,4 +157,23 @@ namespace Gingerbread
             return true;
         }
     }
+
+    // from API official document
+    // https://www.revitapidocs.com/2022/d552f44b-221c-0ecd-d001-41a5099b2f9f.htm
+    public class MassSelectionFilter : ISelectionFilter
+    {
+        public bool AllowElement(Element element)
+        {
+            if (element.Category.Name == "Mass")
+            {
+                return true;
+            }
+            return false;
+        }
+
+        public bool AllowReference(Reference refer, XYZ point)
+        {
+            return false;
+        }
+    }
 }
