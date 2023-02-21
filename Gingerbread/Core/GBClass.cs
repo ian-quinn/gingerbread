@@ -324,12 +324,16 @@ namespace Gingerbread.Core
 
         public bool isTop = false;
         public bool isBottom = false;
+        public bool isBasement = false;
+        public bool isGround = false;
         public bool isShadowing = false;
         public gbLevel(int id, string label, double elevation, int numAllLevels)
         {
             this.id = id;
             this.label = label;
             this.elevation = elevation;
+            if (this.elevation < 0) isBasement = true;
+            if (this.elevation == 0) isGround = true;
             if (id == 0) isBottom = true; else prevId = id - 1;
             if (id == numAllLevels - 1) isTop = true; else nextId = id + 1;
         }
@@ -506,7 +510,10 @@ namespace Gingerbread.Core
                 gbSurface wall = new gbSurface(id + "::Wall_" + i, id, subLoop, 90);
                 wall.adjSrfId = region.match[i];
                 if (region.match[i].Contains("Outside"))
-                    wall.type = surfaceTypeEnum.ExteriorWall;
+                    if (this.level.isBasement)
+                        wall.type = surfaceTypeEnum.UndergroundWall;
+                    else
+                        wall.type = surfaceTypeEnum.ExteriorWall;
                 else
                     wall.type = surfaceTypeEnum.InteriorWall;
                 walls.Add(wall);

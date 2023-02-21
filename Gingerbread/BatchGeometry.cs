@@ -273,7 +273,10 @@ namespace Gingerbread
             }
 
             // calculat the offset from base level to internal origin (usually 0, but not always)
-            Properties.Settings.Default.offsetZ = levels[0].projElevation;
+            // the coordinate retrieved through API is the project elevation
+            // the coordinate you see in the Revit UI is the elevation
+            // to convert make you retrieved in line with what you see you need to deduct the _bias
+            Properties.Settings.Default.offsetZ = levels[0].projElevation - levels[0].elevation;
             XYZ _bias = new XYZ(0, 0, Properties.Settings.Default.offsetZ);
 
             IList<Element> eCurtaSys = new FilteredElementCollector(doc)

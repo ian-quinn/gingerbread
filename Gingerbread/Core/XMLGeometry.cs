@@ -595,6 +595,8 @@ namespace Gingerbread.Core
                     if (level.isBottom)
                     {
                         surfaceTypeEnum surfaceTypeDef = surfaceTypeEnum.SlabOnGrade;
+                        if (level.isBasement)
+                            surfaceTypeDef = surfaceTypeEnum.UndergroundSlab;
                         //if (zone.level.elevation - 0 > 0.1)
                         //    surfaceTypeDef = surfaceTypeEnum.RaisedFloor;
 
@@ -816,7 +818,12 @@ namespace Gingerbread.Core
                                         gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                             revLoop, 180);
                                         splitFloor.adjSrfId = "Outside";
-                                        splitFloor.type = surfaceTypeEnum.RaisedFloor;
+                                        if (level.isBasement)
+                                            splitFloor.type = surfaceTypeEnum.UndergroundSlab;
+                                        else if (level.isGround)
+                                            splitFloor.type = surfaceTypeEnum.SlabOnGrade;
+                                        else
+                                            splitFloor.type = surfaceTypeEnum.RaisedFloor;
                                         zone.floors.Add(splitFloor);
                                     }
                                     else
@@ -832,7 +839,12 @@ namespace Gingerbread.Core
                                             gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
                                                 revLoop, 180);
                                             splitFloor.adjSrfId = "Outside";
-                                            splitFloor.type = surfaceTypeEnum.RaisedFloor;
+                                            if (level.isBasement)
+                                                splitFloor.type = surfaceTypeEnum.UndergroundSlab;
+                                            else if (level.isGround)
+                                                splitFloor.type = surfaceTypeEnum.SlabOnGrade;
+                                            else
+                                                splitFloor.type = surfaceTypeEnum.RaisedFloor;
                                             zone.floors.Add(splitFloor);
                                         }
                                     }
