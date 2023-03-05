@@ -4,6 +4,7 @@ using System.IO;
 using System.Xml.Serialization;
 using System.Globalization;
 using System.Text.RegularExpressions;
+using System.Linq;
 using System.Diagnostics;
 
 namespace Gingerbread.Core
@@ -43,10 +44,15 @@ namespace Gingerbread.Core
             // you may change this setting in the function MakeBuilding()
             cmp.Buildings[0] = MakeBuilding(10000, Properties.Settings.Default.projName, buildingTypeEnum.Office);
 
-
+            int offsetLv = 0;
             // STOREY
             for (int i = 0; i < floors.Count; i++)
+            {
                 cmp.Buildings[0].bldgStories[i] = MakeStorey(floors[i].level, floors[i].loop);
+                if (floors[i].level.elevation < 0)
+                    offsetLv++;
+            }
+                
 
             // SPACE
             // a list for space that is replaceable by multipliers during energy simulation
@@ -194,6 +200,22 @@ namespace Gingerbread.Core
                 pg.PolyLoop = PtsToPolyLoop(shafts[i].loop);
                 shaft.PlanarGeometry = pg;
                 cmp.Shaft[i] = shaft;
+            }
+
+            // try to update all space id, surface id and spaceIdRef
+            foreach (Surface srf in cmp.Surface)
+            {
+                if (srf is null) continue;
+                srf.id = UpdateElementId(srf.id, offsetLv);
+                foreach (var refId in srf.AdjacentSpaceId)
+                {
+                    refId.spaceIdRef = UpdateElementId(refId.spaceIdRef, offsetLv);
+                }
+            }
+            foreach (Space sp in cmp.Buildings[0].Spaces)
+            {
+                if (sp is null) continue;
+                sp.id = UpdateElementId(sp.id, offsetLv);
             }
 
             //write xml to the file
@@ -508,6 +530,17 @@ namespace Gingerbread.Core
                 if (id == face.adjSrfId)
                     return face.id;
             return null;
+        }
+
+        private static string UpdateElementId(string id, int offset)
+        {
+            string[] labelLv = id.Split(new string[] {"::"}, 2, StringSplitOptions.RemoveEmptyEntries);
+            List<string> digits = Regex.Split(labelLv[0], @"\D+").Where(s => s != string.Empty).ToList();
+            int offsetLv = Convert.ToInt32(digits[0]) - offset;
+            if (offsetLv >= 0)
+                return $"F{offsetLv}::{labelLv[1]}";
+            else
+                return $"U{-offsetLv}::{labelLv[1]}";
         }
     }
 }
