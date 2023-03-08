@@ -207,9 +207,16 @@ namespace Gingerbread.Core
             {
                 if (srf is null) continue;
                 srf.id = UpdateElementId(srf.id, offsetLv);
-                foreach (var refId in srf.AdjacentSpaceId)
+                if (srf.AdjacentSpaceId is null)
                 {
-                    refId.spaceIdRef = UpdateElementId(refId.spaceIdRef, offsetLv);
+                    continue;
+                }
+                else
+                {
+                    foreach (var refId in srf.AdjacentSpaceId)
+                    {
+                        refId.spaceIdRef = UpdateElementId(refId.spaceIdRef, offsetLv);
+                    }
                 }
             }
             foreach (Space sp in cmp.Buildings[0].Spaces)
@@ -532,6 +539,9 @@ namespace Gingerbread.Core
             return null;
         }
 
+        /// <summary>
+        /// Rename element id by certain floor level offset. For example, "F0" offsets 2 levels as "U2"
+        /// </summary>
         private static string UpdateElementId(string id, int offset)
         {
             string[] labelLv = id.Split(new string[] {"::"}, 2, StringSplitOptions.RemoveEmptyEntries);
