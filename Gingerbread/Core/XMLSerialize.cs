@@ -433,6 +433,9 @@ namespace Gingerbread.Core
             else
                 surface.exposedToSunField = false;
 
+            // 20230329 see XMLGeometry.cs Appendix for Firewall
+            surface.isFirewall = face.isFirewall;
+
             //surface.constructionIdRef = face.id; // back projection to some construction dict
 
             // there can only be two adjacent spaces for an interior wall

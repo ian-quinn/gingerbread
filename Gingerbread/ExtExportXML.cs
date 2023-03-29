@@ -55,6 +55,7 @@ namespace Gingerbread
                 out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
                 out Dictionary<int, List<List<gbXYZ>>> dictShade,
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
+                out Dictionary<int, List<gbSeg>> dictFirewall,
                 out Dictionary<int, List<gbSeg>> dictGrid,
                 out Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom,
                 out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
@@ -445,7 +446,7 @@ namespace Gingerbread
 
             XMLGeometry.Generate(dictElevation,
                 dictRegion, dictShell,
-                dictWindow, dictDoor, dictColumn, dictBeam, dictGlazing, dictAirwall, dictFloor, dictShade, dictRoom, 
+                dictWindow, dictDoor, dictColumn, dictBeam, dictGlazing, dictAirwall, dictFloor, dictShade, dictRoom, dictFirewall, 
                 out List<gbZone> zones,
                 out List<gbLoop> floors,
                 out List<gbSurface> surfaces,

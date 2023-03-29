@@ -651,9 +651,11 @@ namespace Gingerbread.Core
                 else if (t1 < 0 && t2 > 1)
                     overlap = 1;
                 else if (t1 < 0)
-                    overlap = 0 - t1;
+                    overlap = t2;
+                // overlap = 0 - t1;
                 else if (t2 > 1)
-                    overlap = 1 - t2;
+                    overlap = 1 - t1;
+                // overlap = 1 - t2;
                 else
                     overlap = t2 - t1;
                 proj = new gbSeg(plummet1, plummet2);

@@ -566,7 +566,7 @@ namespace Gingerbread.Core
             // create branch nodes (creating containment tree)
             int safeLock = 0;
             // not possible to have a nesting over 10 levels
-             while (containRef.Count > 0 && safeLock < 10)
+            while (containRef.Count > 0 && safeLock < 10)
             {
                 //Debug.Print("SpaceDetect:: " + "Iteration at: " + safeLock.ToString() + " with " + containRef.Count.ToString() + "chains.");
                 int delChainIdx = -1;

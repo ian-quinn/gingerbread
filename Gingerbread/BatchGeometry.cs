@@ -45,6 +45,8 @@ namespace Gingerbread
             out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
             out Dictionary<int, List<List<gbXYZ>>> dictShade, 
             out Dictionary<int, List<gbSeg>> dictSeparationline,
+            // dictFirewall records customized partitions for fire zone definition
+            out Dictionary<int, List<gbSeg>> dictFirewall,
             out Dictionary<int, List<gbSeg>> dictGrid,
             out Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom,
             out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,
@@ -63,6 +65,8 @@ namespace Gingerbread
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
             dictShade = new Dictionary<int, List<List<gbXYZ>>>();
             dictSeparationline = new Dictionary<int, List<gbSeg>>();
+            // dictFirewall records customized partitions for fir zone definition
+            dictFirewall = new Dictionary<int, List<gbSeg>>();
             dictGrid = new Dictionary<int, List<gbSeg>>();
             dictRoom = new Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>>();
             dictWindowplus = new Dictionary<string, List<Tuple<string, double>>>();
@@ -330,6 +334,7 @@ namespace Gingerbread
                     ));
                 // initiate other dictionaries
                 dictWall.Add(z, new List<gbSeg>());
+                dictFirewall.Add(z, new List<gbSeg>());
                 dictColumn.Add(z, new List<Tuple<List<gbXYZ>, string>>());
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
                 dictCurtain.Add(z, new List<gbSeg>());
@@ -535,6 +540,21 @@ namespace Gingerbread
                 List<gbSeg> temps = new List<gbSeg>();
                 Wall wall = e as Wall;
 
+                // 20230329 
+                // a sample to check user defined attribute
+                bool isFirewall = false;
+                foreach (Parameter par in wall.Parameters)
+                {
+                    if (par.Definition.Name == "是否是防火分区边界墙")
+                    {
+                        if (par.HasValue == true)
+                        {
+                            isFirewall = true;
+                            // then center lines of this wall will be append to dictFirewall
+                        }
+                    }
+                }
+
                 // access baseline by LocationCurve
                 LocationCurve lc = wall.Location as LocationCurve;
 
@@ -555,7 +575,7 @@ namespace Gingerbread
                         temps.Add(
                             new gbSeg(Util.gbXYZConvert(midPts[i]), Util.gbXYZConvert(midPts[i + 1])));
                 }
-                    
+
 
                 // get the height of the wall by retrieving its geometry element
                 Options op = wall.Document.Application.Create.NewGeometryOptions();
@@ -659,7 +679,12 @@ namespace Gingerbread
 
                         // if the WallType is something else, Basic, Stacked, Unknown, append it to dictWall
                         else
+                        {
                             dictWall[i].AddRange(temps);
+                            // additionally, add them to dictFirewall if it is a firewall
+                            if (isFirewall)
+                                dictFirewall[i].AddRange(temps);
+                        }
                     }
                     // if a wall belongs to no level, make it a shading surface
                     else

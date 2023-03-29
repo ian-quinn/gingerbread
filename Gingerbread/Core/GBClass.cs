@@ -378,6 +378,9 @@ namespace Gingerbread.Core
         public string adjSrfId;
         public surfaceTypeEnum type;
 
+        // customized attribute to mark a firewall
+        public bool isFirewall;
+
         public gbSurface(string id, string parentId, List<gbXYZ> loop, double tilt)
         {
             this.id = id;
@@ -509,6 +512,11 @@ namespace Gingerbread.Core
                 // only extrude on axis-z
                 gbSurface wall = new gbSurface(id + "::Wall_" + i, id, subLoop, 90);
                 wall.adjSrfId = region.match[i];
+
+                // 20230329 CAUTION
+                // the floor/ceiling only has null level attribute, for now
+                wall.level = level;
+
                 if (region.match[i].Contains("Outside"))
                     if (this.level.isBasement)
                         wall.type = surfaceTypeEnum.UndergroundWall;

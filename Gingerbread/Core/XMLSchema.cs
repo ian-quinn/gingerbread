@@ -1503,6 +1503,11 @@ namespace Gingerbread.Core
         public string constructionIdRef { get; set; }
         [XmlAttribute]
         public string isShadowing { get; set; }
+
+        // 20230329 see XMLGeometry.cs Appendix for firewall
+        [XmlAttribute]
+        public bool isFirewall { get; set; }
+
         public string Name { get; set; }
         [XmlElement(IsNullable = false, ElementName = "AdjacentSpaceId")]
         public AdjacentSpaceId[] AdjacentSpaceId { get; set; }

@@ -41,6 +41,7 @@ namespace Gingerbread
                 out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
                 out Dictionary<int, List<List<gbXYZ>>> dictShade, 
                 out Dictionary<int, List<gbSeg>> dictSeparationline,
+                out Dictionary<int, List<gbSeg>> dictFirewall, 
                 out Dictionary<int, List<gbSeg>> dictGrid,
                 out Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom,
                 out Dictionary<string, List<Tuple<string, double>>> dictWindowplus,

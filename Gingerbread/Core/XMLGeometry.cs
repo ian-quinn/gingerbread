@@ -23,6 +23,7 @@ namespace Gingerbread.Core
             Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
             Dictionary<int, List<List<gbXYZ>>> dictShade,
             Dictionary<int, List<Tuple<List<List<gbXYZ>>, string>>> dictRoom, 
+            Dictionary<int, List<gbSeg>> dictFirewall,
             out List<gbZone> zones,
             out List<gbLoop> floors,
             out List<gbSurface> surfaces,
@@ -37,9 +38,9 @@ namespace Gingerbread.Core
             for (int i = 0; i < levels.Count - 1; i++)
                 levels[i].height = levels[i + 1].elevation - levels[i].elevation;
 
-            
+
             //foreach (gbLevel level in levels)
-                //Debug.Print("XMLGeometry:: " + $"On level {level.id} elevation {level.elevation} height {level.height}");
+            //Debug.Print("XMLGeometry:: " + $"On level {level.id} elevation {level.elevation} height {level.height}");
 
             // cached intermediate data
             zones = new List<gbZone>();
@@ -180,7 +181,7 @@ namespace Gingerbread.Core
 
                     thisZone.Add(newZone);
 
-                    
+
 
                     //List<string> srfId = new List<string>();
                     //List<Line> boundaryLine = new List<Line>();
@@ -258,7 +259,7 @@ namespace Gingerbread.Core
                     gbXYZ insertPt2d = new gbXYZ(
                         thisSurface[hostId].locationLine.Length * minParam, 
                         opening.Item1.Z - level.elevation, 0);
-                    openingLoop2d.Add(insertPt2d + new gbXYZ(- sizes[0] / 2, 0, 0));
+                    openingLoop2d.Add(insertPt2d + new gbXYZ(-sizes[0] / 2, 0, 0));
                     openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, 0, 0));
                     openingLoop2d.Add(insertPt2d + new gbXYZ(sizes[0] / 2, sizes[1], 0));
                     openingLoop2d.Add(insertPt2d + new gbXYZ(-sizes[0] / 2, sizes[1], 0));
@@ -389,7 +390,7 @@ namespace Gingerbread.Core
                             Util.LogPrint($"Glazing: {projection.Length:f4}m one is ignored at {{{projection}}}");
                         }
                         //else
-                            //Debug.Print($"Glazing: No adherence found for this curtain wal");
+                        //Debug.Print($"Glazing: No adherence found for this curtain wal");
                     }
                 }
 
@@ -514,7 +515,7 @@ namespace Gingerbread.Core
                             Util.LogPrint($"Opening: Door < 0.001 will not be added");
                             continue;
                         }
-                            
+
                         // prevent the sum of opening area surpassing the base surface area
                         if (srf.openingArea + openingArea > srf.area)
                         {
@@ -559,7 +560,7 @@ namespace Gingerbread.Core
                             Util.LogPrint($"Airwall: type conversion forbidden because the surface already hosts an opening");
                             continue;
                         }
-                            
+
                         // note that the second segment is the baseline
                         // the projection has the same direction as the second segment
                         projection = GBMethod.SegProjection(airwall, thisSurface[k].locationLine,
@@ -642,7 +643,7 @@ namespace Gingerbread.Core
                             }
                         }
                     }
-                    
+
                     if (level.id == levels.Count - 2)
                     {
                         //if (zone.tiles.Count == 1)
@@ -1157,9 +1158,46 @@ namespace Gingerbread.Core
                             surfaces[i].type = surfaceTypeEnum.RaisedFloor;
                         if (surfaces[i].tilt == 0)
                             surfaces[i].type = surfaceTypeEnum.Roof;
-                    }       
+                    }
                 }
-                    
+            }
+
+            //--------------------------------//
+            //            APPENDIX            //
+            //--------------------------------//
+
+            // appendix for firewall alignment
+            double _wallGapThreshold = 0.2;
+            double _wallOverlapThreshold = 0.7;
+            List<gbSeg> pairedFirewall = new List<gbSeg>() { };
+            foreach (gbSurface surface in surfaces)
+            {
+                if (surface.level == null)
+                    continue;
+                foreach (gbSeg seg in dictFirewall[surface.level.id])
+                {
+                    segIntersectEnum intersectChecker = GBMethod.SegIntersection(seg, surface.locationLine,
+                        0.0001, out gbXYZ sectPt, out double t1, out double t2);
+                    if (intersectChecker == segIntersectEnum.Parallel || 
+                        intersectChecker == segIntersectEnum.Coincident ||
+                        intersectChecker == segIntersectEnum.ColineAContainB || 
+                        intersectChecker == segIntersectEnum.ColineBContainA ||
+                        intersectChecker == segIntersectEnum.ColineOverlap)
+                    {
+                        double distance = GBMethod.SegDistanceToSeg(seg, surface.locationLine, 
+                            out double overlap1, out gbSeg proj1);
+                        double distance_ = GBMethod.SegDistanceToSeg(surface.locationLine, seg, 
+                            out double overlap2, out gbSeg proj2);
+                        if (distance < _wallGapThreshold)
+                        {
+                            if (overlap1 > _wallOverlapThreshold || overlap2 > _wallOverlapThreshold)
+                            {
+                                surface.isFirewall = true;
+                                pairedFirewall.Add(surface.locationLine);
+                            }
+                        }
+                    }
+                }
             }
 
 
