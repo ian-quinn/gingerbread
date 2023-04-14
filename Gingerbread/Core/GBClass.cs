@@ -271,7 +271,7 @@ namespace Gingerbread.Core
             return string.Format("{0}}}#{{{1}", Start.ToString(), End.ToString());
         }
     }
-
+     
     // just have a try...
     public class gbRegion
     {
