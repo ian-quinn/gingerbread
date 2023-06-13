@@ -523,13 +523,13 @@ namespace Gingerbread.Core
                 {
                     // these new added checkings follow the lattice generation down below
                     // not passed debugging right now, pending
-                    double thetaBetween = Math.Abs(GBMethod.VectorAngle2D(anchors[pointer] - anchors[i], 
-                        anchorInfo[pointer][0]) - 90);
-                    if (thetaBetween < 85)
+                    double thetaBetween = Math.Abs(GBMethod.VectorAnglePI(anchors[pointer] - anchors[i], 
+                        anchorInfo[pointer][0]) - Math.PI / 2);
+                    if (thetaBetween < 1.484)
                         continue;
 
                     // check if the receiving anchor has the opposite projection vector
-                    if (i != pointer && IsJointPaired(anchorInfo[i], -anchorInfo[pointer][0], 2))
+                    if (i != pointer && IsJointPaired(anchorInfo[i], -anchorInfo[pointer][0], 0.035))
                     {
                         double distance = DistanceToRay(anchors[i], anchors[pointer],
                           anchorInfo[pointer][0], out double stretch);
@@ -583,13 +583,13 @@ namespace Gingerbread.Core
                     for (int j = 0; j < anchors.Count; j++)
                     {
                         
-                        double thetaBetween = Math.Abs(GBMethod.VectorAngle2D(anchors[j] - anchors[i], vec) - 90);
-                        if (thetaBetween < 85)
+                        double thetaBetween = Math.Abs(GBMethod.VectorAnglePI(anchors[j] - anchors[i], vec) - Math.PI/2);
+                        if (thetaBetween < 1.484)
                         {
                             //Debug.Print($"Point {anchors[j]} fails term 1 with {GBMethod.VectorAngle2D(anchors[j] - anchors[i], vec)}");
                             continue;
                         }
-                        if (i != j && IsJointPaired(anchorInfo[j], -vec, 2))
+                        if (i != j && IsJointPaired(anchorInfo[j], -vec, 0.035))
                         {
                             double distance = DistanceToRay(anchors[j], anchors[i], vec, out double stretch);
                             //Debug.Print($"----[j] {anchors[j]} with d: {distance} s: {stretch}");
@@ -779,7 +779,7 @@ namespace Gingerbread.Core
         public static bool IsJointPaired(List<gbXYZ> vecs, gbXYZ newVec, double angle)
         {
             foreach (gbXYZ vec in vecs)
-                if (GBMethod.VectorAngle2D(vec, newVec) < angle)
+                if (GBMethod.VectorAnglePI(vec, newVec) < angle)
                     return true;
             return false;
         }

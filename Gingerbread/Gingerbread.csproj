@@ -88,6 +88,8 @@
     <Compile Include="Core\LayoutPatch.cs" />
     <Compile Include="Core\PointAlign.cs" />
     <Compile Include="Core\CurveSimplify.cs" />
+    <Compile Include="Core\EdgeAlign.cs" />
+    <Compile Include="Core\RegionDetect2.cs" />
     <Compile Include="Core\RegionTessellate.cs" />
     <Compile Include="Core\RegionDetect.cs" />
     <Compile Include="Core\XMLGeometry.cs" />

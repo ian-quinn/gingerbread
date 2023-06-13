@@ -101,29 +101,39 @@ namespace Gingerbread
                 enclosings.AddRange(dictCurtaSystem[z]);
                 enclosings.AddRange(dictSeparationline[z]);
                 dictAirwall[z].AddRange(dictSeparationline[z]);
-                List<gbSeg> flatLines = GBMethod.FlattenLines(enclosings);
+                List<gbSeg> _flatLines = GBMethod.FlattenLines(enclosings);
                 dictEnclosing.Add(z, enclosings);
 
                 // PENDING
                 // patch the columns. the patch lines may have collision with the wall lines
                 // thus making the alignment unstable
-                //List<gbSeg> colPatches = LayoutPatch.PatchColumn(flatLines, dictColumn[z]);
-                //flatLines.AddRange(colPatches);
+                List<gbSeg> colPatches = LayoutPatch.PatchColumn(_flatLines, dictColumn[z]);
+                _flatLines.AddRange(colPatches);
 
                 // the extension copies all segments to another list
                 // not stable to operate the endpoints directly for now
-                for (int i = 0; i < flatLines.Count; i++)
-                    for (int j = 0; j < flatLines.Count; j++)
+                for (int i = 0; i < _flatLines.Count; i++)
+                    for (int j = 0; j < _flatLines.Count; j++)
                         if (i != j)
-                            flatLines[i] = GBMethod.SegExtensionToSeg(flatLines[i], flatLines[j],
+                            _flatLines[i] = GBMethod.SegExtensionToSeg(_flatLines[i], _flatLines[j],
                                 Properties.Settings.Default.tolPerimeter);
                 //GBMethod.SegExtension2(flatLines[i], flatLines[j],
                 //    Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
 
+                // note SegsWelding needs very small tolerance
+                // the operation of segment intersection must be very accurate
+                // the eps should be at least e^10-6
+                // it seems that very small segment may escape the tolerance
+                // so it is safe to skip very tiny line shatters
+                List<gbSeg> flatLines = GBMethod.SegsWelding(GBMethod.SkimOut(_flatLines, 0.001), 
+                    Properties.Settings.Default.tolAlignment / 5,
+                    Properties.Settings.Default.tolAlignment / 5, 
+                    Properties.Settings.Default.tolTheta);
+
                 // sort out building blocks. usually there is only one block for each level
                 // this will cluster parallel segments with minor gaps < tolGroup
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
-                    Properties.Settings.Default.tolGrouping);
+                    Properties.Settings.Default.tolGrouping, Properties.Settings.Default.tolGrouping);
 
                 // a trash bin for stray lines that are processed after space detection
                 // there are three steps that may dump debris to this trash bin
@@ -158,19 +168,32 @@ namespace Gingerbread
                 {
                     List<gbXYZ> orthoHull;
                     // try to get the block boundary first
-                    List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, Properties.Settings.Default.tolAlignment);
+                    List<gbSeg> aligLineGroup = EdgeAlign.AlignEdges(lineGroup, 
+                        Properties.Settings.Default.tolAlignment,
+                        Properties.Settings.Default.tolAlignment / 2,
+                        Properties.Settings.Default.tolTheta);
+
+                    //List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, Properties.Settings.Default.tolAlignment);
+
                     //Debug.Print($"ExtExportXML:: reduce line from {lineGroup.Count} to {aliLineGroup.Count}");
-                    List<gbSeg> extLineGroup = GBMethod.SegsExtensionByLength(aliLineGroup, Properties.Settings.Default.tolPerimeter);
-                    List<gbSeg> fusLineGroup = GBMethod.SegsFusion(extLineGroup, Properties.Settings.Default.tolAlignment);
-                    List<gbSeg> shatteredLineGroup = GBMethod.SkimOut(GBMethod.ShatterSegs(fusLineGroup), 0.001);
-                    orthoHull = RegionDetect.GetShell(shatteredLineGroup);
+
+                    List<gbSeg> extLineGroup = GBMethod.SegsExtensionByLength(aligLineGroup, 
+                        Properties.Settings.Default.tolPerimeter);
+                    List<gbSeg> weldLineGroup = GBMethod.SegsWelding(extLineGroup, 
+                        Properties.Settings.Default.tolAlignment / 5,
+                        Properties.Settings.Default.tolAlignment / 5, 
+                        Properties.Settings.Default.tolTheta);
+
+                    orthoHull = RegionDetect2.GetShell(weldLineGroup);
 
                     // PENDING for minimum hull for 2D segments
                     if (orthoHull.Count < 4)
-                        orthoHull = OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup));
+                        //orthoHull = OrthoHull.GetOrthoHull(GBMethod.PilePts(lineGroup));
+                        orthoHull = OrthoHull.GetConvexHull(GBMethod.PilePts(lineGroup));
 
                     //Debug.Print($"OrthoHull at F{z} B{lineGroups.IndexOf(lineGroup)} size {orthoHull.Count}");
-                    RegionTessellate.SimplifyPoly(orthoHull);
+
+                    //RegionTessellate.SimplifyPoly(orthoHull);
                     orthoHull.Add(orthoHull[0]);
                     hullGroups.Add(orthoHull);
                 }
@@ -242,7 +265,12 @@ namespace Gingerbread
                         {
                             lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
                                 dictWall[z], dictCurtain[z], dictWindow[z], dictDoor[z], dictFloor[z], 
-                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping, z == 0 ? false : true, 
+                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping, 
+                                false,
+                                // 20230612 set include air boundary from floor panel may lead to unwanted results
+                                // because some models are really bad on floor modeling
+                                // TASK add another option to toggle it
+                                // z == 0 ? false : true, 
                                 out List<gbSeg> glazings, out List<gbSeg> airwalls, out List<List<gbXYZ>> voidLoops);
 
                             dictGlazing[z].AddRange(glazings);
@@ -257,14 +285,14 @@ namespace Gingerbread
 
 
                         //List<gbSeg> lineExtended = GBMethod.ExtendSegs(lineBlocks[b][g], 0.5);
-                        List<gbSeg> lineFused = GBMethod.SegsFusion(lineBlocks[b][g], Properties.Settings.Default.tolAlignment);
-                        List<gbSeg> lineShatters = GBMethod.SkimOut(
-                            GBMethod.ShatterSegs(lineFused), 0.01);
+                        //List<gbSeg> lineFused = GBMethod.SegsFusion(lineBlocks[b][g]);
+                        //List<gbSeg> lineShatters = GBMethod.SkimOut(GBMethod.ShatterSegs(lineFused), 0.01);
 
 
+                        // 2023-06-8 remove point alignment
+                        /*
                         List<gbXYZ> joints = PointAlign.GetJoints(lineShatters,
                             Properties.Settings.Default.tolDouble, out List<List<gbXYZ>> hands);
-
 
                         List<List<gbXYZ>> anchorInfo_temp, anchorInfo;
                         List<gbSeg> nextBlueprint_1, nextBlueprint_2;
@@ -285,7 +313,19 @@ namespace Gingerbread
                         nextBlueprint.AddRange(nextBlueprint_1);
                         nextBlueprint.AddRange(nextBlueprint_2);
                         preBlueprint = nextBlueprint;
+                        */
 
+                        List<gbSeg> lineAligned = EdgeAlign.AlignEdges(lineBlocks[b][g],
+                            Properties.Settings.Default.tolAlignment,
+                            Properties.Settings.Default.tolAlignment / 2,
+                            Properties.Settings.Default.tolTheta);
+
+                        List<gbSeg> lineExtended = GBMethod.SegsExtensionByLength(lineAligned, 
+                            Properties.Settings.Default.tolPerimeter);
+                        List<gbSeg> lineWelded = GBMethod.SegsWelding(lineExtended, 
+                            Properties.Settings.Default.tolAlignment / 5,
+                            Properties.Settings.Default.tolAlignment / 5, 
+                            Properties.Settings.Default.tolTheta);
 
                         // VISUALIZATION
                         //using (Transaction tx = new Transaction(doc, "Sketch anchors"))
@@ -307,10 +347,13 @@ namespace Gingerbread
                         //}
 
 
+                        // 2023-06-08 remove point alignment
+                        /*
                         List<gbSeg> latticeDebries; // abandoned for now
                         List<gbSeg> lattice = PointAlign.GetLattice(ptAlign, anchorInfo,
                             Properties.Settings.Default.tolDouble, out latticeDebries);
                         strays.AddRange(latticeDebries);
+                        */
 
 
                         List<gbRegion> regions;
@@ -320,8 +363,9 @@ namespace Gingerbread
                         
                         Report(10 + z * 80 / levelNum, $"Processing floorplan on level {z} ...");
 
-                        RegionDetect.GetRegion(lattice, z, b, g, out regions, out regionDebris);
-                        strays.AddRange(Util.FlattenList(regionDebris));
+                        RegionDetect2.GetRegion(lineWelded, z, b, g, out regions);
+                        // 20230611 remove strays output
+                        //strays.AddRange(Util.FlattenList(regionDebris));
 
                         //Debug.Print($"At level-{z} block-{b} group-{g} with {regions.Count} regions");
 
@@ -330,7 +374,7 @@ namespace Gingerbread
                         nestedRegion.Add(regions);
                         string temp_debug = Util.RegionString(regions);
 
-                        Util.LogPrint($"RegionDetect: L{z}-B{b}-G{g} has {regions.Count} region, {regionDebris.Count} orphan");
+                        Util.LogPrint($"RegionDetect: L{z}-B{b}-G{g} has {regions.Count} region, {"?"} orphan");
                     } // end of the GROUP loop
 
                     //Debug.Print($"At level-{z} block-{b} with {nestedRegion.Count} clusters");
@@ -338,7 +382,7 @@ namespace Gingerbread
                     // MCR split process
                     if (nestedRegion.Count > 1)
                     {
-                        RegionDetect.GetMCR(nestedRegion); //, nestedShell
+                        RegionDetect2.GetMCR(nestedRegion); //, nestedShell
                         //Debug.Print("ExtExportXML:: there seems to be an MCR");
                         Util.LogPrint($"Tessellation: L{z}-B{b} has multiply connected regions");
                     }

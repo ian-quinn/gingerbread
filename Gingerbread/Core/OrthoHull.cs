@@ -191,5 +191,102 @@ namespace Gingerbread.Core
             loop.Add(loop[0]);
             return loop;
         }
+
+        public static double Cross(gbXYZ O, gbXYZ A, gbXYZ B)
+        {
+            return (A.X - O.X) * (B.Y - O.Y) - (A.Y - O.Y) * (B.X - O.X);
+        }
+
+        /// <summary>
+        /// Get the convex hull of a point set.
+        /// </summary>
+        public static List<gbXYZ> GetConvexHull(List<gbXYZ> points)
+        {
+            if (points == null)
+                return null;
+
+            if (points.Count() <= 1)
+                return points;
+            int n = points.Count(), k = 0;
+            List<gbXYZ> H = new List<gbXYZ>(new gbXYZ[2 * n]);
+            points.Sort((a, b) =>
+                    a.X == b.X ? a.Y.CompareTo(b.Y) : a.X.CompareTo(b.X));
+
+            // Build lower hull
+            for (int i = 0; i < n; ++i)
+            {
+                while (k >= 2 && Cross(H[k - 2], H[k - 1], points[i]) <= 0)
+                    k--;
+                H[k++] = points[i];
+            }
+
+            // Build upper hull
+            for (int i = n - 2, t = k + 1; i >= 0; i--)
+            {
+                while (k >= t && Cross(H[k - 2], H[k - 1], points[i]) <= 0)
+                    k--;
+                H[k++] = points[i];
+            }
+
+            return H.Take(k - 1).ToList();
+        }
+
+        static double Angle(gbXYZ p1, gbXYZ p2)
+        {
+            return Math.Atan2(p2.Y - p1.Y, p2.X - p1.X);
+        }
+
+        static public gbXYZ PtCoordTrans(gbXYZ pt, double theta)
+        {
+            return new gbXYZ(
+                pt.X * Math.Cos(theta) - pt.Y * Math.Sin(theta),
+                pt.X * Math.Sin(theta) + pt.Y * Math.Cos(theta),
+                0
+            );
+        }
+
+        /// <summary>
+        /// Get the min-area rectangle / optimum bounding rectangle of a point set,
+        /// iterating all possible directions by Rotating Calipers method
+        /// </summary>
+        static public List<gbXYZ> GetMinRectHull(List<gbXYZ> pts)
+        {
+            List<gbXYZ> vts = GetConvexHull(pts);
+
+            double min_area = double.PositiveInfinity;
+            List<gbXYZ> hull = new List<gbXYZ>() { };
+
+            for (int i = 0; i < vts.Count; i++)
+            {
+                int j = (i + 1) % vts.Count;
+
+                double theta = Angle(vts[i], vts[j]);
+
+                List<double> coord_x = new List<double>() { };
+                List<double> coord_y = new List<double>() { };
+                foreach (gbXYZ vt in vts)
+                {
+                    gbXYZ vt_trans = PtCoordTrans(vt, theta);
+                    coord_x.Add(vt_trans.X);
+                    coord_y.Add(vt_trans.Y);
+                }
+
+                coord_x.Sort(); coord_y.Sort();
+
+                double area = (coord_x.Last() - coord_x[0]) * (coord_y.Last() - coord_x[0]);
+
+                if (area < min_area)
+                {
+                    min_area = area;
+                    gbXYZ p1 = PtCoordTrans(new gbXYZ(coord_x[0], coord_y[0], 0), -theta);
+                    gbXYZ p2 = PtCoordTrans(new gbXYZ(coord_x.Last(), coord_y[0], 0), -theta);
+                    gbXYZ p3 = PtCoordTrans(new gbXYZ(coord_x.Last(), coord_y.Last(), 0), -theta);
+                    gbXYZ p4 = PtCoordTrans(new gbXYZ(coord_x[0], coord_y.Last(), 0), -theta);
+                    hull = new List<gbXYZ>() { p1, p2, p3, p4 };
+                }
+            }
+
+            return hull;
+        }
     }
 }

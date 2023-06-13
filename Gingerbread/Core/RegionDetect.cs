@@ -108,7 +108,7 @@ namespace Gingerbread.Core
                 {
                     if (HCOut != HCO[HCIdx] & HCK[HCIdx] == false & HCK[HCOut] == false)
                     {
-                        double testAngle = 2 * Math.PI - GBMethod.VectorAngle(HCPln[HCOut], HCPln[HCO[HCIdx]]);
+                        double testAngle = GBMethod.VectorAngle2PI(HCPln[HCOut], HCPln[HCO[HCIdx]]);
 
                         //Rhino.RhinoApp.Write(testAngle.ToString() + "\n");
                         // The comparing order is important to ensure a right-hand angle under z-axis
@@ -182,7 +182,7 @@ namespace Gingerbread.Core
                     continue;
                 // if the face edges are not enclosed, regard them as orphans
                 segIntersectEnum intersectionCheck = GBMethod.SegIntersection(
-                    kvp.Value[0], kvp.Value.Last(), 0.0001, out gbXYZ intersection, out double t1, out double t2);
+                    kvp.Value[0], kvp.Value.Last(), 0.0001, 0.0001, out gbXYZ intersection, out double t1, out double t2);
                 if (!(intersectionCheck == segIntersectEnum.IntersectOnBoth ||
                     intersectionCheck == segIntersectEnum.ColineJoint))
                 //if (IsSegJoined(kvp.Value[0], kvp.Value.Last(), 0.00001))
@@ -400,7 +400,7 @@ namespace Gingerbread.Core
                 {
                     if (HCOut != HCO[HCIdx] & HCK[HCIdx] == false & HCK[HCOut] == false)
                     {
-                        double testAngle = 2 * Math.PI - GBMethod.VectorAngle(HCPln[HCOut], HCPln[HCO[HCIdx]]);
+                        double testAngle = GBMethod.VectorAngle2PI(HCPln[HCOut], HCPln[HCO[HCIdx]]);
 
                         //Rhino.RhinoApp.Write(testAngle.ToString() + "\n");
                         // The comparing order is important to ensure a right-hand angle under z-axis
@@ -466,7 +466,7 @@ namespace Gingerbread.Core
             {
                 // if the face edges are not enclosed, regard them as orphans
                 segIntersectEnum intersectionCheck = GBMethod.SegIntersection(
-                    kvp.Value[0], kvp.Value.Last(), 0, out gbXYZ intersection, out double t1, out double t2);
+                    kvp.Value[0], kvp.Value.Last(), 0.0001, 0.0001, out gbXYZ intersection, out double t1, out double t2);
                 if (!(intersectionCheck == segIntersectEnum.IntersectOnBoth ||
                     intersectionCheck == segIntersectEnum.ColineJoint))
                 {

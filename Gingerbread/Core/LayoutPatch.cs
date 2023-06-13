@@ -191,7 +191,7 @@ namespace Gingerbread.Core
                 gbXYZ end = lines[i].End;
                 if (GBMethod.IsPtInPoly(start, hull, true) && GBMethod.IsPtInPoly(end, hull, true))
                 {
-                    if (!GBMethod.IsSegPolyIntersected(lines[i], contourIn, 0.000001) &&
+                    if (!GBMethod.IsSegPolyIntersected(lines[i], contourIn, 0.00001, 0.00001) &&
                         !(GBMethod.IsPtInPoly(start, contourIn, false) || GBMethod.IsPtInPoly(end, contourIn, false)))
                     {
                         //lineBlocks[b][g].RemoveAt(i);
@@ -218,11 +218,13 @@ namespace Gingerbread.Core
                         for (int j = 0; j < hull.Count - 1; j++)
                         {
                             GBMethod.SegExtendToSeg(lines[i], new gbSeg(hull[j], hull[j + 1]),
-                                Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolPerimeter);
+                                Properties.Settings.Default.tolDouble,
+                                Properties.Settings.Default.tolDouble, 
+                                Properties.Settings.Default.tolPerimeter);
                         }
                     }
                 }
-                else if (!GBMethod.IsSegPolyIntersected(lines[i], hull, 0.000001))
+                else if (!GBMethod.IsSegPolyIntersected(lines[i], hull, 0.00001, 0.00001))
                 {
                     lines.RemoveAt(i);
                     //Debug.Print($"LayoutPatch:: Original outside seg removed {lines[i]}");
@@ -244,7 +246,8 @@ namespace Gingerbread.Core
                 lines.AddRange(voidBoundary);
 
             // fuse the center lines
-            return GBMethod.SegsFusion(lines, 0.01);
+            return GBMethod.SegsWelding(lines, Properties.Settings.Default.tolAlignment, 
+                Properties.Settings.Default.tolAlignment, Properties.Settings.Default.tolTheta);
         }
 
         public static List<gbSeg> PatchColumn(List<gbSeg> thisWall, 
@@ -264,7 +267,7 @@ namespace Gingerbread.Core
                 if (colPoly == null)
                     continue;
                 List<gbXYZ> colExpansion = GBMethod.OffsetPoly(
-                    OrthoHull.GetRectHull(colPoly),
+                    OrthoHull.GetMinRectHull(colPoly),
                     0.5 * Properties.Settings.Default.tolAlignment)[0];
                 colExpansion.Add(colExpansion[0]);
 
@@ -287,7 +290,7 @@ namespace Gingerbread.Core
                     {
                         gbSeg edge = new gbSeg(colExpansion[i], colExpansion[i + 1]);
                         segIntersectEnum intersectEnum = GBMethod.SegIntersection(wall, edge,
-                            0.000001, out gbXYZ intersection, out double t1, out double t2);
+                            0.00001, 0.00001, out gbXYZ intersection, out double t1, out double t2);
                         if (intersectEnum == segIntersectEnum.IntersectOnB)
                             endPts.Add(intersection);
                         if (intersectEnum == segIntersectEnum.IntersectOnBoth)
@@ -327,7 +330,7 @@ namespace Gingerbread.Core
                             if (i != j)
                             {
                                 segIntersectEnum intersectEnum = GBMethod.SegIntersection(sketch[i], sketch[j], 
-                                    0.000001, out gbXYZ intersection, out double t1, out double t2);
+                                    0.00001, 0.00001, out gbXYZ intersection, out double t1, out double t2);
                                 if (intersectEnum == segIntersectEnum.IntersectOnBoth)
                                 {
                                     if (!breakParams.Contains(t1))
@@ -335,6 +338,9 @@ namespace Gingerbread.Core
                                 }
                             }
                         }
+                        if (breakParams.Count == 0)
+                            continue;
+
                         breakParams.Sort();
                         bool extOnEndFlag = breakParams.Contains(1);
                         bool extOnStartFlag = breakParams.Contains(0);
@@ -346,10 +352,10 @@ namespace Gingerbread.Core
                         if (splits.Count > 0)
                         {
                             // the sketch is not joined by others at the end, so trim it
-                            if (!extOnEndFlag)
+                            if (!extOnEndFlag && splits.Count > 0)
                                 splits.RemoveAt(splits.Count - 1);
                             // the start point is where the wall gets into the column, so keep it
-                            if (i > cutOriginal - 1 && !extOnStartFlag)
+                            if (i > cutOriginal - 1 && !extOnStartFlag && splits.Count > 0)
                                 splits.RemoveAt(0);
                         }
 
@@ -423,7 +429,7 @@ namespace Gingerbread.Core
                 for (int i = 0; i < pts.Count - 1; i++)
                 {
                     segIntersectEnum intersectEnum = GBMethod.SegIntersection(centroid, centroid + vec, pts[i], pts[i + 1], 
-                        0.00001, out gbXYZ intersection, out double t1, out double t2);
+                        0.00001, 0.00001, out gbXYZ intersection, out double t1, out double t2);
                     if (intersectEnum == segIntersectEnum.IntersectOnB)
                         endPts.Insert(0, intersection);
                     if (intersectEnum == segIntersectEnum.IntersectOnBoth)

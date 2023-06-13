@@ -122,10 +122,10 @@ namespace Gingerbread.Core
                 right = shell.NextOrFirst(shell.NextOrFirst(currentNode)).Value - shell.NextOrFirst(currentNode).Value;
                 thisLength = currentNode.Value.DistanceTo(shell.NextOrFirst(currentNode).Value);
 
-                double angleLeft = GBMethod.VectorAngle(left, mid);
-                double angleRight = GBMethod.VectorAngle(mid, right);
+                double angleLeft = GBMethod.VectorAngle2PI(mid, left);
+                double angleRight = GBMethod.VectorAngle2PI(right, mid);
 
-                if (thisLength < minLength && angleLeft > 180 && angleRight > 180)
+                if (thisLength < minLength && angleLeft > Math.PI && angleRight > Math.PI)
                 {
                     minLength = thisLength;
                     targetNode = currentNode;
@@ -241,13 +241,13 @@ namespace Gingerbread.Core
 
                     // The function VectorAngle will not check the minor value
                     // must make sure the input vectors are not residues extremely small
-                    double angle = GBMethod.VectorAngle(vec1, vec2);
+                    double angle = GBMethod.VectorAngle2PI(vec2, vec1);
 
                     if (removeAbrupt)
-                        if (Math.Abs(0 - angle) < tolAngle || Math.Abs(360 - angle) < tolAngle)
+                        if (Math.Abs(0 - angle) < tolAngle || Math.Abs(2 * Math.PI - angle) < tolAngle)
                             delId.Add(i);
                     if (removeRelay)
-                        if (Math.Abs(180 - angle) < tolAngle)
+                        if (Math.Abs(Math.PI - angle) < tolAngle)
                             delId.Add(i);
                 }
             }

@@ -12,7 +12,7 @@
       <Value Profile="(Default)">0.5</Value>
     </Setting>
     <Setting Name="tolTheta" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0</Value>
+      <Value Profile="(Default)">0.2</Value>
     </Setting>
     <Setting Name="tolAlignment" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.11</Value>

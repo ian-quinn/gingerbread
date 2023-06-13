@@ -391,7 +391,8 @@ namespace Gingerbread.Core
             // the azimuth is the angle (0-360) from the north axis (0, 1, 0) to the normal vector
             // the azimuth should follow the clockwise sequence. north-0, east-90, south-180, west-270
             gbXYZ normal = GBMethod.GetPolyNormal(loop);
-            azimuth = GBMethod.VectorAngle(new gbXYZ(0, 1, 0), normal);
+            // VectorAngle2PI return the delta angle from A to B following right hand rule with normal pointing out
+            azimuth = 360 * GBMethod.VectorAngle2PI(normal, new gbXYZ(0, 1, 0)) / 2 * Math.PI;
             // no specific regulations on the azimuth of horizontal plane?
             // simply assign them all with 0 azimuth, for now
             if (Math.Abs(Math.Abs(normal.Z) - 1) < 1.0e-9)

@@ -599,7 +599,10 @@ namespace Gingerbread
                     //bottom <= levels[i].elevation + 0.1 * levels[i].height)
                     double spanCheck = Util.SpanOverlap(bottom, summit, levels[i].elevation,
                         levels[i].elevation + levels[i].height);
-                    if (spanCheck > 0.5 * levels[i].height)
+                    bool isSpanMid = Util.IsSpanMid(bottom, summit, levels[i].elevation,
+                        levels[i].elevation + levels[i].height);
+                    if (spanCheck > 0.5 * levels[i].height || 
+                        (spanCheck > 0.3 * levels[i].height && isSpanMid))
                     {
                             // if the WallType is CurtainWall, append it to dictCurtain
                             if (wall.WallType.Kind == WallKind.Curtain)
@@ -1018,6 +1021,8 @@ namespace Gingerbread
                        bottom <= (levels[i].elevation + 0.5 * levels[i].height))
                     {
                         List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
+                        if (colCrvLoops.Count == 0)
+                            continue;
                         List<gbXYZ> colPoly = new List<gbXYZ>();
                         // only cache the outer boundary without holes
                         foreach (Curve crv in colCrvLoops[0])
@@ -1037,9 +1042,11 @@ namespace Gingerbread
                             }
                         }
                         // make it a closed polygon
-                        colPoly.Add(colPoly[0]);
                         if (colPoly.Count > 0)
+                        {
+                            colPoly.Add(colPoly[0]);
                             dictColumn[i].Add(new Tuple<List<gbXYZ>, string>(colPoly, fi.Name));
+                        }
                     }
                 }
             }

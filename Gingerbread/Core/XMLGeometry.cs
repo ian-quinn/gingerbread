@@ -1177,7 +1177,7 @@ namespace Gingerbread.Core
                 foreach (gbSeg seg in dictFirewall[surface.level.id])
                 {
                     segIntersectEnum intersectChecker = GBMethod.SegIntersection(seg, surface.locationLine,
-                        0.0001, out gbXYZ sectPt, out double t1, out double t2);
+                        0.0001, 0.0001, out gbXYZ sectPt, out double t1, out double t2);
                     if (intersectChecker == segIntersectEnum.Parallel || 
                         intersectChecker == segIntersectEnum.Coincident ||
                         intersectChecker == segIntersectEnum.ColineAContainB || 

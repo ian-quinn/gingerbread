@@ -94,8 +94,8 @@ namespace Gingerbread.Views
             Properties.Settings.Default.originZ = 0;
             Properties.Settings.Default.tolGrouping = 0.5;
             Properties.Settings.Default.tolPerimeter = 0.5;
-            Properties.Settings.Default.tolAlignment = 0.11; 
-            Properties.Settings.Default.tolTheta = 0;
+            Properties.Settings.Default.tolAlignment = 0.15; 
+            Properties.Settings.Default.tolTheta = 0.2;
             Properties.Settings.Default.projName = "GingerbreadHouse";
             Properties.Settings.Default.projAddress = "Shanghai, China";
             Properties.Settings.Default.projNumber = projNumber.Text;

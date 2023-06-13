@@ -1125,6 +1125,17 @@ namespace Gingerbread
             return arr[2] - arr[1];
         }
 
+        public static bool IsSpanMid(double a, double b, double c, double d)
+        {
+            if (a > b) Swap(ref a, ref b);
+            if (c > d) Swap(ref c, ref d);
+            if (b < c || a > d) return false;
+
+            if (a < (c + d) / 2 || b > (c + d) / 2)
+                return true;
+            return false;
+        }
+
         /// <summary>
         /// Log the debug information
         /// </summary>
