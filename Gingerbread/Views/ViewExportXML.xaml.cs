@@ -73,10 +73,16 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGrouping = double.Parse(grouping.Text);
             Properties.Settings.Default.tolPerimeter = double.Parse(perimeter.Text);
             Properties.Settings.Default.tolAlignment = double.Parse(alignment.Text);
-            Properties.Settings.Default.tolTheta = double.Parse(rotation.Text);
+            Properties.Settings.Default.tolAlignmentRatio = double.Parse(alignmentratio.Text);
+            Properties.Settings.Default.tolHoleArea = double.Parse(holearea.Text);
+            Properties.Settings.Default.tolTheta = double.Parse(inclination.Text);
+            if (Properties.Settings.Default.tolTheta == 0)
+                Properties.Settings.Default.tolTheta = 0.01;
+            Properties.Settings.Default.tolHoleArea = double.Parse(holearea.Text);
+            Properties.Settings.Default.tolAlignmentRatio = double.Parse(alignmentratio.Text);
             Properties.Settings.Default.projName = projName.Text;
             Properties.Settings.Default.projAddress = projAddress.Text;
-            Properties.Settings.Default.projNumber = projNumber.Text;
+            //Properties.Settings.Default.projNumber = projNumber.Text;
             Properties.Settings.Default.projLatitude = double.Parse(projLatitude.Text);
             Properties.Settings.Default.projLongitude = double.Parse(projLongitude.Text);
             Properties.Settings.Default.projElevation = double.Parse(projElevation.Text);
@@ -98,7 +104,7 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolTheta = 0.2;
             Properties.Settings.Default.projName = "GingerbreadHouse";
             Properties.Settings.Default.projAddress = "Shanghai, China";
-            Properties.Settings.Default.projNumber = projNumber.Text;
+            //Properties.Settings.Default.projNumber = projNumber.Text;
             Properties.Settings.Default.projLatitude = 31.4;
             Properties.Settings.Default.projLongitude = 121.45;
             Properties.Settings.Default.projElevation = 5.5;
@@ -159,7 +165,27 @@ namespace Gingerbread.Views
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.punchMass = true;
         }
-        
+        private void PatchFloorHole_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchFloorHole = false;
+        }
+        private void PatchFloorHole_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchFloorHole = true;
+        }
+        private void PatchColumn_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchColumn = false;
+        }
+        private void PatchColumn_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchColumn = true;
+        }
+
 
         private void CloseCommandHandler(object sender, ExecutedRoutedEventArgs e)
         {

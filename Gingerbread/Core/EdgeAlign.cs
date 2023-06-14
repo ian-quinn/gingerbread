@@ -425,7 +425,13 @@ namespace Gingerbread.Core
                 // within each bundle there can be multiple clusters of edges, which are far enough 
                 // to have their own main axes representing themselves.
                 // cluster by their expansion box
-                List<List<gbSeg>> clusters = GBMethod.SegClusterByFuzzyIntersection(edge_bundle, tol_d, tol_d);
+
+                double expansionRatio = Properties.Settings.Default.tolAlignmentRatio;
+                // based on segment A, centerline alignment will search all intersected segments within
+                // an uneven expansion box (longer in axis direction and shorter in propendicular direction)
+                // this determines whether the alignment happens more locally or globally
+
+                List<List<gbSeg>> clusters = GBMethod.SegClusterByFuzzyIntersection(edge_bundle, expansionRatio * tol_d, tol_d);
                 sub_groups.AddRange(clusters);
 
                 // sub_groups.AddRange(clusters);

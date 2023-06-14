@@ -34,7 +34,21 @@ namespace Gingerbread.Properties {
                 this["ShortCurveTolerance"] = value;
             }
         }
+
+        // Global tolerance parameter for algorithm
         
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1E-05")]
+        public double tolDouble {
+            get {
+                return ((double)(this["tolDouble"]));
+            }
+            set {
+                this["tolDouble"] = value;
+            }
+        }
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
@@ -82,30 +96,32 @@ namespace Gingerbread.Properties {
                 this["tolAlignment"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1E-05")]
-        public double tolDouble {
+        [global::System.Configuration.DefaultSettingValueAttribute("10")]
+        public double tolHoleArea {
             get {
-                return ((double)(this["tolDouble"]));
+                return ((double)(this["tolHoleArea"]));
             }
             set {
-                this["tolDouble"] = value;
+                this["tolHoleArea"] = value;
             }
         }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string checkInfo {
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public double tolAlignmentRatio {
             get {
-                return ((string)(this["checkInfo"]));
+                return ((double)(this["tolAlignmentRatio"]));
             }
             set {
-                this["checkInfo"] = value;
+                this["tolAlignmentRatio"] = value;
             }
         }
+
+        // User information
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -133,25 +149,25 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool exportStruct {
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double originZ {
             get {
-                return ((bool)(this["exportStruct"]));
+                return ((double)(this["originZ"]));
             }
             set {
-                this["exportStruct"] = value;
+                this["originZ"] = value;
             }
         }
-        
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool includeRef {
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string checkInfo {
             get {
-                return ((bool)(this["includeRef"]));
+                return ((string)(this["checkInfo"]));
             }
             set {
-                this["includeRef"] = value;
+                this["checkInfo"] = value;
             }
         }
         
@@ -241,18 +257,6 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public double originZ {
-            get {
-                return ((double)(this["originZ"]));
-            }
-            set {
-                this["originZ"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("31.4")]
         public double projLatitude {
             get {
@@ -286,7 +290,45 @@ namespace Gingerbread.Properties {
                 this["projElevation"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double projAzimuth {
+            get {
+                return ((double)(this["projAzimuth"]));
+            }
+            set {
+                this["projAzimuth"] = value;
+            }
+        }
+
+        // Parameters for program control
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool exportStruct {
+            get {
+                return ((bool)(this["exportStruct"]));
+            }
+            set {
+                this["exportStruct"] = value;
+            }
+        }
         
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool includeRef {
+            get {
+                return ((bool)(this["includeRef"]));
+            }
+            set {
+                this["includeRef"] = value;
+            }
+        }
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
@@ -313,18 +355,6 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("0")]
-        public double projAzimuth {
-            get {
-                return ((double)(this["projAzimuth"]));
-            }
-            set {
-                this["projAzimuth"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
         public bool punchMass {
             get {
@@ -334,7 +364,34 @@ namespace Gingerbread.Properties {
                 this["punchMass"] = value;
             }
         }
+
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool patchFloorHole {
+            get {
+                return ((bool)(this["patchFloorHole"]));
+            }
+            set {
+                this["patchFloorHole"] = value;
+            }
+        }
         
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool patchColumn {
+            get {
+                return ((bool)(this["patchColumn"]));
+            }
+            set {
+                this["patchColumn"] = value;
+            }
+        }
+        
+
+        // Cache information for floorplan drawings display
+
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("")]
@@ -454,5 +511,9 @@ namespace Gingerbread.Properties {
                 this["offsetZ"] = value;
             }
         }
+        
+        
+        
+        
     }
 }

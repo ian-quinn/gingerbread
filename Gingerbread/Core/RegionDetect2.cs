@@ -598,7 +598,9 @@ namespace Gingerbread.Core
             foreach (List<int> chain in chains)
             {
                 if (nestedRegion[chain.Last()].Count == 2)
-                    if (GBMethod.GetPolyArea(nestedRegion[chain.Last()][0].loop) < 2)
+                    // too small regions will be neglected
+                    // this is to avoid cavities by irregular column or small niche
+                    if (GBMethod.GetPolyArea(nestedRegion[chain.Last()][0].loop) < Properties.Settings.Default.tolHoleArea)
                     {
                         // the nestRegion with only one region
                         // one is the clockwise region and the other is the counter-clockwise shell

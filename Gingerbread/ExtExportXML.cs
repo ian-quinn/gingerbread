@@ -107,8 +107,11 @@ namespace Gingerbread
                 // PENDING
                 // patch the columns. the patch lines may have collision with the wall lines
                 // thus making the alignment unstable
-                List<gbSeg> colPatches = LayoutPatch.PatchColumn(_flatLines, dictColumn[z]);
-                _flatLines.AddRange(colPatches);
+                if (Properties.Settings.Default.patchColumn)
+                {
+                    List<gbSeg> colPatches = LayoutPatch.PatchColumn(_flatLines, dictColumn[z]);
+                    _flatLines.AddRange(colPatches);
+                }
 
                 // the extension copies all segments to another list
                 // not stable to operate the endpoints directly for now
@@ -265,8 +268,8 @@ namespace Gingerbread
                         {
                             lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
                                 dictWall[z], dictCurtain[z], dictWindow[z], dictDoor[z], dictFloor[z], 
-                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping, 
-                                false,
+                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping,
+                                Properties.Settings.Default.patchFloorHole? z == 0 ? false : true : false, 
                                 // 20230612 set include air boundary from floor panel may lead to unwanted results
                                 // because some models are really bad on floor modeling
                                 // TASK add another option to toggle it

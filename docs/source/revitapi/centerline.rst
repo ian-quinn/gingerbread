@@ -6,19 +6,21 @@ The question is, how to get the location curve of any enclosing components like 
 
 Snippets overview:
 
-#. Filter Wall and get the LocationCurve
-#. Get the top/bottom limits of a wall by GetBoundingBox()
-#. Perform intersection between Solid and Plane
-#. Perform intersection between Wall geometries and Plane
-#. Get intersection points between CurtainGrid and Plane
-#. Get Panel geometries of Curtain and Curtain System
-#. Filter CurtainSystem
-#. Get horizontal/vertical grid lines (boundary included)
+#. :ref:`Filter Wall and get the LocationCurve <snippet-1>`
+#. :ref:`Get the top/bottom limits of a wall by GetBoundingBox() <snippet-2>`
+#. :ref:`Perform intersection between Solid and Plane <snippet-3>`
+#. :ref:`Perform intersection between Wall geometries and Plane <snippet-4>`
+#. :ref:`Get intersection points between CurtainGrid and Plane <snippet-5>`
+#. :ref:`Get Panel geometries of Curtain and Curtain System <snippet-6>`
+#. :ref:`Filter CurtainSystem <snippet-7>`
+#. :ref:`Get horizontal/vertical grid lines (boundary included) <snippet-8>`
 
 Basic/Stacked Wall
 ------------------
 
 So, I plan to get the location curve of all enclosing components at each floor. Luckily, we have ``LocationCurve`` attribute. As to a Wall, it is the Location Line at its bottom face. For a Family Instance like Column, it usually lies at its central axis. It can be a Line or an Arc. The basic method to retrieve it is like: (let's say we filter all walls in the Revit document)
+
+.. _snippet-1:
 
 .. code-block:: csharp
 
@@ -43,6 +45,8 @@ So, I plan to get the location curve of all enclosing components at each floor. 
 
 
 A minor flaw is that, the location curve lies at the bottom of the wall component. If encountered with a wall spanning multiple floors, like 1-5, I can only get the enclosing boundary at 1 floor not including all others above. Apparently, a workaround is to compare the elevation of wall and all levels: (though seems too dumb)
+
+.. _snippet-2:
 
 .. code-block:: csharp
 
@@ -75,6 +79,8 @@ We need Boolean operations for solid and plane intersection. Two routes:
 2. Extract the external face of the wall then perform the intersection with floor plane.
 
 Note that the external face may not be the actual "external" one for this is often wrongly defined in a defective model. I prefer the 1st one by collapsing rectangles to center lines. 
+
+.. _snippet-3:
 
 .. code-block:: csharp
 
@@ -109,6 +115,8 @@ Note that the external face may not be the actual "external" one for this is oft
 
 
 Code snippet to apply the process to wall location curve extraction. Note that ``WallKind`` attribute is used to discriminate curtain walls, which has four enumerates: ``Basic`` ``Curtain`` ``Stacked`` ``Unknown``
+
+.. _snippet-4:
 
 .. code-block:: csharp
 
@@ -187,6 +195,7 @@ Panel -> Solid -> X floor plane -> Centerline collapse                  âœ—    â
 
    Different centerlines for different methods
 
+.. _snippet-5:
 
 .. code-block:: csharp
 
@@ -224,6 +233,8 @@ Panel -> Solid -> X floor plane -> Centerline collapse                  âœ—    â
 
 Please see Appendix for the detailed function ``GetCurtainGridVerticalLattice()``
 
+.. _snippet-6:
+
 .. code-block:: csharp
 
     // snippet-6 get the geometry of panels of a curtain wall
@@ -254,6 +265,8 @@ Please see Appendix for the detailed function ``GetCurtainGridVerticalLattice()`
 
 
 The panels are retrieved from the curtain grid, so the logic of curtain system is the same as curtain. Only this time, you need to filter the curtain system first.
+
+.. _snippet-7:
 
 .. code-block:: csharp
 
@@ -292,6 +305,8 @@ Appendix
 --------
 
 The ``GetVGridLineIds()`` returns all grid lines except for the ones at the boundary. Usually we need to compensate for those and align them in the right order.
+
+.. _snippet-8:
 
 .. code-block:: csharp
 

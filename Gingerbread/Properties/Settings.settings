@@ -5,6 +5,9 @@
     <Setting Name="ShortCurveTolerance" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.0025602645573</Value>
     </Setting>
+    <Setting Name="tolDouble" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">1E-05</Value>
+    </Setting>
     <Setting Name="tolGrouping" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.5</Value>
     </Setting>
@@ -17,28 +20,24 @@
     <Setting Name="tolAlignment" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0.11</Value>
     </Setting>
-    <Setting Name="tolDouble" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">1E-05</Value>
+    <Setting Name="tolAlignmentRatio" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">1</Value>
     </Setting>
-    <Setting Name="checkInfo" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="tolHoleArea" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">10</Value>
     </Setting>
+    
     <Setting Name="originX" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
     <Setting Name="originY" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="exportStruct" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
+    <Setting Name="originZ" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
     </Setting>
-    <Setting Name="includeRef" Type="System.Boolean" Scope="User">
-      <Value Profile="(Default)">False</Value>
-    </Setting>
+    
     <Setting Name="projInfo" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
-    </Setting>
-    <Setting Name="spiderPath" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
     <Setting Name="projName" Type="System.String" Scope="User">
@@ -56,9 +55,6 @@
     <Setting Name="projNumber" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>
-    <Setting Name="originZ" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
     <Setting Name="projLatitude" Type="System.Double" Scope="User">
       <Value Profile="(Default)">31.4</Value>
     </Setting>
@@ -68,21 +64,42 @@
     <Setting Name="projElevation" Type="System.Double" Scope="User">
       <Value Profile="(Default)">5.5</Value>
     </Setting>
+    <Setting Name="projAzimuth" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
+
+    <Setting Name="checkInfo" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="geomInfo" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    <Setting Name="spiderPath" Type="System.String" Scope="User">
+      <Value Profile="(Default)" />
+    </Setting>
+    
+    <Setting Name="exportStruct" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="includeRef" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
     <Setting Name="shadowPrev" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
     <Setting Name="exportShade" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="projAzimuth" Type="System.Double" Scope="User">
-      <Value Profile="(Default)">0</Value>
-    </Setting>
     <Setting Name="punchMass" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="geomInfo" Type="System.String" Scope="User">
-      <Value Profile="(Default)" />
+    <Setting Name="patchFloorHole" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">False</Value>
     </Setting>
+    <Setting Name="patchColumn" Type="System.Boolean" Scope="User">
+      <Value Profile="(Default)">True</Value>
+    </Setting>
+
     <Setting Name="drawPrev" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
@@ -110,5 +127,6 @@
     <Setting Name="offsetZ" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
+    
   </Settings>
 </SettingsFile>

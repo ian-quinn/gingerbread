@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="CenterScreen"
              Background="White"
-             Height="585" Width="930"
+             Height="560" Width="930"
              SizeToContent="WidthAndHeight"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -27,7 +27,7 @@
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
             <StackPanel Orientation="Vertical">
-                <GroupBox Header="Header Info" Padding="5" Width="200" Height="185">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="165">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -46,34 +46,35 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
-                            <RowDefinition />
+                            <!--<RowDefinition />-->
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Address" Margin="0 4 0 5"/>
-                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Lat/Long" Margin="0 4 0 5"/>
-                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Elevation" Margin="0 5 0 5"/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Azimuth" Margin="0 5 0 5"/>
-                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Name" Margin="0 5 0 5"/>
-                        <TextBlock Grid.Row="5" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="0" Grid.Column="0" Text="Name" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="1" Grid.Column="0" Text="Address" Margin="0 4 0 5"/>
+                        <TextBlock Grid.Row="2" Grid.Column="0" Text="Lat/Long" Margin="0 4 0 5"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Elevation" Margin="0 5 0 5"/>
+                        <TextBlock Grid.Row="4" Grid.Column="0" Text="Azimuth" Margin="0 5 0 5"/>
+                        <!--<TextBlock Grid.Row="5" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>-->
 
-                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="projAddress" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAddress, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="1" Grid.Column="1" Name="projLatitude" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLatitude, Mode=TwoWay}" Margin="0 2 2 2"/>
-                        <TextBox Grid.Row="1" Grid.Column="2" Name="projLongitude" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLongitude, Mode=TwoWay}" Margin="2 2 0 2"/>
-                        <TextBox Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2" Name="projElevation" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projElevation, Mode=TwoWay}"  Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Name="projAzimuth" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAzimuth, Mode=TwoWay}"  Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
+                        <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projName, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
-                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projNumber, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Name="projAddress" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAddress, Mode=TwoWay}" Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="2" Grid.Column="1" Name="projLatitude" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLatitude, Mode=TwoWay}" Margin="0 2 2 2"/>
+                        <TextBox Grid.Row="2" Grid.Column="2" Name="projLongitude" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projLongitude, Mode=TwoWay}" Margin="2 2 0 2"/>
+                        <TextBox Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2" Name="projElevation" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projElevation, Mode=TwoWay}"  Margin="0 2 0 2"/>
+                        <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projAzimuth" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projAzimuth, Mode=TwoWay}"  Margin="0 2 0 2"/>
+                        
+                        <!--<TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=projNumber, Mode=TwoWay}" Margin="0 2 0 2"/>-->
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Tolerance (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="135">
+                <GroupBox Header="Tolerance (m)" Margin="0 10 0 0" Padding="5" Width="200" Height="135">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -101,8 +102,9 @@ the boundary within this tolerance will be dragged onto that boundary."/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignment" Margin="0 4 0 5" 
                                     ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="tolRotation" Margin="0 4 0 5" 
-                                    ToolTip="The global rotation"/>
+                        <TextBlock Grid.Row="3" Grid.Column="0" Text="tolInclination" Margin="0 4 0 5" 
+                                    ToolTip="The angle threshold to tell if two vectors are co-lined. Usually the value &#x0a;
+                                   lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
 
                         <TextBox Grid.Row="0" Grid.Column="1" Name="grouping" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGrouping, Mode=TwoWay}" Margin="0 2 0 2"/>
@@ -110,12 +112,12 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolPerimeter, Mode=TwoWay}" Margin="0 2 0 2"/>
                         <TextBox Grid.Row="2" Grid.Column="1" Name="alignment" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolAlignment, Mode=TwoWay}" Margin="0 2 0 2"/>
-                        <TextBox Grid.Row="3" Grid.Column="1" Name="rotation" Padding="2" 
+                        <TextBox Grid.Row="3" Grid.Column="1" Name="inclination" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolTheta, Mode=TwoWay}" Margin="0 2 0 2"/>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Origin (m)" Margin="0 5 0 0" Padding="5" Width="200" Height="58" 
+                <GroupBox Header="Origin (m)" Margin="0 10 0 0" Padding="5" Width="200" Height="58" 
                           ToolTip="Set the origin of the gbXML model. If not&#x0a;specified, current coordinate will be used.">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
@@ -149,7 +151,7 @@ will be aligned to an axis. Please set this value according to the average&#x0a;
 
                 </GroupBox>
 
-                <StackPanel Margin="0 10 5 5">
+                <StackPanel Margin="0 15 5 5">
                     <CheckBox x:Name="IncludeRef" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=includeRef, Mode=TwoWay}"
                               Checked ="IncludeRef_Checked" Unchecked ="IncludeRef_Unchecked"  Margin="0 0 0 5" 
                               ToolTip="Retrieve geometry from all linked .rvt files. There should not be any component&#x0a;
@@ -164,11 +166,6 @@ locations of columns and beams, floor multipliers for model simplification, &#x0
                               Checked ="ExportShade_Checked" Unchecked ="ExportShade_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Export shading surface modeled as walls or floor slabs.">
                         Export shading surface</CheckBox>
-                    <CheckBox x:Name="ShadowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=shadowPrev, Mode=TwoWay}"
-                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" Margin="0 0 0 5" 
-                              ToolTip="Align the floorplan boundary shadowing the previous floorplan. This could&#x0a;
-reduce the surface debris but may cause space or surface matching failures.">
-                        Shadow previous floorplan</CheckBox>
                     <CheckBox x:Name="PunchMass" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=punchMass, Mode=TwoWay}"
                               Checked ="PunchMass_Checked" Unchecked ="PunchMass_Unchecked" 
                               ToolTip="If you want holes exist in your building massing, check this box. This will&#x0a;
@@ -258,6 +255,63 @@ substract the atrium or shaft from your massing if it is exposed to outdoors.">
                                     {x:Static p:Settings.Default}, Path=spiderPath, Mode=OneWay}"/>
                             </Grid>
                         </Grid>
+                    </TabItem>
+                    <TabItem Header="Debug">
+                        <StackPanel Orientation="Vertical" Margin="10 0 0 0">
+                            <StackPanel Margin="0 5 0 0" Width="200" HorizontalAlignment="Left">
+
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                        <RowDefinition />
+                                    </Grid.RowDefinitions>
+
+                                    <TextBlock Grid.Row="0" Grid.Column="0" Text="tolDouble" Margin="0 4 0 5" 
+                                        ToolTip="The tolerance performing double precision calculation."/>
+                                    <TextBlock Grid.Row="1" Grid.Column="0" Text="tolHoleArea" Margin="0 4 0 5" 
+                                        ToolTip="There can be holes within the recognized space polygon, forming multiple connected regiosn. &#x0a;
+                                               All holes with area below this threshold will be neglected. These holes may be occupied&#x0a;
+                                               with small cabin, janitor room or columns, which hardly affect energy simulation."/>
+                                    <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignRatio" Margin="0 4 0 5"
+                                        ToolTip=""></TextBlock>
+
+                                    <TextBox Grid.Row="0" Grid.Column="1" Name="precision" Padding="2" 
+                                             Text="{Binding Source={x:Static p:Settings.Default}, Path=tolDouble, Mode=TwoWay}" Margin="0 2 0 2"/>
+                                    <TextBox Grid.Row="1" Grid.Column="1" Name="holearea" Padding="2" 
+                                             Text="{Binding Source={x:Static p:Settings.Default}, Path=tolHoleArea, Mode=TwoWay}" Margin="0 2 0 2"/>
+                                    <TextBox Grid.Row="2" Grid.Column="1" Name="alignmentratio" Padding="2" 
+                                             Text="{Binding Source={x:Static p:Settings.Default}, Path=tolAlignmentRatio, Mode=TwoWay}" Margin="0 2 0 2"/>
+                                </Grid>
+                            </StackPanel>
+
+                            <StackPanel Margin="0 10 5 5">
+                                <CheckBox x:Name="PatchFloorHole" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchFloor, Mode=TwoWay}"
+                              Checked ="PatchFloorHole_Checked" Unchecked ="PatchFloorHole_Unchecked"  Margin="0 0 0 5" 
+                              ToolTip="The hole within the floor that may indicate an atrium. The atrim boundary will&#x0a;
+                                          create an air wall between the atrium and adjacent spaces. If checked, the algorithm will &#x0a;
+                                          add these hole boundaries to the wall centerlines, helping with the region detection.">
+                                    Patch centerlines at floor holes (atrium)</CheckBox>
+                                <CheckBox x:Name="PatchColumn" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchColumn, Mode=TwoWay}"
+                              Checked ="PatchColumn_Checked" Unchecked ="PatchColumn_Unchecked"  Margin="0 0 0 5" 
+                              ToolTip="Columns may break up the continuous wall centerlines thus making it hard for space &#x0a;
+                                          boundary recognition. If checked, the algorithm will try to join the wall centerlines &#x0a;
+                                          at the columns (rectangular, special-shaped or cylinder).">
+                                    Patch centerlines at columns</CheckBox>
+                                <CheckBox x:Name="ShadowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=shadowPrev, Mode=TwoWay}"
+                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" Margin="0 0 0 5" 
+                              ToolTip="Align the floorplan boundary shadowing the previous floorplan. That is, use the axes of &#x0a;
+                                          previous floorplan to align the wall centerlines of the next floorplan. This could &#x0a;
+                                          reduce the surface debris but may cause space or surface matching failures.">
+                                    Shadow previous floorplan</CheckBox>
+                            </StackPanel>
+                            
+                        </StackPanel>
+                        
                     </TabItem>
                 </TabControl>
 
