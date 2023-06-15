@@ -226,9 +226,9 @@ namespace Gingerbread.Core
                     //renumberOffset++;
                     ptLoops.Add(new List<gbXYZ>());
                     infoLoops.Add(new List<string>());
-                    regions.Add(new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + kvp.Key.ToString(),
+                    regions.Add(new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + kvp.Key.ToString(),
                         new List<gbXYZ>(), new List<string>()));
-                    //Debug.Print($"SpaceDetect:: Unexpected orphan detected at F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key}");
+                    //Debug.Print($"SpaceDetect:: Unexpected orphan detected at F{levelId}::B{blockId}::G{groupId}::R{kvp.Key}");
                     continue;
                 }
 
@@ -247,7 +247,7 @@ namespace Gingerbread.Core
                     // the naming convention should follow the XML serialization
                     //if (orphanId.Contains(HCF[adjCrvIdx]) || shellId.Contains(HCF[adjCrvIdx]))
                     //{
-                    //    boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
+                    //    boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + HCF[adjCrvIdx].ToString() +
                     //        "::Outside_" + adjFace.IndexOf(adjCrvIdx).ToString();
                     //}
                     // the HCF[adjCrvIdx] is wrong. This only returns the first belonging space which probably could be the orphan space
@@ -257,17 +257,17 @@ namespace Gingerbread.Core
                         // record the matching relations between shell and inner zone boundaries
                         int shellIdx = GetMatchFIdx(FIdx, adjCrvIdx, orphanId);
                         if (shellIdx == -1)
-                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + shellIdx.ToString() +
+                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + shellIdx.ToString() +
                                 "::Outside_X";
                         else
                             // at this stage, HCF[adjCrvIdx] only indicates to the orphan space
-                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + HCF[adjCrvIdx].ToString() +
+                            boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + HCF[adjCrvIdx].ToString() +
                                 "::Outside_" + FIdx[shellIdx].IndexOf(adjCrvIdx).ToString();
                     }
                     else
-                        //boundaryCondition = "Level_" + levelId + "::Zone_" + (HCF[adjCrvIdx] - renumberOffset).ToString() +
+                        //boundaryCondition = "Level_" + levelId + "::Room_" + (HCF[adjCrvIdx] - renumberOffset).ToString() +
                         //    "::Wall_" + adjFace.IndexOf(adjCrvIdx).ToString();
-                        boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + faceIdx.ToString() + 
+                        boundaryCondition = "F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + faceIdx.ToString() + 
                             "::Wall_" + FIdx[faceIdx].IndexOf(adjCrvIdx).ToString();
 
                     edgeLoop.Add(kvp.Value[j]);
@@ -282,8 +282,8 @@ namespace Gingerbread.Core
 
                 // mark the shell region. make it the first element in the list: regions
                 // this could mandate every nested regions to have its outer shell
-                //Debug.Print($"Log preparing for region F{levelId}::B{blockId}::G{groupId}::Z{kvp.Key} with {ptLoop.Count} edges");
-                gbRegion newRegion = new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::Z" + kvp.Key.ToString(), ptLoop, infoLoop);
+                //Debug.Print($"Log preparing for region F{levelId}::B{blockId}::G{groupId}::R{kvp.Key} with {ptLoop.Count} edges");
+                gbRegion newRegion = new gbRegion("F" + levelId + "::B" + blockId + "::G" + groupId + "::R" + kvp.Key.ToString(), ptLoop, infoLoop);
                 if (shellId.Contains(kvp.Key))
                 {
                     newRegion.isShell = true;

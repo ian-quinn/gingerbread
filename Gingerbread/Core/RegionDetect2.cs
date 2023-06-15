@@ -194,22 +194,22 @@ namespace Gingerbread.Core
                     if (i == shellId)
                         // the shell region is a place holder for the entire process
                         // it will not appear in the final gbXML serialized. so, there must be 
-                        // label gaps of spaces, like from ::Z1 jumping to Z3
+                        // label gaps of spaces, like from ::R1 jumping to R3
                         // however, in this method, there can only be one invalid zone generated
                         // which means, the gapping happens only once, ideally
 
                         // thus, the adjacency label of the shell region is not that important
                         // however, marking their pairred edges of inner regions is a good convention
-                        tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::Z{adjPolyId}::Wall_{adjEdgeSequence}");
+                        tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::R{adjPolyId}::Wall_{adjEdgeSequence}");
                     else
                         if (adjPolyId == shellId)
-                            tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::Z{adjPolyId}::Outside_{adjEdgeSequence}");
+                            tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::R{adjPolyId}::Outside_{adjEdgeSequence}");
                         else
-                            tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::Z{adjPolyId}::Wall_{adjEdgeSequence}");
+                            tagLoop.Add($"F{levelId}::B{blockId}::G{groupId}::R{adjPolyId}::Wall_{adjEdgeSequence}");
                 }
 
                 gbRegion newRegion = new gbRegion(
-                    $"F{levelId}::B{blockId}::G{groupId}::Z{i}", vtLoops[i], tagLoop);
+                    $"F{levelId}::B{blockId}::G{groupId}::R{i}", vtLoops[i], tagLoop);
                 if (i == shellId)
                 {
                     newRegion.isShell = true;

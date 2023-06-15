@@ -448,7 +448,7 @@ namespace Gingerbread.Core
 
     public class gbZone
     {
-        public string id; // structured relationships F0::Z0::Srf_1
+        public string id; // structured relationships F0::R0::Srf_1
         public List<gbXYZ> loop;
         public List<List<gbXYZ>> tiles;
 
