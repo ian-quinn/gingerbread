@@ -792,6 +792,7 @@ namespace Gingerbread.Core
                             {
                                 // duplicate sectLoops only for debugging
                                 // if stable just modify sectLoops directly
+                                // TASK is it necessary to close the loop rawLoop here?
                                 List<List<gbXYZ>> rawLoops = new List<List<gbXYZ>>();
                                 for (int j = sectLoops.Count - 1; j >= 0; j--)
                                 {
@@ -831,7 +832,10 @@ namespace Gingerbread.Core
                                     {
                                         // for a concave simply connected region
                                         // and a multiply connected region
-                                        List<List<gbXYZ>> casters = RegionTessellate.Rectangle(mcrs[j]);
+                                        List<List<gbXYZ>> casters = new List<List<gbXYZ>>() { mcrs[j][0] };
+                                        try { casters = RegionTessellate.Rectangle(mcrs[j]); }
+                                        catch (Exception e) { }
+                                        
                                         foreach (List<gbXYZ> caster in casters)
                                         {
                                             List<gbXYZ> revLoop = GBMethod.ReorderPoly(
