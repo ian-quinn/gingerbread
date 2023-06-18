@@ -34,8 +34,6 @@ namespace Gingerbread.Properties {
                 this["ShortCurveTolerance"] = value;
             }
         }
-
-        // Global tolerance parameter for algorithm
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -48,7 +46,7 @@ namespace Gingerbread.Properties {
                 this["tolDouble"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0.5")]
@@ -96,7 +94,19 @@ namespace Gingerbread.Properties {
                 this["tolAlignment"] = value;
             }
         }
-
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("1")]
+        public double tolAlignmentRatio {
+            get {
+                return ((double)(this["tolAlignmentRatio"]));
+            }
+            set {
+                this["tolAlignmentRatio"] = value;
+            }
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("10")]
@@ -111,17 +121,15 @@ namespace Gingerbread.Properties {
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("1")]
-        public double tolAlignmentRatio {
+        [global::System.Configuration.DefaultSettingValueAttribute("0")]
+        public double tolCollapse {
             get {
-                return ((double)(this["tolAlignmentRatio"]));
+                return ((double)(this["tolCollapse"]));
             }
             set {
-                this["tolAlignmentRatio"] = value;
+                this["tolCollapse"] = value;
             }
         }
-
-        // User information
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -158,18 +166,6 @@ namespace Gingerbread.Properties {
                 this["originZ"] = value;
             }
         }
-
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string checkInfo {
-            get {
-                return ((string)(this["checkInfo"]));
-            }
-            set {
-                this["checkInfo"] = value;
-            }
-        }
         
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
@@ -180,18 +176,6 @@ namespace Gingerbread.Properties {
             }
             set {
                 this["projInfo"] = value;
-            }
-        }
-        
-        [global::System.Configuration.UserScopedSettingAttribute()]
-        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string spiderPath {
-            get {
-                return ((string)(this["spiderPath"]));
-            }
-            set {
-                this["spiderPath"] = value;
             }
         }
         
@@ -290,7 +274,7 @@ namespace Gingerbread.Properties {
                 this["projElevation"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("0")]
@@ -302,9 +286,43 @@ namespace Gingerbread.Properties {
                 this["projAzimuth"] = value;
             }
         }
-
-        // Parameters for program control
-
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string checkInfo {
+            get {
+                return ((string)(this["checkInfo"]));
+            }
+            set {
+                this["checkInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string geomInfo {
+            get {
+                return ((string)(this["geomInfo"]));
+            }
+            set {
+                this["geomInfo"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("")]
+        public string spiderPath {
+            get {
+                return ((string)(this["spiderPath"]));
+            }
+            set {
+                this["spiderPath"] = value;
+            }
+        }
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
@@ -328,16 +346,28 @@ namespace Gingerbread.Properties {
                 this["includeRef"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("True")]
-        public bool shadowPrev {
+        public bool followPrev {
             get {
-                return ((bool)(this["shadowPrev"]));
+                return ((bool)(this["followPrev"]));
             }
             set {
-                this["shadowPrev"] = value;
+                this["followPrev"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool followGrid {
+            get {
+                return ((bool)(this["followGrid"]));
+            }
+            set {
+                this["followGrid"] = value;
             }
         }
         
@@ -364,7 +394,7 @@ namespace Gingerbread.Properties {
                 this["punchMass"] = value;
             }
         }
-
+        
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
@@ -389,18 +419,15 @@ namespace Gingerbread.Properties {
             }
         }
         
-
-        // Cache information for floorplan drawings display
-
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("")]
-        public string geomInfo {
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool patchWall {
             get {
-                return ((string)(this["geomInfo"]));
+                return ((bool)(this["patchWall"]));
             }
             set {
-                this["geomInfo"] = value;
+                this["patchWall"] = value;
             }
         }
         
@@ -511,9 +538,5 @@ namespace Gingerbread.Properties {
                 this["offsetZ"] = value;
             }
         }
-        
-        
-        
-        
     }
 }

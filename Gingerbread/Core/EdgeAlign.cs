@@ -17,7 +17,7 @@ namespace Gingerbread.Core
         /// <summary>
         /// Main function of this component to align points on certain direction
         /// </summary>
-        public static List<gbSeg> AlignEdges(List<gbSeg> edges, 
+        public static List<gbSeg> AlignEdges(List<gbSeg> edges, List<gbSeg> grids, 
           double tol_d, double tol_c, double tol_theta)
         {
             // CAUTION
@@ -41,7 +41,7 @@ namespace Gingerbread.Core
             {
                 // for DEBUG purpose this list includes axes with 0 length
                 // remove those invalid axes in industry envrionment
-                var _axes = GetAxes(edges, direction, tol_d, tol_theta, out List<List<gbSeg>> sub_groups);
+                var _axes = GetAxes(edges, direction, grids, tol_d, tol_theta, out List<List<gbSeg>> sub_groups);
                 foreach (gbSeg ax in _axes)
                     if (ax.Length != 0)
                         axes.Add(ax);
@@ -348,8 +348,8 @@ namespace Gingerbread.Core
         /// then we add new point to this cluster. If there is no such cluster, this point starts new cluster.
         /// </summary>
         /// <returns></returns>
-        public static List<gbSeg> GetAxes(List<gbSeg> edges, gbXYZ direction, double tol_d, double tol_theta,
-            out List<List<gbSeg>> sub_groups)
+        public static List<gbSeg> GetAxes(List<gbSeg> edges, gbXYZ direction, List<gbSeg> grids, 
+            double tol_d, double tol_theta, out List<List<gbSeg>> sub_groups)
         {
             sub_groups = new List<List<gbSeg>>() { };
 
@@ -443,7 +443,25 @@ namespace Gingerbread.Core
                     {
                         if (cluster[0].Length > 2 * tol_d)
                         {
-                            axes.Add(GBMethod.SegProjDirection(cluster[0], direction));
+                            gbSeg _axis = GBMethod.SegProjDirection(cluster[0], direction);
+                            // check if it is already defined in Grids list
+                            double minDist = double.PositiveInfinity;
+                            gbSeg minProj = _axis;
+                            foreach (gbSeg grid in grids)
+                            {
+                                double angle_delta = GBMethod.VectorAnglePI_2(grid.Direction, direction);
+                                if (angle_delta < tol_theta)
+                                {
+                                    double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
+                                    if (gap < minDist && overlap > 0)
+                                    {
+                                        minDist = gap;
+                                        minProj = proj;
+                                    }
+                                }
+                            }
+                            if (minDist < tol_d / 2)
+                                axes.Add(minProj);
                         }
                         else
                         {
@@ -487,7 +505,27 @@ namespace Gingerbread.Core
 
                         gbSeg axis = new gbSeg(axis_start, axis_end);
                         if (axis.Length > 2 * tol_d)
-                            axes.Add(GBMethod.SegProjDirection(axis, direction));
+                        {
+                            gbSeg _axis = GBMethod.SegProjDirection(axis, direction);
+                            // check if it is already defined in Grids list
+                            double minDist = double.PositiveInfinity;
+                            gbSeg minProj = _axis;
+                            foreach (gbSeg grid in grids)
+                            {
+                                double angle_delta = GBMethod.VectorAnglePI_2(grid.Direction, direction);
+                                if (angle_delta < tol_theta)
+                                {
+                                    double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
+                                    if (gap < minDist && overlap > 0)
+                                    {
+                                        minDist = gap;
+                                        minProj = proj;
+                                    }
+                                }
+                            }
+                            if (minDist < tol_d / 2)
+                                axes.Add(minProj);
+                        }
                         else
                         {
                             axes.Add(new gbSeg(new gbXYZ(0, 0, 0), new gbXYZ(0, 0, 0)));

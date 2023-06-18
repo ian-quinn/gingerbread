@@ -19,6 +19,8 @@ namespace Gingerbread
 {
     class BatchGeometry
     {
+        static Properties.Settings sets = Properties.Settings.Default;
+
         // Private class, levelPack for convenient
         private class levelPack
         {
@@ -341,6 +343,7 @@ namespace Gingerbread
                 dictWindow.Add(z, new List<Tuple<gbXYZ, string>>());
                 dictShade.Add(z, new List<List<gbXYZ>>());
                 dictFloor.Add(z, new List<List<List<gbXYZ>>>());
+                dictGrid.Add(z, new List<gbSeg>());
                 // initiation of the dictCurtaSystem is at the end of the loop
 
 
@@ -583,6 +586,54 @@ namespace Gingerbread
                 double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
                 double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
 
+                // access footprint (refer to CmdSketchFootprint.cs)
+                // for a wall with door openings, its footprint can be several rectangulars
+                List<List<gbSeg>> footprints = new List<List<gbSeg>>();
+                if (wall.WallType.Kind == WallKind.Curtain)
+                {
+                    // TASK do not support curtain wall (not necessary for now)
+                    //CurtainGrid cg = wall.CurtainGrid;
+                    //footprints.AddRange(GetPanelPlaneIntersectionCurve(cg, activeViewElevation + tol));
+                    //footprints.AddRange(GetMullionPlaneIntersectionCurve(cg, activeViewElevation + tol));
+                }
+                else
+                {
+                    // not using boolean intersection
+                    // a test module for the GetSolidBottomFace() method
+                    foreach (GeometryObject obj in ge)
+                    {
+                        Solid solid = obj as Solid;
+                        if (null != solid)
+                        {
+                            var bottomFace = GetSolidBottomFace(solid);
+                            if (bottomFace != null)
+                            {
+                                foreach (CurveLoop loop in bottomFace.GetEdgesAsCurveLoops())
+                                {
+                                    List<gbSeg> edgeLoop = new List<gbSeg>() { };
+                                    foreach (Curve edge in loop)
+                                    {
+                                        if (edge is Line)
+                                        {
+                                            edgeLoop.Add(Util.gbSegConvert(edge as Line));
+                                        }
+                                        else
+                                        {
+                                            List<XYZ> ptsTessellated = new List<XYZ>(edge.Tessellate());
+                                            for (int i = 0; i < ptsTessellated.Count - 1; i++)
+                                                edgeLoop.Add(new gbSeg(
+                                                    Util.gbXYZConvert(ptsTessellated[i]), 
+                                                    Util.gbXYZConvert(ptsTessellated[i + 1])
+                                                    ));
+                                        }
+                                    }
+                                    footprints.Add(edgeLoop);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location lines if the wall lies within the range of this level
@@ -604,8 +655,8 @@ namespace Gingerbread
                     if (spanCheck > 0.5 * levels[i].height || 
                         (spanCheck > 0.3 * levels[i].height && isSpanMid))
                     {
-                            // if the WallType is CurtainWall, append it to dictCurtain
-                            if (wall.WallType.Kind == WallKind.Curtain)
+                        // if the WallType is CurtainWall, append it to dictCurtain
+                        if (wall.WallType.Kind == WallKind.Curtain)
                         {
                             // check if the curtain acts like a window
                             // the height of the curtain wall should be almost equal
@@ -687,6 +738,77 @@ namespace Gingerbread
                             // additionally, add them to dictFirewall if it is a firewall
                             if (isFirewall)
                                 dictFirewall[i].AddRange(temps);
+
+                            // do endpoint patch? if so...
+                            // find out the element jointed with this wall
+                            // check if their centerlines are intersected, if not
+                            // then append foorprints intersected by centerlines of both walls
+                            if (Properties.Settings.Default.patchWall)
+                            {
+                                List<gbSeg> wallPatch = new List<gbSeg>() { };
+                                List<gbSeg> flattenFootprints = Util.FlattenList(footprints);
+                                for (int m = 0; m < flattenFootprints.Count; m++)
+                                {
+                                    for (int n = 0; n < temps.Count; n++)
+                                    {
+                                        var llx_ = GBMethod.SegIntersection(flattenFootprints[m], temps[n],
+                                            Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolDouble,
+                                            out gbXYZ sect_, out double t1_, out double t2_);
+                                        if (llx_ == segIntersectEnum.IntersectOnBoth)
+                                        {
+                                            wallPatch.Add(flattenFootprints[m]);
+                                        }
+                                    }
+                                }
+                                if (wallPatch.Count == 0)
+                                    continue;
+
+                                ElementArray eAtStart = lc.get_ElementsAtJoin(0);
+                                ElementArray eAtEnd = lc.get_ElementsAtJoin(1);
+                                foreach (Element eJoined in eAtStart)
+                                {
+                                    if (eJoined is Wall)
+                                    {
+                                        Wall jointWall = eJoined as Wall;
+                                        LocationCurve jlc = jointWall.Location as LocationCurve;
+                                        if (jlc.Curve is Line)
+                                        {
+                                            gbSeg jlc_check = Util.gbSegConvert(jlc.Curve as Line);
+                                            var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
+                                                out gbXYZ sect, out double t1, out double t2);
+                                            if (llx == segIntersectEnum.Parallel)
+                                            {
+                                                // add auxiliary line segments at endpoints
+                                                dictWall[i].Add(wallPatch[0]);
+                                            }
+                                        }
+                                    }
+                                }
+                                foreach (Element eJoined in eAtEnd)
+                                {
+                                    if (eJoined is Wall)
+                                    {
+                                        Wall jointWall = eJoined as Wall;
+                                        LocationCurve jlc = jointWall.Location as LocationCurve;
+                                        if (jlc.Curve is Line)
+                                        {
+                                            gbSeg jlc_check = Util.gbSegConvert(jlc.Curve as Line);
+                                            var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
+                                                out gbXYZ sect, out double t1, out double t2);
+                                            if (llx == segIntersectEnum.Parallel)
+                                            {
+                                                // add auxiliary line segments at endpoints
+                                                if (wallPatch.Count == 2)
+                                                    dictWall[i].Add(wallPatch[1]);
+                                                else
+                                                    dictWall[i].Add(wallPatch[0]);
+                                            }
+                                        }
+                                    }
+                                }
+                                // also, if the wall footprint intersects with the separation line
+                                // append the same endpoint patch to dictWall
+                            }
                         }
                     }
                     // if a wall belongs to no level, make it a shading surface
@@ -911,6 +1033,28 @@ namespace Gingerbread
                         levels[i].elevation < bottom && 
                         levels[i].elevation + levels[i].height > summit)
                         dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                }
+            }
+
+            // ######################### Global Grid System ############################
+
+            if (sets.followGrid)
+            {
+                IList<Element> _eGrids = new FilteredElementCollector(doc)
+                .WhereElementIsNotElementType()
+                .OfCategory(BuiltInCategory.OST_Grids)
+                .ToElements();
+
+                foreach (Element eGrid in _eGrids)
+                {
+                    if (eGrid is Autodesk.Revit.DB.Grid)
+                    {
+                        var grid = eGrid as Autodesk.Revit.DB.Grid;
+                        if (!grid.IsCurved)
+                        {
+                            dictGrid[0].Add(Util.gbSegConvert(grid.Curve as Line));
+                        }
+                    }
                 }
             }
 
@@ -1219,6 +1363,32 @@ namespace Gingerbread
             // else
             // doing nothing and return the empty list
             return footprints;
+        }
+
+        // Private method
+        // Iterate to get the bottom face of a solid
+        static Face GetSolidBottomFace(Solid solid)
+        {
+            List<Face> faces = new List<Face>() { };
+            List<double> elevations = new List<double>() { };
+            double min = double.PositiveInfinity;
+            PlanarFace pf = null;
+            foreach (Face face in solid.Faces)
+            {
+                pf = face as PlanarFace;
+                if (null != pf)
+                {
+                    if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolDouble)
+                        && pf.FaceNormal.Z < 0)
+                    {
+                        faces.Add(pf);
+                        elevations.Add(pf.Origin.Z);
+                        if (elevations.Last() < min) min = elevations.Last();
+                    }
+                }
+            }
+            if (faces.Count == 0) return null;
+            return faces[elevations.IndexOf(min)];
         }
 
         // compare to a list of values to check if there are similar ones

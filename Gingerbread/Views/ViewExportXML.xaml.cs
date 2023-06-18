@@ -9,6 +9,7 @@ using System.Windows.Shapes;
 using System.Windows.Media;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Navigation;
 using System.Collections.Generic;
 
 using Autodesk.Revit.DB;
@@ -80,6 +81,8 @@ namespace Gingerbread.Views
                 Properties.Settings.Default.tolTheta = 0.01;
             Properties.Settings.Default.tolHoleArea = double.Parse(holearea.Text);
             Properties.Settings.Default.tolAlignmentRatio = double.Parse(alignmentratio.Text);
+            Properties.Settings.Default.tolCollapse = double.Parse(vertexcollapse.Text);
+            Properties.Settings.Default.tolDouble = double.Parse(precision.Text);
             Properties.Settings.Default.projName = projName.Text;
             Properties.Settings.Default.projAddress = projAddress.Text;
             //Properties.Settings.Default.projNumber = projNumber.Text;
@@ -101,7 +104,10 @@ namespace Gingerbread.Views
             Properties.Settings.Default.tolGrouping = 0.5;
             Properties.Settings.Default.tolPerimeter = 0.5;
             Properties.Settings.Default.tolAlignment = 0.15; 
+            Properties.Settings.Default.tolAlignmentRatio = 1.0;
             Properties.Settings.Default.tolTheta = 0.2;
+            Properties.Settings.Default.tolCollapse = 0;
+            Properties.Settings.Default.tolDouble = 0.0000001;
             Properties.Settings.Default.projName = "GingerbreadHouse";
             Properties.Settings.Default.projAddress = "Shanghai, China";
             //Properties.Settings.Default.projNumber = projNumber.Text;
@@ -145,15 +151,25 @@ namespace Gingerbread.Views
             Properties.Settings.Default.exportShade = false;
         }
         
-        private void ShadowPrev_Unchecked(object sender, RoutedEventArgs e)
+        private void FollowPrev_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.shadowPrev = false;
+            Properties.Settings.Default.followPrev = false;
         }
-        private void ShadowPrev_Checked(object sender, RoutedEventArgs e)
+        private void FollowPrev_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.shadowPrev = true;
+            Properties.Settings.Default.followPrev = true;
+        }
+        private void FollowGrid_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.followPrev = false;
+        }
+        private void FollowGrid_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.followPrev = true;
         }
         private void PunchMass_Unchecked(object sender, RoutedEventArgs e)
         {
@@ -184,6 +200,23 @@ namespace Gingerbread.Views
         {
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.patchColumn = true;
+        }
+        private void PatchWall_Unchecked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchWall = false;
+        }
+        private void PatchWall_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox cb = sender as CheckBox;
+            Properties.Settings.Default.patchWall = true;
+        }
+
+        // for more information...
+        private void Hyperlink_RequestNavigate(object sender, RequestNavigateEventArgs e)
+        {
+            Process.Start(new ProcessStartInfo(e.Uri.AbsoluteUri));
+            e.Handled = true;
         }
 
 

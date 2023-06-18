@@ -104,7 +104,7 @@ the boundary within this tolerance will be dragged onto that boundary."/>
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="tolInclination" Margin="0 4 0 5" 
                                     ToolTip="The angle threshold to tell if two vectors are co-lined. Usually the value &#x0a;
-                                   lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
+lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
 
                         <TextBox Grid.Row="0" Grid.Column="1" Name="grouping" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=tolGrouping, Mode=TwoWay}" Margin="0 2 0 2"/>
@@ -269,15 +269,18 @@ substract the atrium or shaft from your massing if it is exposed to outdoors.">
                                         <RowDefinition />
                                         <RowDefinition />
                                         <RowDefinition />
+                                        <RowDefinition />
                                     </Grid.RowDefinitions>
 
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="tolDouble" Margin="0 4 0 5" 
                                         ToolTip="The tolerance performing double precision calculation."/>
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="tolHoleArea" Margin="0 4 0 5" 
                                         ToolTip="There can be holes within the recognized space polygon, forming multiple connected regiosn. &#x0a;
-                                               All holes with area below this threshold will be neglected. These holes may be occupied&#x0a;
-                                               with small cabin, janitor room or columns, which hardly affect energy simulation."/>
+All holes with area below this threshold will be neglected. These holes may be occupied&#x0a;
+with small cabin, janitor room or columns, which hardly affect energy simulation."/>
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignRatio" Margin="0 4 0 5"
+                                        ToolTip=""></TextBlock>
+                                    <TextBlock Grid.Row="3" Grid.Column="0" Text="tolCollapse" Margin="0 4 0 5"
                                         ToolTip=""></TextBlock>
 
                                     <TextBox Grid.Row="0" Grid.Column="1" Name="precision" Padding="2" 
@@ -286,6 +289,8 @@ substract the atrium or shaft from your massing if it is exposed to outdoors.">
                                              Text="{Binding Source={x:Static p:Settings.Default}, Path=tolHoleArea, Mode=TwoWay}" Margin="0 2 0 2"/>
                                     <TextBox Grid.Row="2" Grid.Column="1" Name="alignmentratio" Padding="2" 
                                              Text="{Binding Source={x:Static p:Settings.Default}, Path=tolAlignmentRatio, Mode=TwoWay}" Margin="0 2 0 2"/>
+                                    <TextBox Grid.Row="3" Grid.Column="1" Name="vertexcollapse" Padding="2" 
+                                             Text="{Binding Source={x:Static p:Settings.Default}, Path=tolCollapse, Mode=TwoWay}" Margin="0 2 0 2"/>
                                 </Grid>
                             </StackPanel>
 
@@ -293,21 +298,39 @@ substract the atrium or shaft from your massing if it is exposed to outdoors.">
                                 <CheckBox x:Name="PatchFloorHole" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchFloor, Mode=TwoWay}"
                               Checked ="PatchFloorHole_Checked" Unchecked ="PatchFloorHole_Unchecked"  Margin="0 0 0 5" 
                               ToolTip="The hole within the floor that may indicate an atrium. The atrim boundary will&#x0a;
-                                          create an air wall between the atrium and adjacent spaces. If checked, the algorithm will &#x0a;
-                                          add these hole boundaries to the wall centerlines, helping with the region detection.">
+create an air wall between the atrium and adjacent spaces. If checked, the algorithm will &#x0a;
+add these hole boundaries to the wall centerlines, helping with the region detection.">
                                     Patch centerlines at floor holes (atrium)</CheckBox>
                                 <CheckBox x:Name="PatchColumn" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchColumn, Mode=TwoWay}"
                               Checked ="PatchColumn_Checked" Unchecked ="PatchColumn_Unchecked"  Margin="0 0 0 5" 
                               ToolTip="Columns may break up the continuous wall centerlines thus making it hard for space &#x0a;
-                                          boundary recognition. If checked, the algorithm will try to join the wall centerlines &#x0a;
-                                          at the columns (rectangular, special-shaped or cylinder).">
+boundary recognition. If checked, the algorithm will try to join the wall centerlines &#x0a;
+at the columns (rectangular, special-shaped or cylinder).">
                                     Patch centerlines at columns</CheckBox>
-                                <CheckBox x:Name="ShadowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=shadowPrev, Mode=TwoWay}"
-                              Checked ="ShadowPrev_Checked" Unchecked ="ShadowPrev_Unchecked" Margin="0 0 0 5" 
-                              ToolTip="Align the floorplan boundary shadowing the previous floorplan. That is, use the axes of &#x0a;
-                                          previous floorplan to align the wall centerlines of the next floorplan. This could &#x0a;
-                                          reduce the surface debris but may cause space or surface matching failures.">
-                                    Shadow previous floorplan</CheckBox>
+                                <CheckBox x:Name="PatchWall" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchWall, Mode=TwoWay}"
+                              Checked ="PatchWall_Checked" Unchecked ="PatchWall_Unchecked"  Margin="0 0 0 5" 
+                              ToolTip="Two edges of the wall footprint incident to the centerline will be included, &#x0a;
+which helps to identify space boundary formed by walls with multiple thickness walls.">
+                                    Patch centerlines at wall joints</CheckBox>
+                                <CheckBox x:Name="FollowPrev" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=followPrev, Mode=TwoWay}"
+                              Checked ="FollowPrev_Checked" Unchecked ="FollowPrev_Unchecked" Margin="0 0 0 5" 
+                              ToolTip="Try to align the wall centerlines to the previous floorplan. That is, use the axes of &#x0a;
+previous floorplan to align the wall centerlines of the next floorplan. This could &#x0a;
+reduce the surface debris but may cause space or surface matching failures.">
+                                    Follow previous floorplan</CheckBox>
+                                <CheckBox x:Name="FollowGrid" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=followGrid, Mode=TwoWay}"
+                              Checked ="FollowGrid_Checked" Unchecked ="FollowGrid_Unchecked" Margin="0 0 0 5" 
+                              ToolTip="Try to align the wall centerlines boundary to global grids system.">
+                                    Follow global grid system</CheckBox>
+                            </StackPanel>
+
+                            <StackPanel>
+                                <TextBlock>
+                                    <Hyperlink NavigateUri="https://gingerbread.readthedocs.io/en/latest/interface.html#interface" 
+                                               RequestNavigate="Hyperlink_RequestNavigate">
+                                        More info about these settings...
+                                    </Hyperlink>
+                                </TextBlock>
                             </StackPanel>
                             
                         </StackPanel>

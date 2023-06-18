@@ -24,6 +24,9 @@ namespace Gingerbread
         public ProgressBarControl CurrentControl { get; set; }
         bool Cancel = false;
 
+        // make global settings shorter
+        Properties.Settings sets = Properties.Settings.Default;
+
         private delegate void ProgressBarDelegate();
 
         public ExtExportXML() { }
@@ -95,23 +98,18 @@ namespace Gingerbread
 
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
 
+                // define global grid system
+                List<gbSeg> grids = dictGrid[0];
+
                 List<gbSeg> enclosings = new List<gbSeg>();
                 enclosings.AddRange(dictWall[z]);
                 enclosings.AddRange(dictCurtain[z]);
                 enclosings.AddRange(dictCurtaSystem[z]);
                 enclosings.AddRange(dictSeparationline[z]);
+
                 dictAirwall[z].AddRange(dictSeparationline[z]);
                 List<gbSeg> _flatLines = GBMethod.FlattenLines(enclosings);
                 dictEnclosing.Add(z, enclosings);
-
-                // PENDING
-                // patch the columns. the patch lines may have collision with the wall lines
-                // thus making the alignment unstable
-                if (Properties.Settings.Default.patchColumn)
-                {
-                    List<gbSeg> colPatches = LayoutPatch.PatchColumn(_flatLines, dictColumn[z]);
-                    _flatLines.AddRange(colPatches);
-                }
 
                 // the extension copies all segments to another list
                 // not stable to operate the endpoints directly for now
@@ -119,9 +117,9 @@ namespace Gingerbread
                     for (int j = 0; j < _flatLines.Count; j++)
                         if (i != j)
                             _flatLines[i] = GBMethod.SegExtensionToSeg(_flatLines[i], _flatLines[j],
-                                Properties.Settings.Default.tolPerimeter);
+                                sets.tolPerimeter);
                 //GBMethod.SegExtension2(flatLines[i], flatLines[j],
-                //    Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolExpand);
+                //    sets.tolDouble, sets.tolExpand);
 
                 // note SegsWelding needs very small tolerance
                 // the operation of segment intersection must be very accurate
@@ -129,14 +127,14 @@ namespace Gingerbread
                 // it seems that very small segment may escape the tolerance
                 // so it is safe to skip very tiny line shatters
                 List<gbSeg> flatLines = GBMethod.SegsWelding(GBMethod.SkimOut(_flatLines, 0.001), 
-                    Properties.Settings.Default.tolAlignment / 5,
-                    Properties.Settings.Default.tolAlignment / 5, 
-                    Properties.Settings.Default.tolTheta);
+                    sets.tolAlignment / 5,
+                    sets.tolAlignment / 5, 
+                    sets.tolTheta);
 
                 // sort out building blocks. usually there is only one block for each level
                 // this will cluster parallel segments with minor gaps < tolGroup
                 List<List<gbSeg>> lineGroups = GBMethod.SegClusterByFuzzyIntersection(flatLines,
-                    Properties.Settings.Default.tolGrouping, Properties.Settings.Default.tolGrouping);
+                    sets.tolGrouping, sets.tolGrouping);
 
                 // a trash bin for stray lines that are processed after space detection
                 // there are three steps that may dump debris to this trash bin
@@ -171,21 +169,21 @@ namespace Gingerbread
                 {
                     List<gbXYZ> orthoHull;
                     // try to get the block boundary first
-                    List<gbSeg> aligLineGroup = EdgeAlign.AlignEdges(lineGroup, 
-                        Properties.Settings.Default.tolAlignment,
-                        Properties.Settings.Default.tolAlignment / 2,
-                        Properties.Settings.Default.tolTheta);
+                    List<gbSeg> aligLineGroup = EdgeAlign.AlignEdges(lineGroup, grids, 
+                        sets.tolAlignment,
+                        sets.tolCollapse == 0? sets.tolAlignment / 2 : sets.tolCollapse,
+                        sets.tolTheta);
 
-                    //List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, Properties.Settings.Default.tolAlignment);
+                    //List<gbSeg> aliLineGroup = GBMethod.SegsAlignment(lineGroup, sets.tolAlignment);
 
                     //Debug.Print($"ExtExportXML:: reduce line from {lineGroup.Count} to {aliLineGroup.Count}");
 
                     List<gbSeg> extLineGroup = GBMethod.SegsExtensionByLength(aligLineGroup, 
-                        Properties.Settings.Default.tolPerimeter);
+                        sets.tolPerimeter);
                     List<gbSeg> weldLineGroup = GBMethod.SegsWelding(extLineGroup, 
-                        Properties.Settings.Default.tolAlignment / 5,
-                        Properties.Settings.Default.tolAlignment / 5, 
-                        Properties.Settings.Default.tolTheta);
+                        sets.tolAlignment / 5,
+                        sets.tolAlignment / 5, 
+                        sets.tolTheta);
 
                     orthoHull = RegionDetect2.GetShell(weldLineGroup);
 
@@ -263,13 +261,13 @@ namespace Gingerbread
                         // need more cunning way to do this?
                         // now compare the area of offsets and the hull 22-04-15
                         double areaHull = GBMethod.GetPolyArea(hullGroups[b]);
-                        double areaOffset = GBMethod.GetPolyPerimeter(hullGroups[b]) * Properties.Settings.Default.tolPerimeter;
+                        double areaOffset = GBMethod.GetPolyPerimeter(hullGroups[b]) * sets.tolPerimeter;
                         if (g == 0 && areaHull > areaOffset)
                         {
                             lineBlocks[b][g] = LayoutPatch.PatchPerimeter(lineBlocks[b][g], hullGroups[b],
                                 dictWall[z], dictCurtain[z], dictWindow[z], dictDoor[z], dictFloor[z], 
-                                Properties.Settings.Default.tolPerimeter, Properties.Settings.Default.tolGrouping,
-                                Properties.Settings.Default.patchFloorHole? z == 0 ? false : true : false, 
+                                sets.tolPerimeter, sets.tolGrouping,
+                                sets.patchFloorHole? z == 0 ? false : true : false, 
                                 // 20230612 set include air boundary from floor panel may lead to unwanted results
                                 // because some models are really bad on floor modeling
                                 // TASK add another option to toggle it
@@ -295,22 +293,22 @@ namespace Gingerbread
                         // 2023-06-8 remove point alignment
                         /*
                         List<gbXYZ> joints = PointAlign.GetJoints(lineShatters,
-                            Properties.Settings.Default.tolDouble, out List<List<gbXYZ>> hands);
+                            sets.tolDouble, out List<List<gbXYZ>> hands);
 
                         List<List<gbXYZ>> anchorInfo_temp, anchorInfo;
                         List<gbSeg> nextBlueprint_1, nextBlueprint_2;
                         List<gbXYZ> ptAlign_temp = PointAlign.AlignPts(joints, hands, preBlueprint,
-                            Properties.Settings.Default.tolTheta,
-                            Properties.Settings.Default.tolAlignment,
-                            Properties.Settings.Default.tolDouble,
+                            sets.tolTheta,
+                            sets.tolAlignment,
+                            sets.tolDouble,
                             out anchorInfo_temp, out nextBlueprint_1);
                         //List<gbSeg> lattice_temp = PointAlign.GetLattice(ptAlign_temp, anchorInfo_temp,
-                        //    Properties.Settings.Default.tolDouble, out List<gbSeg> someDebris);
+                        //    sets.tolDouble, out List<gbSeg> someDebris);
                         List<string> jointsLabels_temp = Util.HandString(anchorInfo_temp);
                         List<gbXYZ> ptAlign = PointAlign.AlignPts(ptAlign_temp, anchorInfo_temp, preBlueprint,
-                            Properties.Settings.Default.tolTheta - Math.PI / 2,
-                            Properties.Settings.Default.tolAlignment,
-                            Properties.Settings.Default.tolDouble,
+                            sets.tolTheta - Math.PI / 2,
+                            sets.tolAlignment,
+                            sets.tolDouble,
                             out anchorInfo, out nextBlueprint_2);
                         List<string> jointsLabels = Util.HandString(anchorInfo);
                         nextBlueprint.AddRange(nextBlueprint_1);
@@ -318,17 +316,17 @@ namespace Gingerbread
                         preBlueprint = nextBlueprint;
                         */
 
-                        List<gbSeg> lineAligned = EdgeAlign.AlignEdges(lineBlocks[b][g],
-                            Properties.Settings.Default.tolAlignment,
-                            Properties.Settings.Default.tolAlignment / 2,
-                            Properties.Settings.Default.tolTheta);
+                        List<gbSeg> lineAligned = EdgeAlign.AlignEdges(lineBlocks[b][g], grids, 
+                            sets.tolAlignment,
+                            sets.tolCollapse == 0 ? sets.tolAlignment / 2 : sets.tolCollapse,
+                            sets.tolTheta);
 
-                        List<gbSeg> lineExtended = GBMethod.SegsExtensionByLength(lineAligned, 
-                            Properties.Settings.Default.tolPerimeter);
-                        List<gbSeg> lineWelded = GBMethod.SegsWelding(lineExtended, 
-                            Properties.Settings.Default.tolAlignment / 5,
-                            Properties.Settings.Default.tolAlignment / 5, 
-                            Properties.Settings.Default.tolTheta);
+                        List<gbSeg> lineExtended = GBMethod.SegsExtensionByLength(lineAligned,
+                            sets.tolPerimeter);
+                        List<gbSeg> lineWelded = GBMethod.SegsWelding(lineExtended,
+                            sets.tolAlignment / 5,
+                            sets.tolAlignment / 5,
+                            sets.tolTheta);
 
                         // VISUALIZATION
                         //using (Transaction tx = new Transaction(doc, "Sketch anchors"))
@@ -354,7 +352,7 @@ namespace Gingerbread
                         /*
                         List<gbSeg> latticeDebries; // abandoned for now
                         List<gbSeg> lattice = PointAlign.GetLattice(ptAlign, anchorInfo,
-                            Properties.Settings.Default.tolDouble, out latticeDebries);
+                            sets.tolDouble, out latticeDebries);
                         strays.AddRange(latticeDebries);
                         */
 
@@ -446,6 +444,8 @@ namespace Gingerbread
                     JsonSchema.UV endPt = new JsonSchema.UV { coordU = seg.End.X, coordV = seg.End.Y };
                     jsSegs.Add(new JsonSchema.Seg { name = "", start = startPt, end = endPt });
                 }
+                if (jsSegs is null || jsSegs.Count == 0)
+                    continue;
 
                 List<JsonSchema.Poly> jsPolys = new List<JsonSchema.Poly>() { };
                 foreach (gbRegion room in rooms.Value)
@@ -460,6 +460,9 @@ namespace Gingerbread
                     }
                     jsPolys.Add(new JsonSchema.Poly { name = room.label, vertice = jsPts });
                 }
+                if (jsPolys is null || jsPolys.Count == 0)
+                    continue;
+
                 jsLevels.Add(new JsonSchema.Level { 
                     name = dictElevation[rooms.Key].Item1, 
                     elevation = dictElevation[rooms.Key].Item2, 
@@ -472,11 +475,11 @@ namespace Gingerbread
             List<JsonSchema.UV> jsBoundingBox = Util.gbXYZ2Json(boundingBox);
             JsonSchema.Building jsBuilding = new JsonSchema.Building
             {
-                name = Properties.Settings.Default.projName,
+                name = sets.projName,
                 canvas = new JsonSchema.Poly { name = "canvas", vertice = jsBoundingBox },
                 levels = jsLevels
             };
-            Properties.Settings.Default.geomInfo = JsonSerializer.Serialize(jsBuilding);
+            sets.geomInfo = JsonSerializer.Serialize(jsBuilding);
             // end Json serialization
 
 

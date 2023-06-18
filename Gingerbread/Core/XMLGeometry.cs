@@ -664,6 +664,12 @@ namespace Gingerbread.Core
                         foreach (List<gbXYZ> tile in zone.tiles)
                         {
                             RegionTessellate.SimplifyPoly(tile);
+                            // DEBUG LOG
+                            // debris too small will collapse to 0 area with no vertices
+                            // skip it to avoid crush
+                            if (tile.Count == 0)
+                                continue;
+
                             List<gbXYZ> tilePoly = GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.height));
                             gbSurface ceilingTile = new gbSurface(zone.id + "::Ceil_" + counter, zone.id,
                                 tilePoly, 0);
