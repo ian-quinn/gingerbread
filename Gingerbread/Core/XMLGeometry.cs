@@ -546,8 +546,8 @@ namespace Gingerbread.Core
                     }
                 }
 
-                // airwall assignment to interior walls. air boundary as for ceiling or floor
-                // will be left to the serialization process
+                // airwall assignment to interior walls. 
+                // air boundary for ceiling/floor will be left to the serialization process
                 foreach (gbSeg airwall in dictAirwall[level.id])
                 {
                     gbSeg projection;
@@ -567,7 +567,9 @@ namespace Gingerbread.Core
                             false, out double distance);
                         if (projection.Length > 0.5 && distance < Properties.Settings.Default.tolAlignment)
                         {
-                            thisSurface[k].type = surfaceTypeEnum.Air;
+                            // exterior wall cannot be air boundary
+                            if (thisSurface[k].type != surfaceTypeEnum.ExteriorWall)
+                                thisSurface[k].type = surfaceTypeEnum.Air;
                             Util.LogPrint($"Airwall: Space separation added to {thisSurface[k].id}");
                         }
                     }
