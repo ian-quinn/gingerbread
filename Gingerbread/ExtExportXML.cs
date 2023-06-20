@@ -179,7 +179,7 @@ namespace Gingerbread
                     //Debug.Print($"ExtExportXML:: reduce line from {lineGroup.Count} to {aliLineGroup.Count}");
 
                     List<gbSeg> extLineGroup = GBMethod.SegsExtensionByLength(aligLineGroup, 
-                        sets.tolPerimeter);
+                        sets.tolAlignment);
                     List<gbSeg> weldLineGroup = GBMethod.SegsWelding(extLineGroup, 
                         sets.tolAlignment / 5,
                         sets.tolAlignment / 5, 
@@ -196,6 +196,7 @@ namespace Gingerbread
 
                     //RegionTessellate.SimplifyPoly(orthoHull);
                     orthoHull.Add(orthoHull[0]);
+
                     hullGroups.Add(orthoHull);
                 }
 
@@ -209,7 +210,9 @@ namespace Gingerbread
                         if (i != j)
                             if (GBMethod.IsPolyInPoly(hullGroups[i], hullGroups[j]))
                             {
-                                lineBlocks[j].Add(lineGroups[i]);
+                                // if the hull area is too small, ignore the lines within
+                                if (GBMethod.GetPolyArea(hullGroups[i]) > sets.tolHoleArea)
+                                    lineBlocks[j].Add(lineGroups[i]);
                                 redundantBlockIds.Add(i);
                             }
                     }
@@ -322,7 +325,7 @@ namespace Gingerbread
                             sets.tolTheta);
 
                         List<gbSeg> lineExtended = GBMethod.SegsExtensionByLength(lineAligned,
-                            sets.tolPerimeter);
+                            sets.tolAlignment);
                         List<gbSeg> lineWelded = GBMethod.SegsWelding(lineExtended,
                             sets.tolAlignment / 5,
                             sets.tolAlignment / 5,

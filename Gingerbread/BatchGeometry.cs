@@ -774,9 +774,11 @@ namespace Gingerbread
                                         if (jlc.Curve is Line)
                                         {
                                             gbSeg jlc_check = Util.gbSegConvert(jlc.Curve as Line);
-                                            var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
-                                                out gbXYZ sect, out double t1, out double t2);
-                                            if (llx == segIntersectEnum.Parallel)
+                                            //var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
+                                            //    out gbXYZ sect, out double t1, out double t2);
+                                            var angle_delta = GBMethod.VectorAnglePI_2(temps[0].Direction, jlc_check.Direction);
+                                            var para_gap = GBMethod.SegDistanceToSeg(temps[0], jlc_check, out double overlap, out gbSeg proj);
+                                            if (angle_delta < sets.tolTheta && para_gap > sets.tolAlignment / 3)
                                             {
                                                 // add auxiliary line segments at endpoints
                                                 dictWall[i].Add(wallPatch[0]);

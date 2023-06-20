@@ -104,7 +104,7 @@ namespace Gingerbread.Core
             List<List<gbXYZ>> vtLoops = new List<List<gbXYZ>>() { };
             List<List<int>> edgeLoops = new List<List<int>>() { };
             List<List<string>> tagLoops = new List<List<string>>() { };
-            int shellId = 0;
+            List<int> cwLoops = new List<int>() { };
 
             int counter = 0;
             while (edge_remain.Count > 0)
@@ -167,7 +167,7 @@ namespace Gingerbread.Core
                 // mark the shell loop
                 if (GBMethod.IsClockwise(vtLoop))
                 {
-                    shellId = vtLoops.Count;
+                    cwLoops.Add(vtLoops.Count);
                 }
                 vtLoops.Add(vtLoop);
 
@@ -177,6 +177,42 @@ namespace Gingerbread.Core
                     edge_remain.Remove(index);
                 }
             }
+
+            // the cwLoopId includes outer shell or the inner holes
+            // you can tell them apart by selecting the maximum area
+            int shellId = 0; // let the program proceed though the result may be ridiculous
+            if (cwLoops.Count > 0) shellId = cwLoops[0];
+            double maxArea = 0;
+            for (int i = 0; i < cwLoops.Count; i++)
+            {
+                double thisArea = GBMethod.GetPolyArea(vtLoops[cwLoops[i]]);
+                if (thisArea > maxArea)
+                {
+                    shellId = cwLoops[i];
+                    maxArea = thisArea;
+                }
+            }
+            List<int> holeLoops = new List<int>() { };
+            foreach (int loopId in cwLoops)
+            {
+                if (loopId != shellId)
+                    holeLoops.Add(loopId);
+            }
+            // check the containment relation between the holes and other loops
+            // to find their upper level. this only supports one level nesting
+            List<int> nestLoops = new List<int>() { };
+            for (int i = 0; i < holeLoops.Count; i++)
+            {
+                for (int j = 0; j < vtLoops.Count; j++)
+                {
+                    if (cwLoops.Contains(j))
+                        continue;
+                    if (GBMethod.IsPolyInPoly(vtLoops[holeLoops[i]], vtLoops[j]))
+                        nestLoops.Add(j);
+                }
+            }
+            // TASK
+            // further for MCR creation
 
             // iterate all recognized polylines
             // update boundary condition tags, create regions
