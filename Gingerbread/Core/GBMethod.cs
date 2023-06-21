@@ -318,8 +318,7 @@ namespace Gingerbread.Core
                         }
                         else
                         {
-                            double distance = SegDistanceToSeg(lineGroup[i], linePool[j],
-                                out double overlap, out gbSeg proj);
+                            double distance = SegDistanceToSeg(lineGroup[i], linePool[j], out double overlap, out _);
                             double delta_angle = VectorAnglePI_2(lineGroup[i].Direction,
                                 linePool[j].Direction);
                             // BUG note here the overlap does not allow tol_gap to exist
@@ -636,7 +635,7 @@ namespace Gingerbread.Core
         {
             gbXYZ start = subj.Start;
             gbXYZ end = subj.End;
-            double angle = VectorAnglePI_2(subj.Direction, obj.Direction);
+            //double angle = VectorAnglePI_2(subj.Direction, obj.Direction);
             //Debug.Print($"GBMethod::SegDistanceToSeg check angle {angle}");
 
             double d1 = PtDistanceToSeg(start, obj, out gbXYZ plummet1, out double t1);
@@ -656,6 +655,45 @@ namespace Gingerbread.Core
             else
                 overlap = t2 - t1;
             proj = new gbSeg(plummet1, plummet2);
+
+            var llx = SegIntersection(subj, obj, _eps, _eps, out gbXYZ sect, out double _t1, out double _t2);
+            if (llx == segIntersectEnum.Parallel ||
+                llx == segIntersectEnum.IntersectOnLine)
+                return (d1 + d2) / 2;
+            else
+                return 0;
+        }
+
+        public static double SegProjectToSeg(gbSeg subj, gbSeg obj, out double overlap, out gbSeg proj, out gbSeg union)
+        {
+            // after projection, there are four end points in total
+            // the union is a segment by connecting the two points at the middle
+            // it can be segment with positive length, or with negative length (virtual one)
+
+            gbXYZ start = subj.Start;
+            gbXYZ end = subj.End;
+
+            double d1 = PtDistanceToSeg(start, obj, out gbXYZ plummet1, out double t1);
+            double d2 = PtDistanceToSeg(end, obj, out gbXYZ plummet2, out double t2);
+            if (t1 > t2)
+                Util.Swap(ref t1, ref t2);
+            if (t2 < 0 || t1 > 1)
+                overlap = 0;
+            else if (t1 < 0 && t2 > 1)
+                overlap = 1;
+            else if (t1 < 0)
+                overlap = t2;
+            // overlap = 0 - t1;
+            else if (t2 > 1)
+                overlap = 1 - t1;
+            // overlap = 1 - t2;
+            else
+                overlap = t2 - t1;
+            proj = new gbSeg(plummet1, plummet2);
+
+            List<double> evas = new List<double>() { 0, 1, t1, t2 };
+            evas.Sort();
+            union = new gbSeg(obj.PointAt(evas[1]), obj.PointAt(evas[2]));
 
             var llx = SegIntersection(subj, obj, _eps, _eps, out gbXYZ sect, out double _t1, out double _t2);
             if (llx == segIntersectEnum.Parallel ||
@@ -921,7 +959,7 @@ namespace Gingerbread.Core
                 return PtExpansionBox(edge.PointAt(0), ext_x < ext_y ? ext_x : ext_y);
 
             List<gbXYZ> vertices = new List<gbXYZ>() { };
-            gbXYZ direction = edge.Direction / edge.Length;
+            gbXYZ direction = edge.Direction;
             gbXYZ perpCW = new gbXYZ(direction.Y, -direction.X, 0);
             gbXYZ perpCCW = new gbXYZ(-direction.Y, direction.X, 0);
             vertices.Add(edge.PointAt(0) - ext_x * direction + ext_y * perpCCW);

@@ -1197,9 +1197,9 @@ namespace Gingerbread.Core
                         intersectChecker == segIntersectEnum.ColineOverlap)
                     {
                         double distance = GBMethod.SegDistanceToSeg(seg, surface.locationLine, 
-                            out double overlap1, out gbSeg proj1);
+                            out double overlap1, out _);
                         double distance_ = GBMethod.SegDistanceToSeg(surface.locationLine, seg, 
-                            out double overlap2, out gbSeg proj2);
+                            out double overlap2, out _);
                         if (distance < _wallGapThreshold)
                         {
                             if (overlap1 > _wallOverlapThreshold || overlap2 > _wallOverlapThreshold)

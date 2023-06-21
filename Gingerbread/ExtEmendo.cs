@@ -32,6 +32,7 @@ namespace Gingerbread
             BatchGeometry.Execute(doc,
                 out Dictionary<int, Tuple<string, double>> dictElevation,
                 out Dictionary<int, List<gbSeg>> dictWall,
+                out Dictionary<int, List<gbSeg>> dictWallPatch,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
                 out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,

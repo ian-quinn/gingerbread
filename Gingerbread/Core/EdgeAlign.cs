@@ -47,6 +47,9 @@ namespace Gingerbread.Core
                         axes.Add(ax);
             }
 
+            // DEBUG check if axes > 0
+            // if there is no axis, the whole alignment means nothing
+
             for (int i = 0; i < edges.Count; i++)
             {
                 int[] ids = GetEndpointIdFromAdjMat(i, adjMat);
@@ -453,18 +456,18 @@ namespace Gingerbread.Core
                                 if (angle_delta < tol_theta)
                                 {
                                     double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
-                                    if (gap < minDist && overlap > 0)
+                                    if (gap < minDist && overlap > 0 && gap < tol_d / 2)
                                     {
                                         minDist = gap;
                                         minProj = proj;
                                     }
                                 }
                             }
-                            if (minDist < tol_d / 2)
-                                axes.Add(minProj);
+                            axes.Add(minProj);
                         }
                         else
                         {
+                            // place holder for debug
                             axes.Add(new gbSeg(new gbXYZ(0, 0, 0), new gbXYZ(0, 0, 0)));
                         }
                     }
@@ -516,18 +519,18 @@ namespace Gingerbread.Core
                                 if (angle_delta < tol_theta)
                                 {
                                     double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
-                                    if (gap < minDist && overlap > 0)
+                                    if (gap < minDist && overlap > 0 && gap < tol_d / 2)
                                     {
                                         minDist = gap;
                                         minProj = proj;
                                     }
                                 }
                             }
-                            if (minDist < tol_d / 2)
-                                axes.Add(minProj);
+                            axes.Add(minProj);
                         }
                         else
                         {
+                            // place holder for debug
                             axes.Add(new gbSeg(new gbXYZ(0, 0, 0), new gbXYZ(0, 0, 0)));
                         }
                     }

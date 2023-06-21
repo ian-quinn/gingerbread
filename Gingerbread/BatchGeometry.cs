@@ -38,6 +38,7 @@ namespace Gingerbread
         public static void Execute(Document doc, 
             out Dictionary<int, Tuple<string, double>> dictElevation,
             out Dictionary<int, List<gbSeg>> dictWall,
+            out Dictionary<int, List<gbSeg>> dictWallPatch,
             out Dictionary<int, List<gbSeg>> dictCurtain,
             out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
             out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
@@ -58,6 +59,7 @@ namespace Gingerbread
             // initiate variables for output
             dictElevation = new Dictionary<int, Tuple<string, double>>();
             dictWall = new Dictionary<int, List<gbSeg>>();
+            dictWallPatch = new Dictionary<int, List<gbSeg>>();
             dictCurtain = new Dictionary<int, List<gbSeg>>();
             dictCurtaSystem = new Dictionary<int, List<gbSeg>>();
             dictColumn = new Dictionary<int, List<Tuple<List<gbXYZ>, string>>>();
@@ -336,6 +338,7 @@ namespace Gingerbread
                     ));
                 // initiate other dictionaries
                 dictWall.Add(z, new List<gbSeg>());
+                dictWallPatch.Add(z, new List<gbSeg>());
                 dictFirewall.Add(z, new List<gbSeg>());
                 dictColumn.Add(z, new List<Tuple<List<gbXYZ>, string>>());
                 dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
@@ -745,27 +748,45 @@ namespace Gingerbread
                             // then append foorprints intersected by centerlines of both walls
                             if (Properties.Settings.Default.patchWall)
                             {
-                                List<gbSeg> wallPatch = new List<gbSeg>() { };
                                 List<gbSeg> flattenFootprints = Util.FlattenList(footprints);
-                                for (int m = 0; m < flattenFootprints.Count; m++)
-                                {
-                                    for (int n = 0; n < temps.Count; n++)
-                                    {
-                                        var llx_ = GBMethod.SegIntersection(flattenFootprints[m], temps[n],
-                                            Properties.Settings.Default.tolDouble, Properties.Settings.Default.tolDouble,
-                                            out gbXYZ sect_, out double t1_, out double t2_);
-                                        if (llx_ == segIntersectEnum.IntersectOnBoth)
-                                        {
-                                            wallPatch.Add(flattenFootprints[m]);
-                                        }
-                                    }
-                                }
-                                if (wallPatch.Count == 0)
-                                    continue;
+                                
+                                // first extend the location line to the footprint
+                                // then consider the start point and end point
+                                // below is the common situation
+                                // ┌---------┐     ┌--------------------┐ -> footprint
+                                // ├---------┤-----├----------------    │ -> location curve
+                                // └---------┘     └--------------------┘
+                                // try to extend the location line to the footprint boundary
+                                foreach (gbSeg seg in flattenFootprints)
+                                    temps[0] = GBMethod.SegExtensionToSeg(temps[0], seg, sets.tolAlignment * 2);
 
+                                double thickness = Util.FootToM(wall.WallType.Width);
+
+                                ICollection<ElementId> eGeneralIds = JoinGeometryUtils.GetJoinedElements(doc, e);
                                 ElementArray eAtStart = lc.get_ElementsAtJoin(0);
                                 ElementArray eAtEnd = lc.get_ElementsAtJoin(1);
+
+                                // list for potential joined elements
+                                List<Element> eAtJoint = new List<Element>() { };
+                                List<ElementId> eAtJointIds = new List<ElementId>() { };
+
                                 foreach (Element eJoined in eAtStart)
+                                {
+                                    if (eJoined.Id == e.Id || eAtJointIds.Contains(eJoined.Id)) continue;
+                                    else { eAtJointIds.Add(eJoined.Id); eAtJoint.Add(eJoined); }
+                                }
+                                foreach (Element eJoined in eAtStart)
+                                {
+                                    if (eJoined.Id == e.Id || eAtJointIds.Contains(eJoined.Id)) continue;
+                                    else { eAtJointIds.Add(eJoined.Id); eAtJoint.Add(eJoined); }
+                                }
+                                foreach (ElementId eId in eGeneralIds)
+                                {
+                                    if (eId == e.Id || eAtJointIds.Contains(eId)) continue;
+                                    else { eAtJointIds.Add(eId); eAtJoint.Add(doc.GetElement(eId)); }
+                                }
+
+                                foreach (Element eJoined in eAtJoint)
                                 {
                                     if (eJoined is Wall)
                                     {
@@ -777,33 +798,15 @@ namespace Gingerbread
                                             //var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
                                             //    out gbXYZ sect, out double t1, out double t2);
                                             var angle_delta = GBMethod.VectorAnglePI_2(temps[0].Direction, jlc_check.Direction);
-                                            var para_gap = GBMethod.SegDistanceToSeg(temps[0], jlc_check, out double overlap, out gbSeg proj);
-                                            if (angle_delta < sets.tolTheta && para_gap > sets.tolAlignment / 3)
+                                            var para_gap = GBMethod.SegProjectToSeg(jlc_check, temps[0], 
+                                                out _, out _, out gbSeg union);
+                                            if (angle_delta < sets.tolTheta && para_gap > sets.tolAlignment / 5)
                                             {
-                                                // add auxiliary line segments at endpoints
-                                                dictWall[i].Add(wallPatch[0]);
-                                            }
-                                        }
-                                    }
-                                }
-                                foreach (Element eJoined in eAtEnd)
-                                {
-                                    if (eJoined is Wall)
-                                    {
-                                        Wall jointWall = eJoined as Wall;
-                                        LocationCurve jlc = jointWall.Location as LocationCurve;
-                                        if (jlc.Curve is Line)
-                                        {
-                                            gbSeg jlc_check = Util.gbSegConvert(jlc.Curve as Line);
-                                            var llx = GBMethod.SegIntersection(temps[0], jlc_check, sets.tolDouble, sets.tolDouble,
-                                                out gbXYZ sect, out double t1, out double t2);
-                                            if (llx == segIntersectEnum.Parallel)
-                                            {
-                                                // add auxiliary line segments at endpoints
-                                                if (wallPatch.Count == 2)
-                                                    dictWall[i].Add(wallPatch[1]);
-                                                else
-                                                    dictWall[i].Add(wallPatch[0]);
+                                                // create a patch perpendicular to temps[0] with length = thickness, at the middle of union
+                                                gbXYZ basePt = union.PointAt(0.5);
+                                                gbXYZ startPt = basePt + thickness / 2 * GBMethod.GetPendicularVec(temps[0].Direction, true);
+                                                gbXYZ endPt = basePt + thickness / 2 * GBMethod.GetPendicularVec(temps[0].Direction, false);
+                                                dictWallPatch[i].Add(new gbSeg(startPt, endPt));
                                             }
                                         }
                                     }

@@ -49,6 +49,7 @@ namespace Gingerbread
             BatchGeometry.Execute(doc,
                 out Dictionary<int, Tuple<string, double>> dictElevation,
                 out Dictionary<int, List<gbSeg>> dictWall,
+                out Dictionary<int, List<gbSeg>> dictWallPatch,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
                 out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
@@ -111,6 +112,9 @@ namespace Gingerbread
                 List<gbSeg> _flatLines = GBMethod.FlattenLines(enclosings);
                 dictEnclosing.Add(z, enclosings);
 
+                if (sets.patchColumn)
+                    _flatLines.AddRange(LayoutPatch.PatchColumn(dictWall[z], dictColumn[z]));
+
                 // the extension copies all segments to another list
                 // not stable to operate the endpoints directly for now
                 for (int i = 0; i < _flatLines.Count; i++)
@@ -120,6 +124,9 @@ namespace Gingerbread
                                 sets.tolPerimeter);
                 //GBMethod.SegExtension2(flatLines[i], flatLines[j],
                 //    sets.tolDouble, sets.tolExpand);
+
+                if (sets.patchWall)
+                    _flatLines.AddRange(dictWallPatch[z]);
 
                 // note SegsWelding needs very small tolerance
                 // the operation of segment intersection must be very accurate
