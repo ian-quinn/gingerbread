@@ -802,6 +802,8 @@ namespace Gingerbread
                                                 out _, out _, out gbSeg union);
                                             if (angle_delta < sets.tolTheta && para_gap > sets.tolAlignment / 5)
                                             {
+                                                double jlc_width = Util.FootToM(jointWall.WallType.Width);
+                                                if (thickness < jlc_width) thickness = jlc_width;
                                                 // create a patch perpendicular to temps[0] with length = thickness, at the middle of union
                                                 gbXYZ basePt = union.PointAt(0.5);
                                                 gbXYZ startPt = basePt + thickness / 2 * GBMethod.GetPendicularVec(temps[0].Direction, true);

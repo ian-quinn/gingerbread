@@ -412,7 +412,8 @@ namespace Gingerbread
                             }
                             if (regions[i].isShell == true) // check shell
                                 thisBlockShell = regions[i].loop;
-                            if (i != 0) // check space region
+                            //if (i != 0) // check space region
+                            else
                                 thisLevelRegions.Add(regions[i]);
                         }
                     }

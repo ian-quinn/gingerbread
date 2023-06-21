@@ -1,5 +1,5 @@
-Development Log
-===============
+Log
+===
 
 JUNE 2023
 ---------
