@@ -171,15 +171,15 @@ namespace Gingerbread.Views
             CheckBox cb = sender as CheckBox;
             Properties.Settings.Default.followPrev = true;
         }
-        private void PunchMass_Unchecked(object sender, RoutedEventArgs e)
+        private void CreateVoid_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.punchMass = false;
+            Properties.Settings.Default.createVoid = false;
         }
-        private void PunchMass_Checked(object sender, RoutedEventArgs e)
+        private void CreateVoid_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.punchMass = true;
+            Properties.Settings.Default.createVoid = true;
         }
         private void PatchFloorHole_Unchecked(object sender, RoutedEventArgs e)
         {

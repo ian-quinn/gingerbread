@@ -1131,7 +1131,7 @@ namespace Gingerbread
             if (c > d) Swap(ref c, ref d);
             if (b < c || a > d) return false;
 
-            if (a < (c + d) / 2 || b > (c + d) / 2)
+            if (a < (c + d) / 2 && b > (c + d) / 2)
                 return true;
             return false;
         }

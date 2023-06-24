@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms.VisualStyles;
+using System.Windows.Media.Animation;
 using System.Windows.Media.Media3D;
 
 namespace Gingerbread.Core
@@ -251,6 +252,7 @@ namespace Gingerbread.Core
 
         /// <summary>
         /// to get every possible directions
+        /// and try align all directions to orthogonal grid system.
         /// </summary>
         /// <param name="edges"></param>
         /// <param name="tol_theta"></param>
@@ -339,6 +341,16 @@ namespace Gingerbread.Core
                 {
                     directions.Add(direction);
                 }
+            }
+
+            gbXYZ std_x = new gbXYZ(1, 0, 0);
+            gbXYZ std_y = new gbXYZ(0, 1, 0);
+            for(int i = 0; i < directions.Count; i++)
+            {
+                if (GBMethod.VectorAnglePI_2(directions[i], std_x) < Properties.Settings.Default.tolTheta)
+                    directions[i] = std_x;
+                if (GBMethod.VectorAnglePI_2(directions[i], std_y) < Properties.Settings.Default.tolTheta)
+                    directions[i] = std_y;
             }
 
             return directions;

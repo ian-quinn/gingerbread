@@ -1109,7 +1109,7 @@ namespace Gingerbread.Core
                 zones[i].Summarize();
                 // try to locate all spaces exposed to outdoor
                 // trigger this process ONLY if the user demands to
-                if (Properties.Settings.Default.punchMass)
+                if (Properties.Settings.Default.createVoid)
                 {
                     if (zones[i].isExposedAbove)
                     {

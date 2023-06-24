@@ -666,7 +666,7 @@ namespace Gingerbread
                             // or over the height of this level
                             // 0.2m gap ensures the strength of the structure, practical value
                             // PENDING  - this value may vary with projects
-                            if (summit - bottom < levels[i].height - Util.MToFoot(0.2))
+                            if (summit - bottom <= levels[i].height + Util.MToFoot(0.2))
                             {
                                 Debug.Print($"BatchGeometry:: Panel Level{i}-{levels[i].height - Util.MToFoot(0.1)} u:{summit} b:{bottom}");
                                 foreach (gbSeg segment in temps)
@@ -1066,6 +1066,7 @@ namespace Gingerbread
             }
 
             // ######################### USER DEFINED SHADE ############################
+            // DEUBG you should dump all geometry cache from previous project when user opens another one
             if (Properties.Settings.Default.shadeIds != "")
             {
                 string[] serializedRefs = Properties.Settings.Default.shadeIds.Split('#');
@@ -1105,7 +1106,6 @@ namespace Gingerbread
                     // so add -1 key to mark them as absolete ones
                     dictShade.Add(-1, vertexLoops);
                 }
-                
             }
             
 

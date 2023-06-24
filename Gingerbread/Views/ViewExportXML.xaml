@@ -166,11 +166,11 @@ locations of columns and beams, floor multipliers for model simplification, &#x0
                               Checked ="ExportShade_Checked" Unchecked ="ExportShade_Unchecked" Margin="0 0 0 5" 
                               ToolTip="Export shading surface modeled as walls or floor slabs.">
                         Export shading surface</CheckBox>
-                    <CheckBox x:Name="PunchMass" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=punchMass, Mode=TwoWay}"
-                              Checked ="PunchMass_Checked" Unchecked ="PunchMass_Unchecked" 
-                              ToolTip="If you want holes exist in your building massing, check this box. This will&#x0a;
-substract the atrium or shaft from your massing if it is exposed to outdoors.">
-                        Punctuate building mass</CheckBox>
+                    <CheckBox x:Name="CreateVoid" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=createVoid, Mode=TwoWay}"
+                              Checked ="CreateVoid_Checked" Unchecked ="CreateVoid_Unchecked" 
+                              ToolTip="If you want holes carved out from the building mass, check this box. This will&#x0a;
+cut out the atrium or shaft from the mass if it is exposed to outdoors.">
+                        Create void in building mass</CheckBox>
                 </StackPanel>
 
                 <Grid Margin="0 10 0 0">

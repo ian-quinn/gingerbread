@@ -21,6 +21,6 @@ Contents
 
    compile
    revitapi/index
-   interface
+   ui/index
    algorithm
    log

@@ -386,12 +386,12 @@ namespace Gingerbread.Properties {
         [global::System.Configuration.UserScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool punchMass {
+        public bool createVoid {
             get {
-                return ((bool)(this["punchMass"]));
+                return ((bool)(this["createVoid"]));
             }
             set {
-                this["punchMass"] = value;
+                this["createVoid"] = value;
             }
         }
         

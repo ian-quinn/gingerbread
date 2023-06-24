@@ -1,9 +1,6 @@
-Interface
-=========
-
-
 Tolerance Parameters
---------------------
+====================
+
 
 There are several tolerance parameters customizable. Because architecture design has some modals by convention, often the case is, you do not need to change these values.
 
@@ -20,7 +17,7 @@ There are several tolerance parameters customizable. Because architecture design
 * tolHoleArea (hidden)
 * tolDouble (hidden)
 
-.. figure:: images/tolerance_parameters.png
+.. figure:: ../images/tolerance_parameters.png
 
    Tolerance Parameters
 

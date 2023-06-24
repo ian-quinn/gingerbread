@@ -322,12 +322,7 @@ namespace Gingerbread
                         shatteredCrvs.Add(crv);
                     }
                 }
-                using (Transaction tx = new Transaction(doc, "Sketch curves"))
-                {
-                    tx.Start();
-                    Util.DrawDetailLines(doc, shatteredCrvs);
-                    tx.Commit();
-                }
+                Util.DrawDetailLines(doc, shatteredCrvs);
             }
 
             return Result.Succeeded;

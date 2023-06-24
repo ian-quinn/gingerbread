@@ -92,7 +92,7 @@
     <Setting Name="exportShade" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">True</Value>
     </Setting>
-    <Setting Name="punchMass" Type="System.Boolean" Scope="User">
+    <Setting Name="createVoid" Type="System.Boolean" Scope="User">
       <Value Profile="(Default)">False</Value>
     </Setting>
     <Setting Name="patchFloorHole" Type="System.Boolean" Scope="User">
