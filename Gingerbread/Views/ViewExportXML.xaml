@@ -9,7 +9,7 @@
              mc:Ignorable="d"
              WindowStartupLocation="CenterScreen"
              Background="White"
-             Height="560" Width="930"
+             Height="580" Width="930"
              SizeToContent="WidthAndHeight"
              WindowStyle="None" AllowsTransparency="True">
 
@@ -27,7 +27,7 @@
 
         <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10 10 10 5">
             <StackPanel Orientation="Vertical">
-                <GroupBox Header="Header Info" Padding="5" Width="200" Height="165">
+                <GroupBox Header="Header Info" Padding="5" Width="200" Height="160">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding}" FontSize="12" Foreground="Gray" />
@@ -54,6 +54,7 @@
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Lat/Long" Margin="0 4 0 5"/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Elevation" Margin="0 5 0 5"/>
                         <TextBlock Grid.Row="4" Grid.Column="0" Text="Azimuth" Margin="0 5 0 5"/>
+                        
                         <!--<TextBlock Grid.Row="5" Grid.Column="0" Text="Number" Margin="0 5 0 5"/>-->
 
                         <TextBox Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2" Name="projName" Padding="2" 
@@ -68,7 +69,7 @@
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projElevation, Mode=TwoWay}"  Margin="0 2 0 2"/>
                         <TextBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" Name="projAzimuth" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projAzimuth, Mode=TwoWay}"  Margin="0 2 0 2"/>
-                        
+
                         <!--<TextBox Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Name="projNumber" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=projNumber, Mode=TwoWay}" Margin="0 2 0 2"/>-->
                     </Grid>
@@ -117,7 +118,7 @@ lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Origin (m)" Margin="0 10 0 0" Padding="5" Width="200" Height="58" 
+                <GroupBox Header="Coordinate" Margin="0 10 0 0" Padding="5" Width="200" Height="83" 
                           ToolTip="Set the origin of the gbXML model. If not&#x0a;specified, current coordinate will be used.">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
@@ -128,25 +129,32 @@ lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="6*"/>
+                            <ColumnDefinition Width="4*"/>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="6*"/>
+                            <ColumnDefinition Width="4*"/>
                             <ColumnDefinition Width="1*"/>
-                            <ColumnDefinition Width="6*"/>
+                            <ColumnDefinition Width="4*"/>
+                            <ColumnDefinition Width="1*"/>
+                            <ColumnDefinition Width="4*"/>
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Column="0" Text="X" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="1" Name="Xcoord" Padding="2" 
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Text="Origin" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2" Grid.Row="0" Text="X" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="3" Grid.Row="0" Name="Xcoord" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originX, Mode=TwoWay}" Margin="2"/>
-                        <TextBlock Grid.Column="2" Text="Y" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="3" Name="Ycoord" Padding="2" 
+                        <TextBlock Grid.Column="4" Grid.Row="0" Text="Y" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="5" Grid.Row="0" Name="Ycoord" Padding="2"
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originY, Mode=TwoWay}" Margin="2"/>
-                        <TextBlock Grid.Column="4" Text="Z" VerticalAlignment="Center"/>
-                        <TextBox Grid.Column="5" Name="Zcoord" Padding="2" 
+                        <TextBlock Grid.Column="6" Grid.Row="0" Text="Z" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="7" Name="Zcoord" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originZ, Mode=TwoWay}" Margin="2"/>
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="1" Text="Axes Rotation °" VerticalAlignment="Center"/>
+                        <TextBox Grid.Column="5" Grid.ColumnSpan="3" Grid.Row="1" Name="Theta" Padding="2" 
+                                 Text="{Binding Source={x:Static p:Settings.Default}, Path=originTheta, Mode=TwoWay}" Margin="2"/>
                     </Grid>
 
                 </GroupBox>

@@ -2061,5 +2061,35 @@ namespace Gingerbread.Core
 
         #endregion poly operations
 
+        #region utilities
+
+        public static gbXYZ transCoords(gbXYZ pt, double theta)
+        {
+            return new gbXYZ(
+                    pt.X * Math.Cos(theta) - pt.Y * Math.Sin(theta),
+                    pt.Y * Math.Cos(theta) + pt.X * Math.Sin(theta),
+                    0);
+        }
+        public static gbSeg transCoords(gbSeg seg, double theta)
+        {
+            return new gbSeg(transCoords(seg.Start, theta), transCoords(seg.End, theta));
+        }
+
+        public static List<gbXYZ> transCoords(List<gbXYZ> pts, double theta)
+        {
+            List<gbXYZ> _pts = new List<gbXYZ>();
+            foreach (gbXYZ pt in pts)
+                _pts.Add(transCoords(pt, theta));
+            return _pts;
+        }
+
+        public static List<gbSeg> transCoords(List<gbSeg> segs, double theta)
+        {
+            List<gbSeg> _segs = new List<gbSeg>();
+            foreach (gbSeg seg in segs)
+                _segs.Add(transCoords(seg, theta));
+            return _segs;
+        }
+        #endregion
     }
 }

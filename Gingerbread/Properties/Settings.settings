@@ -38,6 +38,9 @@
     <Setting Name="originZ" Type="System.Double" Scope="User">
       <Value Profile="(Default)">0</Value>
     </Setting>
+    <Setting Name="originTheta" Type="System.Double" Scope="User">
+      <Value Profile="(Default)">0</Value>
+    </Setting>
     <Setting Name="projInfo" Type="System.String" Scope="User">
       <Value Profile="(Default)" />
     </Setting>

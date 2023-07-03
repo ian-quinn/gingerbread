@@ -1266,6 +1266,68 @@ namespace Gingerbread
             //dictElevation.Add(dictElevation.Count, new Tuple<string, double>("Roof",
             //    Util.FootToM(levels.Last().elevation + levels.Last().height)));
 
+            // update the coordinates according to project rotation angle (if exists)
+            // considering to embed it in each loop
+            if (sets.originTheta != 0)
+            {
+                double theta = sets.originTheta / 180 * Math.PI;
+                for (int i = 0; i < dictWall.Count; i++)
+                {
+                    dictWall[i] = GBMethod.transCoords(dictWall[i], theta);
+                    dictWallPatch[i] = GBMethod.transCoords(dictWallPatch[i], theta);
+                    dictCurtain[i] = GBMethod.transCoords(dictCurtain[i], theta);
+                    dictCurtaSystem[i] = GBMethod.transCoords(dictCurtaSystem[i], theta);
+                    dictSeparationline[i] = GBMethod.transCoords(dictSeparationline[i], theta);
+                    dictFirewall[i] = GBMethod.transCoords(dictFirewall[i], theta);
+                    dictGrid[i] = GBMethod.transCoords(dictGrid[i], theta);
+
+                    for (int j = 0; j < dictColumn[i].Count; j++)
+                    {
+                        var transCol = new Tuple<List<gbXYZ>, string>(
+                            GBMethod.transCoords(dictColumn[i][j].Item1, theta), dictColumn[i][j].Item2);
+                        dictColumn[i][j] = transCol;
+                    }
+                    for (int j = 0; j < dictBeam[i].Count; j++)
+                    {
+                        var transBeam = new Tuple<gbSeg, string>(
+                            GBMethod.transCoords(dictBeam[i][j].Item1, theta), dictBeam[i][j].Item2);
+                        dictBeam[i][j] = transBeam;
+                    }
+                    for (int j = 0; j < dictWindow[i].Count; j++)
+                    {
+                        var transWin = new Tuple<gbXYZ, string>(
+                            GBMethod.transCoords(dictWindow[i][j].Item1, theta), dictWindow[i][j].Item2);
+                        dictWindow[i][j] = transWin;
+                    }
+                    for (int j = 0; j < dictDoor[i].Count; j++)
+                    {
+                        var transDoor = new Tuple<gbXYZ, string>(
+                            GBMethod.transCoords(dictDoor[i][j].Item1, theta), dictDoor[i][j].Item2);
+                        dictDoor[i][j] = transDoor;
+                    }
+
+                    for (int j = 0; j < dictFloor[i].Count; j++)
+                    {
+                        for (int k = 0; k < dictFloor[i][j].Count; k++)
+                        {
+                            dictFloor[i][j][k] = GBMethod.transCoords(dictFloor[i][j][k], theta);
+                        }
+                    }
+                    for (int j = 0; j < dictFloor[i].Count; j++)
+                    {
+                        dictShade[i][j] = GBMethod.transCoords(dictShade[i][j], theta);
+                    }
+                    for (int j = 0; j < dictRoom[i].Count; j++)
+                    {
+                        var newLoop = new List<List<gbXYZ>>() { };
+                        for (int k = 0; k < dictRoom[i][j].Item1.Count; k++)
+                            newLoop.Add(GBMethod.transCoords(dictRoom[i][j].Item1[k], theta));
+                        var transRoom = new Tuple<List<List<gbXYZ>>, string>(newLoop, dictRoom[i][j].Item2);
+                        dictRoom[i][j] = transRoom;
+                    }
+                }
+            }
+
             // DEBUG
             checkInfo = "";
             
