@@ -104,7 +104,7 @@ the boundary within this tolerance will be dragged onto that boundary."/>
                                     ToolTip="The tolerance during joint alignment. All points within this threshold&#x0a;
 will be aligned to an axis. Please set this value according to the average&#x0a;thickness of interior walls, or by default."/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="tolInclination" Margin="0 4 0 5" 
-                                    ToolTip="The angle threshold to tell if two vectors are co-lined. Usually the value &#x0a;
+                                    ToolTip="The angle threshold to tell if two vectors are co-lined. Usually the value&#x0a;
 lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
 
                         <TextBox Grid.Row="0" Grid.Column="1" Name="grouping" Padding="2" 
@@ -118,7 +118,7 @@ lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
                     </Grid>
                 </GroupBox>
 
-                <GroupBox Header="Coordinate" Margin="0 10 0 0" Padding="5" Width="200" Height="83" 
+                <GroupBox Header="Coords Correction" Margin="0 10 0 0" Padding="5" Width="200" Height="83" 
                           ToolTip="Set the origin of the gbXML model. If not&#x0a;specified, current coordinate will be used.">
                     <GroupBox.HeaderTemplate>
                         <DataTemplate>
@@ -142,7 +142,8 @@ lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
                             <RowDefinition />
                         </Grid.RowDefinitions>
 
-                        <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Text="Origin" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="0" Text="Origin" VerticalAlignment="Center" 
+                                   ToolTip="Set another point in currecnt axis sytem as the origin of gbXML model"/>
                         <TextBlock Grid.Column="2" Grid.Row="0" Text="X" VerticalAlignment="Center"/>
                         <TextBox Grid.Column="3" Grid.Row="0" Name="Xcoord" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originX, Mode=TwoWay}" Margin="2"/>
@@ -152,7 +153,8 @@ lies between 0 and 0.2 in radian. This value cannot be set as 0."/>
                         <TextBlock Grid.Column="6" Grid.Row="0" Text="Z" VerticalAlignment="Center"/>
                         <TextBox Grid.Column="7" Name="Zcoord" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originZ, Mode=TwoWay}" Margin="2"/>
-                        <TextBlock Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="1" Text="Axes Rotation °" VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="0" Grid.ColumnSpan="5" Grid.Row="1" Text="Axes Rotation °" VerticalAlignment="Center" 
+                                   ToolTip="Rotate the global axes counter-clockwise by a certain angle (in degree)"/>
                         <TextBox Grid.Column="5" Grid.ColumnSpan="3" Grid.Row="1" Name="Theta" Padding="2" 
                                  Text="{Binding Source={x:Static p:Settings.Default}, Path=originTheta, Mode=TwoWay}" Margin="2"/>
                     </Grid>
@@ -283,13 +285,15 @@ cut out the atrium or shaft from the mass if it is exposed to outdoors.">
                                     <TextBlock Grid.Row="0" Grid.Column="0" Text="tolDouble" Margin="0 4 0 5" 
                                         ToolTip="The tolerance performing double precision calculation."/>
                                     <TextBlock Grid.Row="1" Grid.Column="0" Text="tolHoleArea" Margin="0 4 0 5" 
-                                        ToolTip="There can be holes within the recognized space polygon, forming multiple connected regiosn. &#x0a;
+                                        ToolTip="There can be holes within the recognized space polygon, forming multiple connected regiosn.&#x0a;
 All holes with area below this threshold will be neglected. These holes may be occupied&#x0a;
 with small cabin, janitor room or columns, which hardly affect energy simulation."/>
                                     <TextBlock Grid.Row="2" Grid.Column="0" Text="tolAlignRatio" Margin="0 4 0 5"
-                                        ToolTip=""></TextBlock>
+                                        ToolTip="When using expansion box searching lines for alignment, this is the ratio of expanding&#x0a;
+speed on tangential and normal directions."></TextBlock>
                                     <TextBlock Grid.Row="3" Grid.Column="0" Text="tolCollapse" Margin="0 4 0 5"
-                                        ToolTip=""></TextBlock>
+                                        ToolTip="During wall centerline alignment, the endpoints will be pulled onto intersection points of&#x0a;
+grids. Use this value to tune the collapsing radius."></TextBlock>
 
                                     <TextBox Grid.Row="0" Grid.Column="1" Name="precision" Padding="2" 
                                              Text="{Binding Source={x:Static p:Settings.Default}, Path=tolDouble, Mode=TwoWay}" Margin="0 2 0 2"/>
@@ -328,7 +332,7 @@ reduce the surface debris but may cause space or surface matching failures.">
                                     Follow previous floorplan</CheckBox>
                                 <CheckBox x:Name="FollowGrid" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=followGrid, Mode=TwoWay}"
                               Checked ="FollowGrid_Checked" Unchecked ="FollowGrid_Unchecked" Margin="0 0 0 5" 
-                              ToolTip="Try to align the wall centerlines boundary to global grids system.">
+                              ToolTip="Try to align the wall centerlines to global grids system.">
                                     Follow global grid system</CheckBox>
                             </StackPanel>
 

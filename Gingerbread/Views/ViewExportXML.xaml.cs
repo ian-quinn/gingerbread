@@ -71,6 +71,7 @@ namespace Gingerbread.Views
             Properties.Settings.Default.originX = double.Parse(Xcoord.Text);
             Properties.Settings.Default.originY = double.Parse(Ycoord.Text);
             Properties.Settings.Default.originZ = double.Parse(Zcoord.Text);
+            Properties.Settings.Default.originTheta = double.Parse(Theta.Text);
             Properties.Settings.Default.tolGrouping = double.Parse(grouping.Text);
             Properties.Settings.Default.tolPerimeter = double.Parse(perimeter.Text);
             Properties.Settings.Default.tolAlignment = double.Parse(alignment.Text);
@@ -101,11 +102,12 @@ namespace Gingerbread.Views
             Properties.Settings.Default.originX = 0;
             Properties.Settings.Default.originY = 0;
             Properties.Settings.Default.originZ = 0;
-            Properties.Settings.Default.tolGrouping = 0.5;
-            Properties.Settings.Default.tolPerimeter = 0.5;
+            Properties.Settings.Default.originTheta = 0;
+            Properties.Settings.Default.tolGrouping = 0.15;
+            Properties.Settings.Default.tolPerimeter = 0.4;
             Properties.Settings.Default.tolAlignment = 0.15; 
             Properties.Settings.Default.tolAlignmentRatio = 1.0;
-            Properties.Settings.Default.tolTheta = 0.2;
+            Properties.Settings.Default.tolTheta = 0.01;
             Properties.Settings.Default.tolCollapse = 0;
             Properties.Settings.Default.tolDouble = 0.0000001;
             Properties.Settings.Default.projName = "GingerbreadHouse";
@@ -115,6 +117,18 @@ namespace Gingerbread.Views
             Properties.Settings.Default.projLongitude = 121.45;
             Properties.Settings.Default.projElevation = 5.5;
             Properties.Settings.Default.projAzimuth = 0;
+
+            // roll back to debug mode with minimum export requirement
+            Properties.Settings.Default.includeRef = false;
+            Properties.Settings.Default.exportStruct = false;
+            Properties.Settings.Default.exportShade = false;
+            Properties.Settings.Default.createVoid = false;
+            Properties.Settings.Default.patchFloorHole = true;
+            Properties.Settings.Default.patchColumn = true;
+            Properties.Settings.Default.patchWall = true;
+            Properties.Settings.Default.followPrev = false;
+            Properties.Settings.Default.followGrid = false;
+
             txtUpdate.Visibility = System.Windows.Visibility.Collapsed;
             txtState.Visibility = System.Windows.Visibility.Visible;
             txtState.Text = "Reset to default value.";
@@ -164,12 +178,12 @@ namespace Gingerbread.Views
         private void FollowGrid_Unchecked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.followPrev = false;
+            Properties.Settings.Default.followGrid = false;
         }
         private void FollowGrid_Checked(object sender, RoutedEventArgs e)
         {
             CheckBox cb = sender as CheckBox;
-            Properties.Settings.Default.followPrev = true;
+            Properties.Settings.Default.followGrid = true;
         }
         private void CreateVoid_Unchecked(object sender, RoutedEventArgs e)
         {
