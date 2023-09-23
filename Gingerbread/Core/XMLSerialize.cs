@@ -107,8 +107,24 @@ namespace Gingerbread.Core
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
                 // if the current face has already been an adjacent face 
                 // of one of those modeled surfaces (uniqueSrfs), skip it
-                if (RetrieveMatchedSrf(faces[i].id, uniqueSrfs) == null)
-                    uniqueSrfs.Add(faces[i]);
+                // 20230923
+                // such a process randomly take one of the paired (matched) adjacent surfaces as the partition
+                // to make it always select the floor surface, a short cut is to only add Floor of every partition
+                string matchedSrfId = RetrieveMatchedSrf(faces[i].id, uniqueSrfs);
+                // if none of the paired surface has been recorded...
+                if (matchedSrfId == null)
+                {
+                    // check if this is the Ceiling -> Floor pair
+                    if (faces[i].id.Contains("Ceil") && faces[i].adjSrfId.Contains("Floor"))
+                        continue;
+                    // if not, the surface can be safely added
+                    else
+                        uniqueSrfs.Add(faces[i]);
+                } 
+                else
+                    // if continue, only one surface will be added representing the partition
+                    // if commented out, all surfaces will be added
+                    continue;
 
 
                 Surface newSurface = MakeSurface(faces[i], srfCounter);

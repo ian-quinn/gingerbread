@@ -41,7 +41,7 @@ copy "$(ProjectDir)$(OutputPath)\Resources\spider\*.*" "$(AppData)\Autodesk\REVI
 
 **Demo**  
 ![Snapshot](https://i.postimg.cc/XNPN6P9k/Interface-v3.jpg)  
-Project is under development, with [Document](https://https://gingerbread.readthedocs.io/) / [Log](https://docs.google.com/spreadsheets/d/1GnTWx-_kwdaAGRdL3LA4CheP_-5_2_bUgBY8ID7Jfow/edit?usp=sharing) updated once in a while.
+Project is under development, with [Document](https://gingerbread.readthedocs.io/) / [Log](https://docs.google.com/spreadsheets/d/1GnTWx-_kwdaAGRdL3LA4CheP_-5_2_bUgBY8ID7Jfow/edit?usp=sharing) updated once in a while.
   
 Test it with `Technical_school-current_m.rvt` shipped with Revit.  
 

@@ -637,7 +637,8 @@ namespace Gingerbread.Core
                                 RegionTessellate.SimplifyPoly(dupTile);
                                 dupTile.Reverse();
 
-                                gbSurface floor = new gbSurface(zone.id + "::Floor_0", zone.id, dupTile, 180);
+                                // 20230923 same as the logic of Ceil_ / not tested
+                                gbSurface floor = new gbSurface(zone.id + "::Floor_" + counter, zone.id, dupTile, 180);
                                 floor.type = surfaceTypeDef;
                                 floor.adjSrfId = "Outside";
                                 zone.floors.Add(floor);
@@ -765,7 +766,8 @@ namespace Gingerbread.Core
                                                 tilePoly, 0);
                                             splitCeil.adjSrfId = "Outside";
                                             splitCeil.type = surfaceTypeEnum.Roof;
-                                            zone.floors.Add(splitCeil);
+                                            // 20230923 not tested
+                                            zone.ceilings.Add(splitCeil);
                                         }
                                     }
                                 }
@@ -910,7 +912,8 @@ namespace Gingerbread.Core
                                 // the name does not matter
                                 // they only have to stay coincident so the adjacent spaces can be tracked
                                 string splitCeilId = zone.id + "::Ceil_" + zone.ceilings.Count;
-                                string splitFloorId = adjZone.id + "::Floor_" + zone.floors.Count;
+                                // 20230923 switch from zone.floors.Count to adjZone.floors.Count
+                                string splitFloorId = adjZone.id + "::Floor_" + adjZone.floors.Count;
                                 // be cautious here
                                 // the ceiling here mean the shadowing floor, so the tilt is still 180
                                 List<gbXYZ> dupLoop = GBMethod.ReorderPoly(
