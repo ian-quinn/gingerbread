@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using ClipperLib;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
+using System.Dynamic;
 
 namespace Gingerbread.Core
 {
@@ -16,8 +17,8 @@ namespace Gingerbread.Core
             //Dictionary<int, List<List<string>>> dictMatch,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
-            Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn, 
-            Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
+            Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictColumn, 
+            Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictBeam,
             Dictionary<int, List<gbSeg>> dictCurtain,
             Dictionary<int, List<gbSeg>> dictAirwall,
             Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
@@ -27,8 +28,8 @@ namespace Gingerbread.Core
             out List<gbZone> zones,
             out List<gbLoop> floors,
             out List<gbSurface> surfaces,
-            out List<gbLoop> columns, 
-            out List<gbLoop> beams, 
+            out List<gbSweep> columns, 
+            out List<gbSweep> beams, 
             out List<gbLoop> shafts)
         {
             List<gbLevel> levels = new List<gbLevel>();
@@ -1217,79 +1218,84 @@ namespace Gingerbread.Core
 
 
             // appendix for structure components
-            columns = new List<gbLoop>();
-            foreach (KeyValuePair<int, List<Tuple<List<gbXYZ>, string>>> kvp in dictColumn)
+            columns = new List<gbSweep>();
+            foreach (KeyValuePair<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> kvp in dictColumn)
             {
                 int counter = 0;
-                foreach (Tuple<List<gbXYZ>, string> label in kvp.Value)
+                foreach (Tuple<string, string, List<gbXYZ>, gbSeg> colInfo in kvp.Value)
                 {
-                    List<double> sizes = new List<double>();
-                    foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
-                    {
-                        double size = Convert.ToInt32(match.Value) / 1000.0;
-                        sizes.Add(size);
-                    }
-                    if (sizes.Count == 0)
-                        continue;
-                    double width = sizes[0];
-                    double height = sizes[0];
-                    if (sizes.Count == 2)
-                        height = sizes[1];
-                    List<gbXYZ> loop = label.Item1;
-                    loop.RemoveAt(loop.Count - 1);
+                    // no longer decode dimensions from column label /20231118
+
+                    //List<double> sizes = new List<double>();
+                    //foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
+                    //{
+                    //    double size = Convert.ToInt32(match.Value) / 1000.0;
+                    //    sizes.Add(size);
+                    //}
+                    //if (sizes.Count == 0)
+                    //    continue;
+                    //double width = sizes[0];
+                    //double height = sizes[0];
+                    //if (sizes.Count == 2)
+                    //    height = sizes[1];
+
                     // legacy version uses the centroid of column to transfer data
                     //loop.Add(label.Item1 + new gbXYZ(-0.5 * width, -0.5 * height, 0));
                     //loop.Add(label.Item1 + new gbXYZ(0.5 * width, -0.5 * height, 0));
                     //loop.Add(label.Item1 + new gbXYZ(0.5 * width, 0.5 * height, 0));
                     //loop.Add(label.Item1 + new gbXYZ(-0.5 * width, 0.5 * height, 0));
-                    gbLoop column = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, 0);
-                    column.dimension1 = width;
-                    column.dimension2 = height;
+
+                    gbSweep column = new gbSweep(colInfo.Item1, colInfo.Item2, levels[kvp.Key], colInfo.Item3, colInfo.Item4);
                     columns.Add(column);
                     counter++;
                 }
             }
-            beams = new List<gbLoop>();
-            foreach (KeyValuePair<int, List<Tuple<gbSeg, string>>> kvp in dictBeam)
+
+            beams = new List<gbSweep>();
+            foreach (KeyValuePair<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> kvp in dictBeam)
             {
                 int counter = 0;
-                foreach (Tuple<gbSeg, string> label in kvp.Value)
+                foreach (Tuple<string, string, List<gbXYZ>, gbSeg> beamInfo in kvp.Value)
                 {
-                    //Debug.Print($"XMLGeometry:: Checking beam existence... {label.Item2}");
-                    List<double> sizes = new List<double>();
-                    foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
-                    {
-                        double size = Convert.ToInt32(match.Value) / 1000.0;
-                        sizes.Add(size);
-                    }
-                    if (sizes.Count == 0)
-                    {
-                        //Debug.Print("XMLGeometry:: Skip current beam...");
-                        continue;
-                    }
-                    double width = sizes[0];
-                    double height = sizes[0];
-                    if (sizes.Count == 2)
-                        height = sizes[1];
+                    // no longer decode dimensions from beam label /20231118
 
-                    List<gbXYZ> loop = new List<gbXYZ>();
-                    // 2D plane operation
-                    gbXYZ startPt = GBMethod.FlattenPt(label.Item1.Start);
-                    gbXYZ endPt = GBMethod.FlattenPt(label.Item1.End);
-                    gbXYZ vec1 = endPt - startPt;
-                    vec1.Unitize();
-                    gbXYZ vec2 = GBMethod.GetPendicularVec(vec1, true);
-                    loop.Add(startPt + 0.5 * width * vec2);
-                    loop.Add(endPt + 0.5 * width * vec2);
-                    loop.Add(endPt - 0.5 * width * vec2);
-                    loop.Add(startPt - 0.5 * width * vec2);
-                    gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, levels[kvp.Key].height);
-                    beam.dimension1 = width;
-                    beam.dimension2 = height;
+                    //Debug.Print($"XMLGeometry:: Checking beam existence... {label.Item2}");
+                    //List<double> sizes = new List<double>();
+                    //foreach (Match match in Regex.Matches(label.Item2, @"\d+"))
+                    //{
+                    //    double size = Convert.ToInt32(match.Value) / 1000.0;
+                    //    sizes.Add(size);
+                    //}
+                    //if (sizes.Count == 0)
+                    //{
+                    //    //Debug.Print("XMLGeometry:: Skip current beam...");
+                    //    continue;
+                    //}
+                    //double width = sizes[0];
+                    //double height = sizes[0];
+                    //if (sizes.Count == 2)
+                    //    height = sizes[1];
+
+                    // no longer provide the bottom face geometry of beam
+
+                    //List<gbXYZ> loop = new List<gbXYZ>();
+                    //gbXYZ startPt = GBMethod.FlattenPt(label.Item1.Start);
+                    //gbXYZ endPt = GBMethod.FlattenPt(label.Item1.End);
+                    //gbXYZ vec1 = endPt - startPt;
+                    //vec1.Unitize();
+                    //gbXYZ vec2 = GBMethod.GetPendicularVec(vec1, true);
+                    //loop.Add(startPt + 0.5 * width * vec2);
+                    //loop.Add(endPt + 0.5 * width * vec2);
+                    //loop.Add(endPt - 0.5 * width * vec2);
+                    //loop.Add(startPt - 0.5 * width * vec2);
+                    //gbLoop beam = new gbLoop($"F{kvp.Key}_{counter}_{label.Item2}", levels[kvp.Key], loop, levels[kvp.Key].height);
+
+                    gbSweep beam = new gbSweep(beamInfo.Item1, beamInfo.Item2, levels[kvp.Key], beamInfo.Item3, beamInfo.Item4);
                     beams.Add(beam);
                     counter++;
                 }
             }
+
             shafts = new List<gbLoop>();
             foreach (KeyValuePair<int, List<List<List<gbXYZ>>>> kvp in dictFloor)
             {

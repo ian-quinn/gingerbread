@@ -52,8 +52,8 @@ namespace Gingerbread
                 out Dictionary<int, List<gbSeg>> dictWallPatch,
                 out Dictionary<int, List<gbSeg>> dictCurtain,
                 out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
-                out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
-                out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
+                out Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictColumn,
+                out Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictBeam,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
                 out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
                 out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor, 
@@ -511,8 +511,8 @@ namespace Gingerbread
                 out List<gbZone> zones,
                 out List<gbLoop> floors,
                 out List<gbSurface> surfaces,
-                out List<gbLoop> columns,
-                out List<gbLoop> beams,
+                out List<gbSweep> columns,
+                out List<gbSweep> beams,
                 out List<gbLoop> shafts);
 
             Report(95, "Serialize gbXML file ...");

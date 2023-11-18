@@ -200,13 +200,17 @@ namespace Gingerbread.Core
         /// <summary>
         /// Get the convex hull of a point set.
         /// </summary>
-        public static List<gbXYZ> GetConvexHull(List<gbXYZ> points)
+        // 20231118 original method alters the sequence of input points, terrible mistake
+        public static List<gbXYZ> GetConvexHull(List<gbXYZ> pts)
         {
-            if (points == null)
+            if (pts == null)
                 return null;
 
-            if (points.Count() <= 1)
-                return points;
+            if (pts.Count() <= 1)
+                return pts;
+
+            List<gbXYZ> points = pts.ToList();
+
             int n = points.Count(), k = 0;
             List<gbXYZ> H = new List<gbXYZ>(new gbXYZ[2 * n]);
             points.Sort((a, b) =>

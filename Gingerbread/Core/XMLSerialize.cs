@@ -12,7 +12,7 @@ namespace Gingerbread.Core
     class XMLSerialize
     {
         public static void Generate(string path, List<gbZone> zones, List<gbLoop> floors, List<gbSurface> faces,
-            List<gbLoop> columns, List<gbLoop> beams, List<gbLoop> shafts)
+            List<gbSweep> columns, List<gbSweep> beams, List<gbLoop> shafts)
         //    Dictionary<string, string> adjDict)
         {
             gb.gbci = new CultureInfo(String.Empty);
@@ -185,12 +185,16 @@ namespace Gingerbread.Core
             {
                 Column column = new Column();
                 column.id = columns[i].id;
+                column.name = columns[i].name;
                 column.level = columns[i].level.id;
-                column.Width = string.Format("{0:0.000000}", columns[i].dimension1);
-                column.Height = string.Format("{0:0.000000}", columns[i].dimension2);
                 PlanarGeometry pg = new PlanarGeometry();
                 pg.PolyLoop = PtsToPolyLoop(columns[i].loop);
                 column.PlanarGeometry = pg;
+                Axis ax = new Axis();
+                ax.Points = new CartesianPoint[] {
+                    PtToCartesianPoint(columns[i].axis.Start),
+                    PtToCartesianPoint(columns[i].axis.End)};
+                column.Axis = ax;
                 cmp.Column[i] = column;
             }
             cmp.Beam = new Beam[beams.Count];
@@ -198,12 +202,16 @@ namespace Gingerbread.Core
             {
                 Beam beam = new Beam();
                 beam.id = beams[i].id;
+                beam.name = beams[i].name;
                 beam.level = beams[i].level.id;
-                beam.Width = string.Format("{0:0.000000}", beams[i].dimension1);
-                beam.Height = string.Format("{0:0.000000}", beams[i].dimension2);
                 PlanarGeometry pg = new PlanarGeometry();
                 pg.PolyLoop = PtsToPolyLoop(beams[i].loop);
                 beam.PlanarGeometry = pg;
+                Axis ax = new Axis();
+                ax.Points = new CartesianPoint[] { 
+                    PtToCartesianPoint(beams[i].axis.Start), 
+                    PtToCartesianPoint(beams[i].axis.End)};
+                beam.Axis = ax;
                 cmp.Beam[i] = beam;
             }
             cmp.Shaft = new Shaft[shafts.Count];

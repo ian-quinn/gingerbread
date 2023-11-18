@@ -251,19 +251,19 @@ namespace Gingerbread.Core
         }
 
         public static List<gbSeg> PatchColumn(List<gbSeg> thisWall, 
-            List<Tuple<List<gbXYZ>, string>> thisColumn)
+            List<Tuple<string, string, List<gbXYZ>, gbSeg>> thisColumn)
         {
             List<List<gbSeg>> patches = new List<List<gbSeg>>();
 
             // loop throught all column polygons
             // 
-            foreach (Tuple<List<gbXYZ>, string> column in thisColumn)
+            foreach (Tuple<string, string, List<gbXYZ>, gbSeg> column in thisColumn)
             {
                 // vertex loop of column footprint and its expansion
                 // skip if the polygon is not convex, 
                 // which ensures the wall line can only have 
                 // 2 intersections with the polygon utmost
-                List<gbXYZ> colPoly = column.Item1;
+                List<gbXYZ> colPoly = column.Item3;
                 if (colPoly == null)
                     continue;
                 List<gbXYZ> colExpansion = GBMethod.OffsetPoly(

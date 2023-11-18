@@ -161,6 +161,16 @@ namespace Gingerbread.Core
                 Math.Abs(pt.Z - origin.Z));
         }
 
+        public static gbXYZ GetRectCentroid(List<gbXYZ> vts)
+        {
+            // whether it is closed or not, only take four vertices
+            return new gbXYZ(
+                (vts[0].X + vts[1].X + vts[2].X + vts[3].X) / 4,
+                (vts[0].Y + vts[1].Y + vts[2].Y + vts[3].Y) / 4,
+                (vts[0].Z + vts[1].Z + vts[2].Z + vts[3].Z) / 4
+                );
+        }
+
         #endregion basic operations
 
         // ---------------------------------------------------------------------------------------------- //

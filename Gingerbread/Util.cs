@@ -251,9 +251,11 @@ namespace Gingerbread
         }
         public static gbSeg gbSegConvert(Line line)
         {
-            return new gbSeg(
-            gbXYZConvert(line.GetEndPoint(0)),
-            gbXYZConvert(line.GetEndPoint(1)) ); 
+            if (!(line is null))
+                return new gbSeg(
+                gbXYZConvert(line.GetEndPoint(0)),
+                gbXYZConvert(line.GetEndPoint(1)));
+            else return null;
         }
         public static Line gbSegConvert(gbSeg seg)
         {

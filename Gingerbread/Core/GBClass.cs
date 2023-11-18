@@ -344,14 +344,29 @@ namespace Gingerbread.Core
         public string id;
         public gbLevel level;
         public List<gbXYZ> loop;
-        public double dimension1;
-        public double dimension2;
         // convert the 2D loop to 3D floor geometry
         public gbLoop(string id, gbLevel level, List<gbXYZ> loop, double delta)
         {
             this.id = id;
             this.level = level;
             this.loop = GBMethod.ElevatePts(loop, level.elevation + delta);
+        }
+    }
+
+    public class gbSweep
+    {
+        public string id;
+        public string name;
+        public gbLevel level;
+        public List<gbXYZ> loop;
+        public gbSeg axis;
+        public gbSweep(string id, string name, gbLevel level, List<gbXYZ> loop, gbSeg axis)
+        {
+            this.id = id;
+            this.name = name;
+            this.level = level;
+            this.loop = loop;
+            this.axis = axis;
         }
     }
 

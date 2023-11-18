@@ -307,7 +307,7 @@ grids. Use this value to tune the collapsing radius."></TextBlock>
                             </StackPanel>
 
                             <StackPanel Margin="0 10 5 5">
-                                <CheckBox x:Name="PatchFloorHole" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchFloor, Mode=TwoWay}"
+                                <CheckBox x:Name="PatchFloorHole" IsChecked="{Binding Source={x:Static p:Settings.Default}, Path=patchFloorHole, Mode=TwoWay}"
                               Checked ="PatchFloorHole_Checked" Unchecked ="PatchFloorHole_Unchecked"  Margin="0 0 0 5" 
                               ToolTip="The hole within the floor that may indicate an atrium. The atrim boundary will&#x0a;
 create an air wall between the atrium and adjacent spaces. If checked, the algorithm will &#x0a;

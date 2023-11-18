@@ -10,6 +10,7 @@ using Autodesk.Revit.DB.Architecture;
 using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Gingerbread.Core;
+using System.Net;
 #endregion
 
 // PENDING      - functions saved for a happy day
@@ -41,8 +42,8 @@ namespace Gingerbread
             out Dictionary<int, List<gbSeg>> dictWallPatch,
             out Dictionary<int, List<gbSeg>> dictCurtain,
             out Dictionary<int, List<gbSeg>> dictCurtaSystem, 
-            out Dictionary<int, List<Tuple<List<gbXYZ>, string>>> dictColumn,
-            out Dictionary<int, List<Tuple<gbSeg, string>>> dictBeam,
+            out Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictColumn,
+            out Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>> dictBeam,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictWindow,
             out Dictionary<int, List<Tuple<gbXYZ, string>>> dictDoor,
             out Dictionary<int, List<List<List<gbXYZ>>>> dictFloor,
@@ -62,8 +63,8 @@ namespace Gingerbread
             dictWallPatch = new Dictionary<int, List<gbSeg>>();
             dictCurtain = new Dictionary<int, List<gbSeg>>();
             dictCurtaSystem = new Dictionary<int, List<gbSeg>>();
-            dictColumn = new Dictionary<int, List<Tuple<List<gbXYZ>, string>>>();
-            dictBeam = new Dictionary<int, List<Tuple<gbSeg, string>>>();
+            dictColumn = new Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>>();   // use sweep for this type of geometry
+            dictBeam = new Dictionary<int, List<Tuple<string, string, List<gbXYZ>, gbSeg>>>();     // use sweep for this type of geometry
             dictWindow = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictDoor = new Dictionary<int, List<Tuple<gbXYZ, string>>>();
             dictFloor = new Dictionary<int, List<List<List<gbXYZ>>>>();
@@ -340,8 +341,8 @@ namespace Gingerbread
                 dictWall.Add(z, new List<gbSeg>());
                 dictWallPatch.Add(z, new List<gbSeg>());
                 dictFirewall.Add(z, new List<gbSeg>());
-                dictColumn.Add(z, new List<Tuple<List<gbXYZ>, string>>());
-                dictBeam.Add(z, new List<Tuple<gbSeg, string>>());
+                dictColumn.Add(z, new List<Tuple<string, string, List<gbXYZ>, gbSeg>>());
+                dictBeam.Add(z, new List<Tuple<string, string, List<gbXYZ>, gbSeg>>());
                 dictCurtain.Add(z, new List<gbSeg>());
                 dictWindow.Add(z, new List<Tuple<gbXYZ, string>>());
                 dictShade.Add(z, new List<List<gbXYZ>>());
@@ -389,10 +390,10 @@ namespace Gingerbread
                     Wall wall = d.Host as Wall;
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
-                        XYZ lp = Util.GetFamilyInstanceLocation(d) - _bias;
+                        XYZ lp = Util.GetFamilyInstanceLocation(d);
                         if (lp is null)
                             continue;
-                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                        doorLocs.Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp - _bias), $"{width:F0} x {height:F0}"));
                         //Debug.Print($"BatchGeometry:: F{z}: Got door at " + lp.ToString());
                     }
                 }
@@ -762,7 +763,10 @@ namespace Gingerbread
 
                                 double thickness = Util.FootToM(wall.WallType.Width);
 
-                                ICollection<ElementId> eGeneralIds = JoinGeometryUtils.GetJoinedElements(doc, e);
+                                // 20231116 thought the wall e may not be in the current document
+                                // if external files are linked, you may need to look for joined elements in other documents
+                                // current function can only search for the joined element within the same doc
+                                ICollection<ElementId> eGeneralIds = JoinGeometryUtils.GetJoinedElements(e.Document, e);
                                 ElementArray eAtStart = lc.get_ElementsAtJoin(0);
                                 ElementArray eAtEnd = lc.get_ElementsAtJoin(1);
 
@@ -1015,10 +1019,14 @@ namespace Gingerbread
             {
                 FamilyInstance w = e as FamilyInstance;
                 FamilySymbol ws = w.Symbol;
-                XYZ lp = Util.GetFamilyInstanceLocation(w) - _bias;
+
+                // FamilyInstance.Location.LocationPoint may not be XYZ
+                // note that this method allows null as a return value
+                // 20231118 if it is null, you cannot perform calculatons on it
+                XYZ lp = Util.GetFamilyInstanceLocation(w);
                 if (lp == null)
                     continue;
-
+                
                 double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
                 double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
 
@@ -1039,9 +1047,9 @@ namespace Gingerbread
                         summit - levels[i].elevation - levels[i].height >= 0 || 
                         levels[i].elevation < bottom && 
                         levels[i].elevation + levels[i].height > summit)
-                        dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp), $"{width:F0} x {height:F0}"));
+                        dictWindow[i].Add(new Tuple<gbXYZ, string>(Util.gbXYZConvert(lp - _bias), $"{width:F0} x {height:F0}"));
                 }
-            }
+            }   
 
             // ######################### Global Grid System ############################
 
@@ -1149,19 +1157,54 @@ namespace Gingerbread
             }
             foreach (FamilyInstance fi in fiColumns)
             {
-                // FamilyInstance.Location.LocationPoint may not be XYZ
-                // PENDING come back to this later
-                // note that this method allows null as a return value
-                XYZ lp = Util.GetFamilyInstanceLocationPoint(fi) - _bias;
-                if (null == lp)
-                    continue;
-                
                 // get the height of the column by retrieving its geometry element
                 Options op = fi.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = fi.get_Geometry(op);
 
                 double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
                 double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
+
+                // prepare the geometry first
+                List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
+                if (colCrvLoops.Count == 0)
+                    continue;
+                List<gbXYZ> colPoly = new List<gbXYZ>();
+                // only cache the outer boundary without holes
+                foreach (Curve crv in colCrvLoops[0])
+                {
+                    if (crv is Line)
+                    {
+                        // 20231118 this may not follow the looping sequence
+                        colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                    }
+                    // we are expecting rectangular columns but
+                    // there will always be special-shaped or cylindrical ones
+                    else
+                    {
+                        List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                        // remove the end point so there will be no duplicate
+                        ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                        colPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                    }
+                }
+
+                // get bounding box of the colPoly
+                List<gbXYZ> colPolyBox = GBMethod.ElevatePts(
+                    OrthoHull.GetRectHull(colPoly), colPoly[0].Z);
+                colPolyBox.RemoveAt(4);
+
+                // what to do with the slant column?
+                // OrthoHull.GetRectHull() returns a closed polyline on XY plane
+                gbXYZ centroid = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly));
+                gbSeg colAxis = new gbSeg(
+                    new gbXYZ(centroid.X, centroid.Y, Util.FootToM(bottom)),
+                    new gbXYZ(centroid.X, centroid.Y, Util.FootToM(summit))
+                    );
+
+                // or: (this may not work for columns)
+                //LocationCurve lc = fi.Location as LocationCurve;
+                //gbSeg colAxis = Util.gbSegConvert(lc.Curve as Line);
+
                 for (int i = 0; i < levels.Count; i++)
                 {
                     // add location point if the column lies within the range of this level
@@ -1171,32 +1214,13 @@ namespace Gingerbread
                        summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
                        bottom <= (levels[i].elevation + 0.5 * levels[i].height))
                     {
-                        List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
-                        if (colCrvLoops.Count == 0)
-                            continue;
-                        List<gbXYZ> colPoly = new List<gbXYZ>();
-                        // only cache the outer boundary without holes
-                        foreach (Curve crv in colCrvLoops[0])
-                        {
-                            if (crv is Line)
-                            {
-                                colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
-                            }
-                            // we are expecting rectangular columns but
-                            // there will always be special-shaped or cylindrical ones
-                            else
-                            {
-                                List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
-                                // remove the end point so there will be no duplicate
-                                ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
-                                colPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
-                            }
-                        }
+                        
                         // make it a closed polygon
                         if (colPoly.Count > 0)
                         {
                             colPoly.Add(colPoly[0]);
-                            dictColumn[i].Add(new Tuple<List<gbXYZ>, string>(colPoly, fi.Name));
+                            dictColumn[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                                fi.Id.ToString(), fi.Name, colPolyBox, colAxis));
                         }
                     }
                 }
@@ -1247,6 +1271,28 @@ namespace Gingerbread
                 double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
                 //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
 
+                // prepare the geometry
+                List<CurveLoop> beamCrvLoops = GetFootprintOfBeam(fi);
+                if (beamCrvLoops.Count == 0)
+                    continue;
+                List<gbXYZ> beamPoly = new List<gbXYZ>();
+                foreach (Curve crv in beamCrvLoops[0])
+                {
+                    if (crv is Line)
+                    {
+                        beamPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                    }
+                    else
+                    {
+                        List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                        ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                        beamPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                    }
+                }
+
+                if (beamPoly[0].Z > 20)
+                    Debug.Print($"error at iteration {fiBeams.IndexOf(fi)}");
+
                 for (int i = 0; i < levels.Count; i++)
                 {
                     //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
@@ -1255,7 +1301,8 @@ namespace Gingerbread
                     if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
                     {
                         //Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
-                        dictBeam[i].Add(new Tuple<gbSeg, string>(Util.gbSegConvert(lc.Curve as Line), fi.Name));
+                        dictBeam[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                            fi.Id.ToString(), fi.Name, beamPoly, Util.gbSegConvert(lc.Curve as Line)));
                         break;
                     }
                 }
@@ -1283,15 +1330,19 @@ namespace Gingerbread
 
                     for (int j = 0; j < dictColumn[i].Count; j++)
                     {
-                        var transCol = new Tuple<List<gbXYZ>, string>(
-                            GBMethod.transCoords(dictColumn[i][j].Item1, theta), dictColumn[i][j].Item2);
+                        var transCol = new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                            dictColumn[i][j].Item1, dictColumn[i][j].Item2, 
+                            GBMethod.transCoords(dictColumn[i][j].Item3, theta),
+                            GBMethod.transCoords(dictColumn[i][j].Item4, theta));
                         dictColumn[i][j] = transCol;
                     }
                     for (int j = 0; j < dictBeam[i].Count; j++)
                     {
-                        var transBeam = new Tuple<gbSeg, string>(
-                            GBMethod.transCoords(dictBeam[i][j].Item1, theta), dictBeam[i][j].Item2);
-                        dictBeam[i][j] = transBeam;
+                        var transBeam = new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                            dictBeam[i][j].Item1, dictBeam[i][j].Item2,
+                            GBMethod.transCoords(dictBeam[i][j].Item3, theta),
+                            GBMethod.transCoords(dictBeam[i][j].Item4, theta));
+                        dictColumn[i][j] = transBeam;
                     }
                     for (int j = 0; j < dictWindow[i].Count; j++)
                     {
@@ -1326,6 +1377,18 @@ namespace Gingerbread
                         dictRoom[i][j] = transRoom;
                     }
                 }
+            }
+
+            // filter out null values?
+            for (int i = 0; i < dictWall.Count; i++)
+            {
+                dictWall[i].RemoveAll(item => item == null);
+                dictWallPatch[i].RemoveAll(item => item == null);
+                dictCurtain[i].RemoveAll(item => item == null);
+                dictCurtaSystem[i].RemoveAll(item => item == null);
+                dictSeparationline[i].RemoveAll(item => item == null);
+                dictColumn[i].RemoveAll(item => item.Item1 == null);
+                dictBeam[i].RemoveAll(item => item.Item1 == null);
             }
 
             // DEBUG
@@ -1431,6 +1494,95 @@ namespace Gingerbread
             }
             // else
             // doing nothing and return the empty list
+            return footprints;
+        }
+
+        static List<CurveLoop> GetFootprintOfBeam(FamilyInstance fi)
+        {
+            List<CurveLoop> footprints = new List<CurveLoop>();
+            LocationCurve lc = fi.Location as LocationCurve;
+            if (!(lc.Curve is Line))
+                return footprints;
+
+            Line lc_line = lc.Curve as Line;
+            gbXYZ axis_dir = Util.gbXYZConvert(lc_line.Direction);
+
+            //// skip if it has a vertical axis /no use
+            if (axis_dir.Z > 0.000001)
+                return footprints;
+
+            //// skip for invalid axis /no use
+            if (axis_dir.Norm() < 0.1)
+                return footprints;
+
+            Options opt = new Options();
+            opt.ComputeReferences = true;
+            opt.DetailLevel = ViewDetailLevel.Medium;
+            GeometryElement ge = fi.get_Geometry(opt);
+
+            foreach (GeometryObject obj in ge)
+            {
+                if (obj is Solid)
+                {
+                    Solid so = obj as Solid;
+                    Face bottomFace = null;
+                    foreach (Face f in so.Faces)
+                    {
+                        gbXYZ normal = Util.gbXYZConvert(f.ComputeNormal(new UV(0, 0)));
+                        // note that axis.Direction is on XY plane
+                        // the bottom face has to be vertical to the XY plane
+                        if (Math.Abs(GBMethod.VectorAngle2PI(normal, axis_dir) - Math.PI)< 0.017)
+                        {
+                            bottomFace = f;
+                        }
+                    }
+
+                    if (null != bottomFace)
+                    {
+                        // skip beam with too small section (100*100mm as minimum)
+                        if (bottomFace.Area > 11 || bottomFace.Area < 0.11)
+                            return footprints;
+
+                        foreach (CurveLoop edge in bottomFace.GetEdgesAsCurveLoops())
+                        {
+                            footprints.Add(edge);
+                        }
+                    }
+                }
+                else if (obj is GeometryInstance)
+                {
+                    GeometryInstance geoInstance = obj as GeometryInstance;
+                    GeometryElement geoElement = geoInstance.GetInstanceGeometry();
+                    foreach (GeometryObject obj2 in geoElement)
+                    {
+                        if (obj2 is Solid)
+                        {
+                            Solid so2 = obj2 as Solid;
+                            Face bottomFace = null;
+                            foreach (Face f in so2.Faces)
+                            {
+                                gbXYZ normal = Util.gbXYZConvert(f.ComputeNormal(new UV(0, 0)));
+                                if (Math.Abs(GBMethod.VectorAngle2PI(normal, axis_dir) - Math.PI) < 0.017)
+                                {
+                                    bottomFace = f;
+                                }
+                            }
+                            if (null != bottomFace)
+                            {
+                                // skip beam with too small section (100*100mm as minimum, 1m2 as maximum)
+                                if (bottomFace.Area > 11 || bottomFace.Area < 0.11)
+                                    return footprints;
+
+                                foreach (CurveLoop edge in bottomFace.GetEdgesAsCurveLoops())
+                                {
+                                    footprints.Add(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
             return footprints;
         }
 
