@@ -1167,7 +1167,7 @@ namespace Gingerbread
                     double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
 
                     // prepare the geometry first
-                    List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
+                    List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi, true);
                     if (colCrvLoops.Count == 0)
                         continue;
                     List<gbXYZ> colPoly = new List<gbXYZ>();
@@ -1197,15 +1197,36 @@ namespace Gingerbread
 
                     // what to do with the slant column?
                     // OrthoHull.GetRectHull() returns a closed polyline on XY plane
-                    gbXYZ centroid = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly));
+                    gbXYZ centroid_bottom = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly));
                     gbSeg colAxis = new gbSeg(
-                        new gbXYZ(centroid.X, centroid.Y, Util.FootToM(bottom)),
-                        new gbXYZ(centroid.X, centroid.Y, Util.FootToM(summit))
+                        new gbXYZ(centroid_bottom.X, centroid_bottom.Y, Util.FootToM(bottom)),
+                        new gbXYZ(centroid_bottom.X, centroid_bottom.Y, Util.FootToM(summit))
                         );
-
-                    // or: (this may not work for columns)
-                    //LocationCurve lc = fi.Location as LocationCurve;
-                    //gbSeg colAxis = Util.gbSegConvert(lc.Curve as Line);
+                    // by default, the axis will be the vertical extrusion
+                    // if the top face can be found, the centroid connection between top/bottom faces will be the axis
+                    // 20231119 pack this code snippet as function
+                    List<CurveLoop> colCrvLoops_ = GetFootprintOfColumn(fi, false);
+                    if (colCrvLoops_.Count != 0)
+                    {
+                        
+                        List<gbXYZ> colPoly_ = new List<gbXYZ>();
+                        foreach (Curve crv in colCrvLoops_[0])
+                        {
+                            if (crv is Line)
+                                colPoly_.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                            else
+                            {
+                                List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                                ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                                colPoly_.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                            }
+                        }
+                        gbXYZ centroid_top = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly_));
+                        colAxis = new gbSeg(
+                            new gbXYZ(centroid_bottom.X, centroid_bottom.Y, Util.FootToM(bottom)),
+                            new gbXYZ(centroid_top.X, centroid_top.Y, Util.FootToM(summit))
+                            );
+                    }
 
                     for (int i = 0; i < levels.Count; i++)
                     {
@@ -1449,10 +1470,28 @@ namespace Gingerbread
             }
             return pf;
         }
+        static Face GetTopFace(Solid solid)
+        {
+            PlanarFace pf = null;
+            foreach (Face face in solid.Faces)
+            {
+                pf = face as PlanarFace;
+                if (null != pf)
+                {
+                    if (Core.Basic.IsVertical(pf.FaceNormal, Properties.Settings.Default.tolDouble)
+                        && pf.FaceNormal.Z > 0)
+                    {
+                        break;
+                    }
+                }
+            }
+            return pf;
+        }
+
 
         // Private method
         // Generate the CurveLoop of the footprint
-        static List<CurveLoop> GetFootprintOfColumn(FamilyInstance fi)
+        static List<CurveLoop> GetFootprintOfColumn(FamilyInstance fi, bool isBottom)
         {
             List<CurveLoop> footprints = new List<CurveLoop>();
 
@@ -1465,10 +1504,15 @@ namespace Gingerbread
             {
                 if (obj is Solid)
                 {
-                    Face bottomFace = GetBottomFace(obj as Solid);
-                    if (null != bottomFace)
+                    Face baseFace = null;
+                    if (isBottom)
+                        baseFace = GetBottomFace(obj as Solid);
+                    else
+                        baseFace = GetTopFace(obj as Solid);
+
+                    if (null != baseFace)
                     {
-                        foreach (CurveLoop edge in bottomFace.GetEdgesAsCurveLoops())
+                        foreach (CurveLoop edge in baseFace.GetEdgesAsCurveLoops())
                         {
                             footprints.Add(edge);
                         }
