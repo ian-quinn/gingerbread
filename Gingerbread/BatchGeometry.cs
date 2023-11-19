@@ -1115,195 +1115,198 @@ namespace Gingerbread
                     dictShade.Add(-1, vertexLoops);
                 }
             }
-            
+
 
 
             // ######################### STRUCTURE SECTION #############################
-            // allocate column information to each floor
-            // also read data from linked Revit model if necessary
-            ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
-                new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
-
-            IList<Element> eColumns = new FilteredElementCollector(doc)
-                .OfClass(typeof(FamilyInstance))
-                .WherePasses(bothColumnFilter)
-                .ToElements();
-            //Debug.Print($"Type of the element {eColumns[0].GetType()}");
-
-            List<FamilyInstance> fiColumns = new List<FamilyInstance>();
-
-            foreach (Element e in eColumns)
+            if (Properties.Settings.Default.exportStruct)
             {
-                if (e is null)
-                    continue;
-                fiColumns.Add(e as FamilyInstance);
-            }
+                // allocate column information to each floor
+                // also read data from linked Revit model if necessary
+                ElementMulticategoryFilter bothColumnFilter = new ElementMulticategoryFilter(
+                    new List<BuiltInCategory> { BuiltInCategory.OST_Columns, BuiltInCategory.OST_StructuralColumns });
 
-            foreach (Document refDoc in refDocs)
-            {
-                IList<Element> _eColumns = new FilteredElementCollector(refDoc)
+                IList<Element> eColumns = new FilteredElementCollector(doc)
                     .OfClass(typeof(FamilyInstance))
                     .WherePasses(bothColumnFilter)
                     .ToElements();
-                //Debug.Print($"All together elements {_eColumns.Count}");
-                foreach (Element e in _eColumns)
+                //Debug.Print($"Type of the element {eColumns[0].GetType()}");
+
+                List<FamilyInstance> fiColumns = new List<FamilyInstance>();
+
+                foreach (Element e in eColumns)
                 {
                     if (e is null)
                         continue;
-                    FamilyInstance fi = e as FamilyInstance;
-                    //Debug.Print($"Trying to convert... {fi.GetType()}");
-                    fiColumns.Add(fi);
-                }
-            }
-            foreach (FamilyInstance fi in fiColumns)
-            {
-                // get the height of the column by retrieving its geometry element
-                Options op = fi.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = fi.get_Geometry(op);
-
-                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
-                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
-
-                // prepare the geometry first
-                List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
-                if (colCrvLoops.Count == 0)
-                    continue;
-                List<gbXYZ> colPoly = new List<gbXYZ>();
-                // only cache the outer boundary without holes
-                foreach (Curve crv in colCrvLoops[0])
-                {
-                    if (crv is Line)
-                    {
-                        // 20231118 this may not follow the looping sequence
-                        colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
-                    }
-                    // we are expecting rectangular columns but
-                    // there will always be special-shaped or cylindrical ones
-                    else
-                    {
-                        List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
-                        // remove the end point so there will be no duplicate
-                        ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
-                        colPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
-                    }
+                    fiColumns.Add(e as FamilyInstance);
                 }
 
-                // get bounding box of the colPoly
-                List<gbXYZ> colPolyBox = GBMethod.ElevatePts(
-                    OrthoHull.GetRectHull(colPoly), colPoly[0].Z);
-                colPolyBox.RemoveAt(4);
-
-                // what to do with the slant column?
-                // OrthoHull.GetRectHull() returns a closed polyline on XY plane
-                gbXYZ centroid = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly));
-                gbSeg colAxis = new gbSeg(
-                    new gbXYZ(centroid.X, centroid.Y, Util.FootToM(bottom)),
-                    new gbXYZ(centroid.X, centroid.Y, Util.FootToM(summit))
-                    );
-
-                // or: (this may not work for columns)
-                //LocationCurve lc = fi.Location as LocationCurve;
-                //gbSeg colAxis = Util.gbSegConvert(lc.Curve as Line);
-
-                for (int i = 0; i < levels.Count; i++)
+                foreach (Document refDoc in refDocs)
                 {
-                    // add location point if the column lies within the range of this level
-                    // this is irrelevant to its host level
-                    // sometimes the levels from linked file are not corresponding to the current model
-                    if (//fi.LevelId == levels[i].id ||
-                       summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
-                       bottom <= (levels[i].elevation + 0.5 * levels[i].height))
+                    IList<Element> _eColumns = new FilteredElementCollector(refDoc)
+                        .OfClass(typeof(FamilyInstance))
+                        .WherePasses(bothColumnFilter)
+                        .ToElements();
+                    //Debug.Print($"All together elements {_eColumns.Count}");
+                    foreach (Element e in _eColumns)
                     {
-                        
-                        // make it a closed polygon
-                        if (colPoly.Count > 0)
+                        if (e is null)
+                            continue;
+                        FamilyInstance fi = e as FamilyInstance;
+                        //Debug.Print($"Trying to convert... {fi.GetType()}");
+                        fiColumns.Add(fi);
+                    }
+                }
+                foreach (FamilyInstance fi in fiColumns)
+                {
+                    // get the height of the column by retrieving its geometry element
+                    Options op = fi.Document.Application.Create.NewGeometryOptions();
+                    GeometryElement ge = fi.get_Geometry(op);
+
+                    double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                    double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
+
+                    // prepare the geometry first
+                    List<CurveLoop> colCrvLoops = GetFootprintOfColumn(fi);
+                    if (colCrvLoops.Count == 0)
+                        continue;
+                    List<gbXYZ> colPoly = new List<gbXYZ>();
+                    // only cache the outer boundary without holes
+                    foreach (Curve crv in colCrvLoops[0])
+                    {
+                        if (crv is Line)
                         {
-                            colPoly.Add(colPoly[0]);
-                            dictColumn[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
-                                fi.Id.ToString(), fi.Name, colPolyBox, colAxis));
+                            // 20231118 this may not follow the looping sequence
+                            colPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                        }
+                        // we are expecting rectangular columns but
+                        // there will always be special-shaped or cylindrical ones
+                        else
+                        {
+                            List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                            // remove the end point so there will be no duplicate
+                            ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                            colPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                        }
+                    }
+
+                    // get bounding box of the colPoly
+                    List<gbXYZ> colPolyBox = GBMethod.ElevatePts(
+                        OrthoHull.GetRectHull(colPoly), colPoly[0].Z);
+                    colPolyBox.RemoveAt(4);
+
+                    // what to do with the slant column?
+                    // OrthoHull.GetRectHull() returns a closed polyline on XY plane
+                    gbXYZ centroid = GBMethod.GetRectCentroid(OrthoHull.GetRectHull(colPoly));
+                    gbSeg colAxis = new gbSeg(
+                        new gbXYZ(centroid.X, centroid.Y, Util.FootToM(bottom)),
+                        new gbXYZ(centroid.X, centroid.Y, Util.FootToM(summit))
+                        );
+
+                    // or: (this may not work for columns)
+                    //LocationCurve lc = fi.Location as LocationCurve;
+                    //gbSeg colAxis = Util.gbSegConvert(lc.Curve as Line);
+
+                    for (int i = 0; i < levels.Count; i++)
+                    {
+                        // add location point if the column lies within the range of this level
+                        // this is irrelevant to its host level
+                        // sometimes the levels from linked file are not corresponding to the current model
+                        if (//fi.LevelId == levels[i].id ||
+                           summit >= (levels[i].elevation + 0.5 * levels[i].height) &&
+                           bottom <= (levels[i].elevation + 0.5 * levels[i].height))
+                        {
+
+                            // make it a closed polygon
+                            if (colPoly.Count > 0)
+                            {
+                                colPoly.Add(colPoly[0]);
+                                dictColumn[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                                    fi.Id.ToString(), fi.Name, colPolyBox, colAxis));
+                            }
                         }
                     }
                 }
-            }
 
 
-            // allocate beam information to each floor
-            // read data from linked Revit model if necessary
-            List<Tuple<gbSeg, string>> beamLocs = new List<Tuple<gbSeg, string>>();
-            IList<Element> eBeams = new FilteredElementCollector(doc)
-                .OfClass(typeof(FamilyInstance))
-                .OfCategory(BuiltInCategory.OST_StructuralFraming)
-                .ToElements();
-
-            List<FamilyInstance> fiBeams = new List<FamilyInstance>();
-            foreach (Element e in eBeams)
-            {
-                if (e is null)
-                    continue;
-                fiBeams.Add(e as FamilyInstance);
-            }
-
-            foreach (Document refDoc in refDocs)
-            {
-                IList<Element> _eBeams = new FilteredElementCollector(refDoc)
+                // allocate beam information to each floor
+                // read data from linked Revit model if necessary
+                List<Tuple<gbSeg, string>> beamLocs = new List<Tuple<gbSeg, string>>();
+                IList<Element> eBeams = new FilteredElementCollector(doc)
                     .OfClass(typeof(FamilyInstance))
                     .OfCategory(BuiltInCategory.OST_StructuralFraming)
                     .ToElements();
-                foreach (Element e in _eBeams)
+
+                List<FamilyInstance> fiBeams = new List<FamilyInstance>();
+                foreach (Element e in eBeams)
                 {
                     if (e is null)
                         continue;
                     fiBeams.Add(e as FamilyInstance);
                 }
-            }
 
-            //Debug.Print($"BatchGeometry:: beams in total - {fiBeams.Count}");
-            foreach (FamilyInstance fi in fiBeams)
-            {
-                // is it dangerous not considering the curve might not be a line?
-                LocationCurve lc = fi.Location as LocationCurve;
-                if (null == lc)
-                    continue;
-
-                Options op = fi.Document.Application.Create.NewGeometryOptions();
-                GeometryElement ge = fi.get_Geometry(op);
-                double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
-                double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
-                //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
-
-                // prepare the geometry
-                List<CurveLoop> beamCrvLoops = GetFootprintOfBeam(fi);
-                if (beamCrvLoops.Count == 0)
-                    continue;
-                List<gbXYZ> beamPoly = new List<gbXYZ>();
-                foreach (Curve crv in beamCrvLoops[0])
+                foreach (Document refDoc in refDocs)
                 {
-                    if (crv is Line)
+                    IList<Element> _eBeams = new FilteredElementCollector(refDoc)
+                        .OfClass(typeof(FamilyInstance))
+                        .OfCategory(BuiltInCategory.OST_StructuralFraming)
+                        .ToElements();
+                    foreach (Element e in _eBeams)
                     {
-                        beamPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
-                    }
-                    else
-                    {
-                        List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
-                        ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
-                        beamPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                        if (e is null)
+                            continue;
+                        fiBeams.Add(e as FamilyInstance);
                     }
                 }
 
-                if (beamPoly[0].Z > 20)
-                    Debug.Print($"error at iteration {fiBeams.IndexOf(fi)}");
-
-                for (int i = 0; i < levels.Count; i++)
+                //Debug.Print($"BatchGeometry:: beams in total - {fiBeams.Count}");
+                foreach (FamilyInstance fi in fiBeams)
                 {
-                    //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
-                    // compare the upper limit and the level elevation
-                    // assume a tolerance of 0.2m
-                    if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
+                    // is it dangerous not considering the curve might not be a line?
+                    LocationCurve lc = fi.Location as LocationCurve;
+                    if (null == lc)
+                        continue;
+
+                    Options op = fi.Document.Application.Create.NewGeometryOptions();
+                    GeometryElement ge = fi.get_Geometry(op);
+                    double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                    double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
+                    //Debug.Print("Beam upper limit: " + Util.FootToM(summit).ToString());
+
+                    // prepare the geometry
+                    List<CurveLoop> beamCrvLoops = GetFootprintOfBeam(fi);
+                    if (beamCrvLoops.Count == 0)
+                        continue;
+                    List<gbXYZ> beamPoly = new List<gbXYZ>();
+                    foreach (Curve crv in beamCrvLoops[0])
                     {
-                        //Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
-                        dictBeam[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
-                            fi.Id.ToString(), fi.Name, beamPoly, Util.gbSegConvert(lc.Curve as Line)));
-                        break;
+                        if (crv is Line)
+                        {
+                            beamPoly.Add(Util.gbXYZConvert(crv.GetEndPoint(0)));
+                        }
+                        else
+                        {
+                            List<XYZ> ptsTessellated = new List<XYZ>(crv.Tessellate());
+                            ptsTessellated.RemoveAt(ptsTessellated.Count - 1);
+                            beamPoly.AddRange(Util.gbXYZsConvert(ptsTessellated));
+                        }
+                    }
+
+                    if (beamPoly[0].Z > 20)
+                        Debug.Print($"error at iteration {fiBeams.IndexOf(fi)}");
+
+                    for (int i = 0; i < levels.Count; i++)
+                    {
+                        //Debug.Print("Level height: " + Util.FootToM(levels[i].elevation + levels[i].height).ToString());
+                        // compare the upper limit and the level elevation
+                        // assume a tolerance of 0.2m
+                        if (Math.Abs(summit - (levels[i].elevation + levels[i].height)) < Util.MToFoot(0.2))
+                        {
+                            //Debug.Print("Beam location: " + Util.gbSegConvert(lc.Curve as Line).ToString());
+                            dictBeam[i].Add(new Tuple<string, string, List<gbXYZ>, gbSeg>(
+                                fi.Id.ToString(), fi.Name, beamPoly, Util.gbSegConvert(lc.Curve as Line)));
+                            break;
+                        }
                     }
                 }
             }

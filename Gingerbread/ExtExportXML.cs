@@ -202,7 +202,7 @@ namespace Gingerbread
                     //Debug.Print($"OrthoHull at F{z} B{lineGroups.IndexOf(lineGroup)} size {orthoHull.Count}");
 
                     //RegionTessellate.SimplifyPoly(orthoHull);
-                    orthoHull.Add(orthoHull[0]);
+                    //orthoHull.Add(orthoHull[0]);
 
                     hullGroups.Add(orthoHull);
                 }

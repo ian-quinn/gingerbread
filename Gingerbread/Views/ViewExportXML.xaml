@@ -338,7 +338,7 @@ reduce the surface debris but may cause space or surface matching failures.">
 
                             <StackPanel>
                                 <TextBlock>
-                                    <Hyperlink NavigateUri="https://gingerbread.readthedocs.io/en/latest/interface.html#interface" 
+                                    <Hyperlink NavigateUri="https://gingerbread.readthedocs.io/en/latest/ui/tolerance.html" 
                                                RequestNavigate="Hyperlink_RequestNavigate">
                                         More info about these settings...
                                     </Hyperlink>

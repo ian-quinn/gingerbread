@@ -158,7 +158,9 @@ namespace Gingerbread.Core
                     {
                         double area = GBMethod.GetPolyArea(loop);
                         double perimeter = GBMethod.GetPolyPerimeter(loop);
-                        if (area > 10 && perimeter / Math.Sqrt(area) < 6 || area > 100)
+                        if (area > Properties.Settings.Default.tolHoleArea  // constrain total area
+                            && perimeter / Math.Sqrt(area) < 6              // constrain twisted shape
+                            || area > 100)                                  // cancel if it is large enough
                         {
                             List<gbSeg> _airWalls = GBMethod.GetClosedPoly(loop);
                             List<gbSeg> clipperWalls = new List<gbSeg>();
