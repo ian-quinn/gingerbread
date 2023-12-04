@@ -4,6 +4,7 @@ using ClipperLib;
 using System.Text.RegularExpressions;
 using System.Diagnostics;
 using System.Dynamic;
+using Autodesk.Revit.UI;
 
 namespace Gingerbread.Core
 {
@@ -303,6 +304,8 @@ namespace Gingerbread.Core
                         else
                         {
                             List<List<gbXYZ>> section = GBMethod.ClipPoly(boundingBox, srfOffset, ClipType.ctIntersection);
+                            if (section is null || section.Count == 0)
+                                continue;
                             rectifiedOpening = section[0];
                             //Debug.Write($"XMLGeometry:: Rectified");
                             //foreach (gbXYZ pt in rectifiedOpening)
@@ -976,6 +979,7 @@ namespace Gingerbread.Core
                     Util.LogPrint($"----------------Shape the shade on Level-{level.id}----------------");
 
                     // shadings are from dictShade (orphan floor slab, roof or wall) and dictFloor
+                    // orphan shades are clipped from the shell of the level it belongs to
                     List<List<gbXYZ>> shellClippers = new List<List<gbXYZ>>();
                     if (dictShell.ContainsKey(level.id))
                         shellClippers = dictShell[level.id];
@@ -1036,6 +1040,8 @@ namespace Gingerbread.Core
                         }
                     }
 
+                    // you need to perform the clipping with the adjancent two floor shells
+                    // only for the floor (roof not included for now)
                     if (!level.isBottom && !level.isTop &&
                         dictFloor.ContainsKey(level.id) && dictShell.ContainsKey(level.prevId))
                     {
@@ -1056,7 +1062,9 @@ namespace Gingerbread.Core
                             {
                                 if (GBMethod.IsPolyInPoly(GBMethod.ElevatePts(slabShell, 0), clipper))
                                     containmentCounter++;
-                                if (GBMethod.IsPolyOutPoly(GBMethod.ElevatePts(slabShell, 0), clipper))
+                                if (GBMethod.IsPolyOutPoly(GBMethod.ElevatePts(slabShell, 0), clipper) &&
+                                    !GBMethod.IsPolyInPoly(clipper, GBMethod.ElevatePts(slabShell, 0)))
+                                    // 20231204 second term is important
                                     isolationCounter--;
                             }
                             if (isolationCounter == 0)
@@ -1067,28 +1075,55 @@ namespace Gingerbread.Core
                                 surfaces.Add(shading);
                                 shadeCounter++;
                                 Util.LogPrint($"Shading: Floor/roof slabs cast as shade {{{shading.loop[0]}}}");
+                                continue; // either change surface type directly or perform the clipping. choose only one
                             }
                             if (containmentCounter == 0)
                             {
                                 List<List<gbXYZ>> results = GBMethod.ClipPoly(
                                     new List<List<gbXYZ>>() { GBMethod.ElevatePts(slabShell, 0) },
                                     shellClippers, ClipType.ctDifference);
-                                foreach (List<gbXYZ> result in results)
+                                // the result may be a multiply-connected region
+                                // if it is a MCR, there can only be two polyloops nesting togeter
+                                // If && evaluates its first operand as false, it does not evaluate its second operand.
+                                if (results.Count == 2 && GBMethod.IsPolyInPoly(results[1], results[0]))
                                 {
-                                    RegionTessellate.SimplifyPoly(result);
-                                    //Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
-                                    double area = GBMethod.GetPolyArea(result);
-                                    if (area < 1 || result.Count == 0 || GBMethod.IsClockwise(result))
+                                    // 20231204
+                                    // switch to another simple MCR split method
+                                    // by connecting one point on the outer loop and the other on the inner loop
+                                    // or split it via the co-centroid
+                                    // for now just leave it be
+
+                                    continue;
+
+                                    //List<List<gbXYZ>> tiles = RegionTessellate.Rectangle(results);
+                                    //foreach (List<gbXYZ> tile in tiles)
+                                    //{
+                                    //    gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
+                                    //    "Void", GBMethod.ReorderPoly(GBMethod.ElevatePts(tile, level.elevation)), 0);
+                                    //    shading.type = surfaceTypeEnum.Shade;
+                                    //    surfaces.Add(shading);
+                                    //    shadeCounter++;
+                                    //}
+                                }
+                                else
+                                {
+                                    foreach (List<gbXYZ> result in results)
                                     {
-                                        //Util.LogPrint($"Shading: Tiny facet ({area:f4} m2) removed");
-                                        continue;
+                                        RegionTessellate.SimplifyPoly(result);
+                                        //Debug.Print($"XMLGeometry:: Shading area: {GBMethod.GetPolyArea(result)}");
+                                        double area = GBMethod.GetPolyArea(result);
+                                        if (area < 1 || result.Count == 0 || GBMethod.IsClockwise(result))
+                                        {
+                                            //Util.LogPrint($"Shading: Tiny facet ({area:f4} m2) removed");
+                                            continue;
+                                        }
+                                        gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
+                                        "Void", GBMethod.ReorderPoly(GBMethod.ElevatePts(result, level.elevation)), 0);
+                                        shading.type = surfaceTypeEnum.Shade;
+                                        surfaces.Add(shading);
+                                        shadeCounter++;
+                                        Util.LogPrint($"Shading: Floor/roof slabs clipped into shade {{{shading.loop[0]}}}");
                                     }
-                                    gbSurface shading = new gbSurface($"F{level.id}::Shade_{shadeCounter}",
-                                    "Void", GBMethod.ReorderPoly(GBMethod.ElevatePts(result, level.elevation)), 0);
-                                    shading.type = surfaceTypeEnum.Shade;
-                                    surfaces.Add(shading);
-                                    shadeCounter++;
-                                    Util.LogPrint($"Shading: Floor/roof slabs clipped into shade {{{shading.loop[0]}}}");
                                 }
                             }
                         }

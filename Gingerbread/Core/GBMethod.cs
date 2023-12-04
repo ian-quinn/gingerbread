@@ -2078,7 +2078,7 @@ namespace Gingerbread.Core
             return new gbXYZ(
                     pt.X * Math.Cos(theta) - pt.Y * Math.Sin(theta),
                     pt.Y * Math.Cos(theta) + pt.X * Math.Sin(theta),
-                    0);
+                    pt.Z);
         }
         public static gbSeg transCoords(gbSeg seg, double theta)
         {

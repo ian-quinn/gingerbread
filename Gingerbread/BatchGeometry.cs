@@ -11,6 +11,7 @@ using Autodesk.Revit.UI;
 using Autodesk.Revit.UI.Selection;
 using Gingerbread.Core;
 using System.Net;
+using System.Text.RegularExpressions;
 #endregion
 
 // PENDING      - functions saved for a happy day
@@ -250,38 +251,93 @@ namespace Gingerbread
                 }
             }
 
-            
-            levels = levels.OrderBy(z => z.elevation).ToList(); // ascending order
-            // assign height to each level (only > 2000 mm )
-            // note that the embedded unit of Revit is foot, so you must do the conversion
-            for (int i = 0; i < levels.Count - 1; i++)
-            {
-                double deltaZ = levels[i + 1].elevation - levels[i].elevation;
-                if (deltaZ > Util.MmToFoot(2000))
-                    levels[i].height = deltaZ;
-            }
-            // skim out levels with 0 height
-            for (int i = levels.Count - 1; i >= 0; i--)
-                if (levels[i].height == 0)
-                    levels.RemoveAt(i);
-
-
+            // create levels from roof or floor, over
+            // what if there is no roof or floor?
             IList<Element> eLevels = new FilteredElementCollector(doc)
                 .WhereElementIsNotElementType()
                 .OfCategory(BuiltInCategory.INVALID)
                 .OfClass(typeof(Level))
                 .ToElements();
-            foreach (Element eLevel in eLevels)
+
+            // if no level information gained from the floor or roof, go actual level definition.
+            bool useLevelDefined = false;
+            if (levels.Count == 0)
             {
-                Level level = eLevel as Level;
-                if (Math.Abs(level.Elevation - levels.Last().elevation - levels.Last().height) < 0.01)
+                foreach (Element eLevel in eLevels)
                 {
-                    levels.Add(new levelPack(level.Id, level.Name, level.Elevation, level.ProjectElevation));
-                    break;
+                    Level level = eLevel as Level;
+                    levels.Add(new levelPack(level.Id, level.Name,
+                        Math.Round(level.Elevation, 6),
+                        Math.Round(level.ProjectElevation, 6)));
+                }
+                useLevelDefined = true;
+            }
+
+            levels = levels.OrderBy(z => z.elevation).ToList(); // ascending order
+
+            if (!useLevelDefined)
+            {
+                foreach (Element eLevel in eLevels)
+                {
+                    Level level = eLevel as Level;
+                    int insert_id = -1;
+                    bool insertable = false;
+                    // iterate current levels from bottom to top
+                    // insert the eLevel when it is smaller than the current level at the first time
+                    // eLevel cannot be higher than the top one in levels list. the level gets valid when it holds a floor or roof
+                    for (int i = 0; i < levels.Count; i++)
+                    {
+                        if (level.Elevation < levels[i].elevation)
+                        {
+                            if (i == 0) // a lower level that has not been included in levels
+                            {
+                                insert_id = i;
+                                insertable = true;
+                                break;
+                            }
+                            // if it is the same with the previous one, ignore it
+                            else if (Math.Abs(level.Elevation - levels[i - 1].elevation) < 0.01)
+                                break;
+                            else
+                            {
+                                insert_id = i;
+                                insertable = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (insertable)
+                        levels.Insert(insert_id, new levelPack(level.Id, level.Name, level.Elevation, level.ProjectElevation));
                 }
             }
 
-            // calculat the offset from base level to internal origin (usually 0, but not always)
+            // assign height to each level (only > 1000 mm )
+            // note that the internal unit is foot, so you must do the conversion
+            for (int i = 0; i < levels.Count - 1; i++)
+            {
+                double deltaZ = levels[i + 1].elevation - levels[i].elevation;
+                if (deltaZ > Util.MmToFoot(1000))
+                    levels[i].height = deltaZ;
+            }
+            // keep the top level, skim out lower levels with 0 height
+            // the top level will not be counted as a valid floor in the following space extrusion
+            for (int i = levels.Count - 2; i >= 0; i--)
+                if (levels[i].height == 0)
+                    levels.RemoveAt(i);
+
+            // commented out 20231204
+            //foreach (Element eLevel in eLevels)
+            //{
+            //    Level level = eLevel as Level;
+            //    if (Math.Abs(level.Elevation - levels.Last().elevation - levels.Last().height) < 0.01)
+            //    {
+            //        levels.Add(new levelPack(level.Id, level.Name, level.Elevation, level.ProjectElevation));
+            //        break;
+            //    }
+            //}
+
+
+            // calculate the offset from base level to internal origin (usually 0, but not always)
             // the coordinate retrieved through API is the project elevation
             // the coordinate you see in the Revit UI is the elevation
             // to convert make you retrieved in line with what you see you need to deduct the _bias
@@ -385,8 +441,99 @@ namespace Gingerbread
                 {
                     FamilyInstance d = e as FamilyInstance;
                     FamilySymbol ds = d.Symbol;
-                    double height = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
-                    double width = Util.FootToMm(ds.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+
+                    string label = ds.FamilyName;
+                    List<double> sizes = new List<double>();
+                    foreach (Match match in Regex.Matches(label, @"\d+"))
+                    {
+                        double size = Convert.ToInt32(match.Value);
+                        if (label.Contains("\""))
+                            size = Util.FootToMm(size / 12);
+                        else if (label.Contains("\'"))
+                            size = Util.FootToMm(size);
+                        sizes.Add(size);
+                    }
+
+                    double height = 0;
+                    double width = 0;
+
+                    if (sizes.Count == 2)
+                    {
+                        height = sizes[1];
+                        width = sizes[0];
+                    }
+                    else
+                    {
+                        // if not possible, try to get the dimension by element attributes
+                        // get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM)
+                        // get_Parameter(BuiltInParameter.FAMILY_WIDTH_PARAM)
+                        height = Util.FootToMm(ds.get_Parameter(BuiltInParameter.DOOR_HEIGHT).AsDouble());
+                        width = Util.FootToMm(ds.get_Parameter(BuiltInParameter.DOOR_WIDTH).AsDouble());
+                    }
+
+                    Options op = d.Document.Application.Create.NewGeometryOptions();
+                    GeometryElement ge = ds.get_Geometry(op);
+                    double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
+                    double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
+
+                    // if the value == 0, get information from actual geometry
+                    // bounding box Z works because door and windows are usually vertical
+                    if (Math.Abs(height) < 0.1)
+                        height = Util.FootToMm(summit - bottom);
+                    // PENDING pack it into a 'GetFootprintFromGO' method
+                    if (Math.Abs(width) < 0.1)
+                    {
+                        foreach (GeometryObject obj in ge)
+                        {
+                            if (obj is Solid)
+                            {
+                                var bottomFace = GetSolidBottomFace(obj as Solid);
+                                if (bottomFace != null)
+                                {
+                                    List<double> edge_lengths = new List<double>() { };
+                                    // you should calculate an OBB here
+                                    foreach (CurveLoop loop in bottomFace.GetEdgesAsCurveLoops())
+                                        foreach (Curve edge in loop)
+                                            if (edge is Line)
+                                                edge_lengths.Add(Util.gbSegConvert(edge as Line).Length);
+                                    edge_lengths.Sort();
+                                    width = 1000 * edge_lengths.Last();
+                                }
+                            }
+                            else if (obj is GeometryInstance)
+                            {
+                                GeometryInstance gi_ = obj as GeometryInstance;
+                                GeometryElement ge_ = gi_.GetInstanceGeometry();
+                                foreach (GeometryObject obj_ in ge_)
+                                {
+                                    if (obj_ is Solid)
+                                    {
+                                        var bottomFace_ = GetSolidBottomFace(obj_ as Solid);
+                                        if (bottomFace_ != null)
+                                        {
+                                            List<double> edge_lengths = new List<double>() { };
+                                            // you should calculate an OBB here
+                                            foreach (CurveLoop loop in bottomFace_.GetEdgesAsCurveLoops())
+                                                foreach (Curve edge in loop)
+                                                    if (edge is Line)
+                                                        edge_lengths.Add(Util.gbSegConvert(edge as Line).Length);
+                                            edge_lengths.Sort();
+                                            // this length is already m
+                                            width = 1000 * edge_lengths.Last();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    if (Math.Abs(width) < 300)
+                    {
+                        double width_x = ge.GetBoundingBox().Max.X - ge.GetBoundingBox().Min.X;
+                        double width_y = ge.GetBoundingBox().Max.Y - ge.GetBoundingBox().Min.Y;
+                        width = width_x > width_y ? width_x : width_y;
+                        width = Util.FootToMm(width);
+                    }
+
                     Wall wall = d.Host as Wall;
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
@@ -726,7 +873,11 @@ namespace Gingerbread
                                     else
                                     {
                                         //Debug.Print("BatchGeometry:: empty panelPts");
-                                        temps = new List<gbSeg>();
+
+                                        // commented out 20231204
+                                        // if no panel information is available, go back to the location line
+                                        // this may not be correct?
+                                        //temps = new List<gbSeg>();
                                     }
                                 }
                                 // --------------------comment out the lines in between when testing ROOMVENT model----------------
@@ -1026,14 +1177,95 @@ namespace Gingerbread
                 XYZ lp = Util.GetFamilyInstanceLocation(w);
                 if (lp == null)
                     continue;
-                
-                double height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
-                double width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+
+                // first try to get the dimension by labeling
+                string label = ws.FamilyName;
+                List<double> sizes = new List<double>();
+                foreach (Match match in Regex.Matches(label, @"\d+"))
+                {
+                    double size = Convert.ToInt32(match.Value);
+                    if (label.Contains("\""))
+                        size = Util.FootToMm(size / 10);
+                    else if (label.Contains("\'"))
+                        size = Util.FootToMm(size);
+                    sizes.Add(size);
+                }
+
+                double height = 0;
+                double width = 0;
+
+                if (sizes.Count == 2)
+                {
+                    height = sizes[1];
+                    width = sizes[0];
+                }
+                else
+                {
+                    // if not possible, try to get the dimension by element attributes
+                    height = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_HEIGHT).AsDouble());
+                    width = Util.FootToMm(ws.get_Parameter(BuiltInParameter.WINDOW_WIDTH).AsDouble());
+                }
 
                 Options op = w.Document.Application.Create.NewGeometryOptions();
                 GeometryElement ge = w.get_Geometry(op);
                 double summit = ge.GetBoundingBox().Max.Z - Properties.Settings.Default.offsetZ;
                 double bottom = ge.GetBoundingBox().Min.Z - Properties.Settings.Default.offsetZ;
+
+                // if still not possible get information from actual geometry
+                if (Math.Abs(height) < 0.1)
+                    height = Util.FootToMm(summit - bottom);
+                // PENDING pack it into a 'GetFootprintFromGO' method
+                if (Math.Abs(width) < 0.1)
+                {
+                    foreach (GeometryObject obj in ge)
+                    {
+                        if (obj is Solid)
+                        {
+                            var bottomFace = GetSolidBottomFace(obj as Solid);
+                            if (bottomFace != null)
+                            {
+                                List<double> edge_lengths = new List<double>() { };
+                                // you should calculate an OBB here
+                                foreach (CurveLoop loop in bottomFace.GetEdgesAsCurveLoops())
+                                    foreach (Curve edge in loop)
+                                        if (edge is Line)
+                                            edge_lengths.Add(Util.gbSegConvert(edge as Line).Length);
+                                edge_lengths.Sort();
+                                width = 1000 * edge_lengths.Last();
+                            }
+                        }
+                        else if (obj is GeometryInstance)
+                        {
+                            GeometryInstance gi_ = obj as GeometryInstance;
+                            GeometryElement ge_ = gi_.GetInstanceGeometry();
+                            foreach (GeometryObject obj_ in ge_)
+                            {
+                                if (obj_ is Solid)
+                                {
+                                    var bottomFace_ = GetSolidBottomFace(obj_ as Solid);
+                                    if (bottomFace_ != null)
+                                    {
+                                        List<double> edge_lengths = new List<double>() { };
+                                        // you should calculate an OBB here
+                                        foreach (CurveLoop loop in bottomFace_.GetEdgesAsCurveLoops())
+                                            foreach (Curve edge in loop)
+                                                if (edge is Line)
+                                                    edge_lengths.Add(Util.gbSegConvert(edge as Line).Length);
+                                        edge_lengths.Sort();
+                                        width = 1000 * edge_lengths.Last();
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                if (Math.Abs(width) < 0.1)
+                {
+                    double width_x = ge.GetBoundingBox().Max.X - ge.GetBoundingBox().Min.X;
+                    double width_y = ge.GetBoundingBox().Max.Y - ge.GetBoundingBox().Min.Y;
+                    width = width_x > width_y ? width_x : width_y;
+                    width = Util.FootToMm(width);
+                }
 
                 if (summit < bottom)
                     continue;
@@ -1388,7 +1620,7 @@ namespace Gingerbread
                             dictFloor[i][j][k] = GBMethod.transCoords(dictFloor[i][j][k], theta);
                         }
                     }
-                    for (int j = 0; j < dictFloor[i].Count; j++)
+                    for (int j = 0; j < dictShade[i].Count; j++)
                     {
                         dictShade[i][j] = GBMethod.transCoords(dictShade[i][j], theta);
                     }
