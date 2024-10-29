@@ -458,24 +458,7 @@ namespace Gingerbread.Core
                     {
                         if (cluster[0].Length > 2 * tol_d)
                         {
-                            gbSeg _axis = GBMethod.SegProjDirection(cluster[0], direction);
-                            // check if it is already defined in Grids list
-                            double minDist = double.PositiveInfinity;
-                            gbSeg minProj = _axis;
-                            foreach (gbSeg grid in grids)
-                            {
-                                double angle_delta = GBMethod.VectorAnglePI_2(grid.Direction, direction);
-                                if (angle_delta < tol_theta)
-                                {
-                                    double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
-                                    if (gap < minDist && overlap > 0 && gap < tol_d / 2)
-                                    {
-                                        minDist = gap;
-                                        minProj = proj;
-                                    }
-                                }
-                            }
-                            axes.Add(minProj);
+                            axes.Add(PullToGrid(cluster[0], direction ,grids, tol_d, tol_theta));
                         }
                         else
                         {
@@ -521,24 +504,7 @@ namespace Gingerbread.Core
                         gbSeg axis = new gbSeg(axis_start, axis_end);
                         if (axis.Length > 2 * tol_d)
                         {
-                            gbSeg _axis = GBMethod.SegProjDirection(axis, direction);
-                            // check if it is already defined in Grids list
-                            double minDist = double.PositiveInfinity;
-                            gbSeg minProj = _axis;
-                            foreach (gbSeg grid in grids)
-                            {
-                                double angle_delta = GBMethod.VectorAnglePI_2(grid.Direction, direction);
-                                if (angle_delta < tol_theta)
-                                {
-                                    double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
-                                    if (gap < minDist && overlap > 0 && gap < tol_d / 2)
-                                    {
-                                        minDist = gap;
-                                        minProj = proj;
-                                    }
-                                }
-                            }
-                            axes.Add(minProj);
+                            axes.Add(PullToGrid(axis, direction, grids, tol_d, tol_theta));
                         }
                         else
                         {
@@ -550,6 +516,38 @@ namespace Gingerbread.Core
             }
 
             return axes;
+        }
+
+        public static gbSeg PullToGrid(gbSeg axis, gbXYZ direction, List<gbSeg> grids, double tol_d, double tol_theta)
+        {
+            gbSeg _axis = GBMethod.SegProjDirection(axis, direction);
+            //double minDist = double.PositiveInfinity;
+            gbSeg minProj = _axis;
+            double overlap_dist = 0;
+            // iterate to find the largest overlap within the tol_d gap
+            foreach (gbSeg grid in grids)
+            {
+                double angle_delta = GBMethod.VectorAnglePI_2(grid.Direction, direction);
+                if (angle_delta < tol_theta)
+                {
+                    double gap = GBMethod.SegDistanceToSeg(_axis, grid, out double overlap, out gbSeg proj);
+                    if (gap < tol_d/2 && overlap > 0)
+                    {
+                        if (overlap * grid.Length > overlap_dist)
+                        {
+                            overlap_dist = overlap * grid.Length;
+                            minProj = proj;
+                        }
+                        // previous conditions
+                        //if (gap < minDist && overlap > 0 && gap < tol_d / 2)
+                        //{
+                        //    minDist = gap;
+                        //    minProj = proj;
+                        //}
+                    }
+                }
+            }
+            return minProj;
         }
 
         public static int[,] GetAdjMat(List<gbSeg> edges, out gbXYZ[] vts, out int[] degrees)

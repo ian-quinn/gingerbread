@@ -849,22 +849,26 @@ namespace Gingerbread.Core
                                         List<List<gbXYZ>> casters = new List<List<gbXYZ>>() { mcrs[j][0] };
                                         try { casters = RegionTessellate.Rectangle(mcrs[j]); }
                                         catch (Exception e) { }
-                                        
+                                        // when it reaches the maximum iteration of Rectangle(), there will be no error raised
+                                        // thus casters may include empty loops
                                         foreach (List<gbXYZ> caster in casters)
                                         {
-                                            List<gbXYZ> revLoop = GBMethod.ReorderPoly(
+                                            if (caster.Count > 2)
+                                            {
+                                                List<gbXYZ> revLoop = GBMethod.ReorderPoly(
                                                 GBMethod.ElevatePts(caster, level.elevation));
-                                            revLoop.Reverse();
-                                            gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
-                                                revLoop, 180);
-                                            splitFloor.adjSrfId = "Outside";
-                                            if (level.isBasement)
-                                                splitFloor.type = surfaceTypeEnum.UndergroundSlab;
-                                            else if (level.isGround)
-                                                splitFloor.type = surfaceTypeEnum.SlabOnGrade;
-                                            else
-                                                splitFloor.type = surfaceTypeEnum.RaisedFloor;
-                                            zone.floors.Add(splitFloor);
+                                                revLoop.Reverse();
+                                                gbSurface splitFloor = new gbSurface(zone.id + "::Floor_" + zone.floors.Count, zone.id,
+                                                    revLoop, 180);
+                                                splitFloor.adjSrfId = "Outside";
+                                                if (level.isBasement)
+                                                    splitFloor.type = surfaceTypeEnum.UndergroundSlab;
+                                                else if (level.isGround)
+                                                    splitFloor.type = surfaceTypeEnum.SlabOnGrade;
+                                                else
+                                                    splitFloor.type = surfaceTypeEnum.RaisedFloor;
+                                                zone.floors.Add(splitFloor);
+                                            }
                                         }
                                     }
                                 }
@@ -1352,6 +1356,42 @@ namespace Gingerbread.Core
                 }
             }
         }
+
+        /// <summary>
+        /// A post-processing during gbSurface serialization. 
+        /// 1. downgrade the accuracy of coordinates to 3 digits 
+        /// 2. check if the polygon degenerated in this case (split event) then simplify it
+        /// 3. Clipper returns polygon with vertices necessary (not closed loop), which suits
+        /// the format of XML
+        /// 4. Floor.loop is counter-clockwise, Ceiling.loop is clockwise, however, Clipper
+        /// always returns polygon counter-clockwise, you need to reverse it when surface.tilt = 180
+        /// </summary>
+        /// <param name="surface"></param>
+        public static void SimplifySurface(gbSurface surface)
+        {
+            //if (surface.id == "F1::B0::G0::R54::Floor_0")
+            //    Debug.Print("check");
+            List<gbXYZ> sequence = new List<gbXYZ>();
+            foreach (gbXYZ pt in surface.loop)
+            {
+                sequence.Add(new gbXYZ(
+                    Math.Round(pt.X, 4),
+                    Math.Round(pt.Y, 4),
+                    Math.Round(pt.Z, 4)));
+            }
+            List<List<gbXYZ>> result = GBMethod.SimplifyPoly(sequence);
+            if (result.Count > 0)
+            {
+                var loop_simplified = result[0];
+                if (surface.tilt == 180)
+                    loop_simplified.Reverse();
+                surface.loop = loop_simplified;
+            }
+            else
+                surface.loop = new List<gbXYZ>() { new gbXYZ(0, 0, 0) };
+            return;
+        }
+
 
         static bool IsOpeningOverlap(List<gbOpening> openings, gbOpening newOpening)
         {

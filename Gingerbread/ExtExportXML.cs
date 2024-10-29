@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Text.Json;
+using System.Text.Json; // .NET 4.7.2 and after
 
 using Autodesk.Revit.ApplicationServices;
 using Autodesk.Revit.Attributes;
@@ -82,8 +82,10 @@ namespace Gingerbread
             Dictionary<int, List<gbSeg>> dictGlazing = new Dictionary<int, List<gbSeg>>();
             Dictionary<int, List<gbSeg>> dictAirwall = new Dictionary<int, List<gbSeg>>();
             Dictionary<int, List<gbSeg>> dictEnclosing = new Dictionary<int, List<gbSeg>>();
-            List<gbSeg> preBlueprint = new List<gbSeg>();
-            List<gbSeg> nextBlueprint = new List<gbSeg>();
+            // the blueprint mirrors the edges aligned of each floor iteration, temporal cache
+            List<gbSeg> blueprint = new List<gbSeg>();
+            //List<gbSeg> preBlueprint = new List<gbSeg>();
+            //List<gbSeg> nextBlueprint = new List<gbSeg>();
             //List<gbSeg> shellBlueprint = new List<gbSeg>();
 
             for (int z = 0; z < levelNum; z++)
@@ -100,7 +102,16 @@ namespace Gingerbread
                 Report(10 + z * 80 / levelNum - 40 / levelNum, $"Processing floorplan on level {z} ...");
 
                 // define global grid system
+                // DEBUG 240822 predefined as the global grid then the aligned edges of previous floor
+                // move all edges from blueprint to current grids list, then clear blueprint
                 List<gbSeg> grids = dictGrid[0];
+                if (z > 0)
+                {
+                    grids = new List<gbSeg>();
+                    foreach (gbSeg edge in blueprint)
+                        grids.Add(edge);
+                }
+                blueprint = new List<gbSeg>();
 
                 List<gbSeg> enclosings = new List<gbSeg>();
                 enclosings.AddRange(dictWall[z]);
@@ -338,6 +349,9 @@ namespace Gingerbread
                             sets.tolAlignment / 5,
                             sets.tolTheta);
 
+                        // cache result as blueprint for the next floor level iteration
+                        blueprint.AddRange(lineWelded);
+
                         // VISUALIZATION
                         //using (Transaction tx = new Transaction(doc, "Sketch anchors"))
                         //{
@@ -491,6 +505,9 @@ namespace Gingerbread
                 levels = jsLevels
             };
             sets.geomInfo = JsonSerializer.Serialize(jsBuilding);
+            // if not supported, go for Newtonsoft.JSON with the following line
+            // sets.geomInfo = JsonConvert.SerializeObject(jsBuildings);
+
             // end Json serialization
 
 
@@ -522,6 +539,16 @@ namespace Gingerbread
 
             string fileName = "GingerbreadXML.xml";
             string thisAssemblyFolderPath = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            // DEBUG 240822 try to simplify surface and lower its accuracy 
+            foreach (var surface in surfaces)
+            {
+                // only simplify horizontal surfaces for now
+                if (surface.tilt != 90)
+                {
+                    Util.LogPrint($"Serialization: Degenerate Surface_{surface.id} - trigger poly simplification");
+                    XMLGeometry.SimplifySurface(surface);
+                }
+            }
             XMLSerialize.Generate(thisAssemblyFolderPath + "/" + fileName, zones, floors, surfaces, columns, beams, shafts);
 
             Report(100, "Done export to " + thisAssemblyFolderPath);

@@ -535,6 +535,7 @@ namespace Gingerbread
                     }
 
                     Wall wall = d.Host as Wall;
+                    if (wall is null) continue;
                     if (wall.WallType.Kind != WallKind.Curtain)
                     {
                         XYZ lp = Util.GetFamilyInstanceLocation(d);

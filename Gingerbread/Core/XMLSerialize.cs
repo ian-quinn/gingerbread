@@ -17,6 +17,7 @@ namespace Gingerbread.Core
         {
             gb.gbci = new CultureInfo(String.Empty);
 
+
             //the basics
             //constructor to define the basics
             gbXML gbx = new gbXML();
@@ -80,7 +81,7 @@ namespace Gingerbread.Core
                     spaceVoidID.Add(zones[i].id);
             }
             // summarize the total indoor area
-            cmp.Buildings[0].Area = string.Format("{0:0.000000}", sumArea);
+            cmp.Buildings[0].Area = string.Format("{0:0.0000}", sumArea);
 
 
             // SURFACE
@@ -91,17 +92,16 @@ namespace Gingerbread.Core
             int srfCounter = 0;
             for (int i = 0; i < faces.Count; i++)
             {
-                if (faces[i].loop.Count < 3)
+                // face.loop is a closed vertice loop, so its count <= 3 implies degenerated srf
+                if (faces[i].loop.Count <= 3)
                 {
-                    // the degenerate surface excludes triangles
-                    //Debug.Print("XMLSerialization:: Degenerated surface detected at: " + i);
-                    Util.LogPrint($"Serialization: Degenerated surface removed at Surface_{i}");
+                    Util.LogPrint($"Serialization: Degenerate Surface_{i} - vertices <= 2");
                     continue;
                 }
-                if (faces[i].area < 0.001)
+                if (faces[i].height < 0.001 || faces[i].width < 0.001)
                 {
-                    //Debug.Print("XMLSerialization:: 0 area warning at surface: " + i);
-                    //continue;
+                    Util.LogPrint($"Serialization: Degenerate Surface_{i} - too small area");
+                    continue;
                 }
 
                 //Util.LogPrint(faces[i].id + "-" + faces[i].adjSrfId);
@@ -263,9 +263,9 @@ namespace Gingerbread.Core
             CartesianPoint cpt = new CartesianPoint();
             cpt.Coordinate = new string[3];
             CultureInfo ci = new CultureInfo(String.Empty);
-            string xformat = string.Format(ci, "{0:0.000000}", pt.X - Properties.Settings.Default.originX);
-            string yformat = string.Format(ci, "{0:0.000000}", pt.Y - Properties.Settings.Default.originY);
-            string zformat = string.Format(ci, "{0:0.000000}", pt.Z - Properties.Settings.Default.originZ);
+            string xformat = string.Format(ci, "{0:0.0000}", pt.X - Properties.Settings.Default.originX);
+            string yformat = string.Format(ci, "{0:0.0000}", pt.Y - Properties.Settings.Default.originY);
+            string zformat = string.Format(ci, "{0:0.0000}", pt.Z - Properties.Settings.Default.originZ);
             cpt.Coordinate[0] = xformat;
             cpt.Coordinate[1] = yformat;
             cpt.Coordinate[2] = zformat;
@@ -490,8 +490,8 @@ namespace Gingerbread.Core
             rg.CartesianPoint = PtToCartesianPoint(face.loop[0]);
             rg.Tilt = face.tilt.ToString();
 
-            rg.Width = string.Format("{0:0.000000}", face.width);
-            rg.Height = string.Format("{0:0.000000}", face.height);
+            rg.Width = string.Format("{0:0.0000}", face.width);
+            rg.Height = string.Format("{0:0.0000}", face.height);
             surface.RectangularGeometry = rg;
 
             PlanarGeometry pg = new PlanarGeometry();
@@ -535,8 +535,8 @@ namespace Gingerbread.Core
                     // at the left down corner
                     op_rg.CartesianPoint = PtToCartesianPoint(
                         GBMethod.RelativePt(face.openings[i].loop[0], face.loop[0]));
-                    op_rg.Width = string.Format("{0:0.000000}", face.openings[i].width);
-                    op_rg.Height = string.Format("{0:0.000000}", face.openings[i].height);
+                    op_rg.Width = string.Format("{0:0.0000}", face.openings[i].width);
+                    op_rg.Height = string.Format("{0:0.0000}", face.openings[i].height);
                     op.rg = op_rg;
 
                     PlanarGeometry op_pg = new PlanarGeometry();

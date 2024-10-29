@@ -1442,11 +1442,11 @@ namespace Gingerbread.Core
             //}
             //if (IsOn)
             //{
-                if (IsPtInPoly(start, poly, true) && IsPtInPoly(end, poly, true))
+            if (IsPtInPoly(start, poly, true) && IsPtInPoly(end, poly, true))
                 //!IsSegPolyIntersected(seg, poly, 0.000001))
-                    return true;
-                else
-                    return false;
+                return true;
+            else
+                return false;
             //}
             //else
             //{
@@ -1900,31 +1900,61 @@ namespace Gingerbread.Core
             return offsetPts;
         }
 
+        /// <summary>
+        /// Convert 3D gbXYZ point to 2D IntPt, note that the z-axis info is missing
+        /// </summary>
+        /// <param name="pt"></param>
+        /// <param name="digit"></param>
+        /// <returns></returns>
+        static IntPoint PtToIntPt(gbXYZ pt, int digit)
+        {
+            return new IntPoint(Math.Round(pt.X * Math.Pow(10, digit)), Math.Round(pt.Y * Math.Pow(10, digit)));
+        }
+        static gbXYZ IntPtToPt(IntPoint pt, int digit, double z_offset)
+        {
+            return new gbXYZ(pt.X * Math.Pow(10, -digit), pt.Y * Math.Pow(10, -digit), z_offset);
+        }
+
+        public static List<List<gbXYZ>> SimplifyPoly(List<gbXYZ> loop)
+        {
+            List<List<IntPoint>> result = new List<List<IntPoint>>();
+            List<List<gbXYZ>> loop_cleaned = new List<List<gbXYZ>>();
+            if (loop.Count == 0)
+                return loop_cleaned;
+
+            List<IntPoint> subj = new List<IntPoint>();
+            double z = loop[0].Z;
+            foreach (gbXYZ pt in loop)
+                subj.Add(PtToIntPt(pt, 4));
+
+            Clipper c = new Clipper();
+            c.StrictlySimple = true;
+            c.AddPath(subj, PolyType.ptSubject, true);
+            c.Execute(ClipType.ctUnion, result, PolyFillType.pftEvenOdd, PolyFillType.pftEvenOdd);
+
+            foreach (var path in result)
+            {
+                List<gbXYZ> child_poly = new List<gbXYZ>();
+                foreach (var pt in path)
+                {
+                    child_poly.Add(IntPtToPt(pt, 4, z));
+                }
+                loop_cleaned.Add(child_poly);
+            }
+            return loop_cleaned;
+        }
 
         /// <summary>
         /// Do polygon boolean operation. Algorithm depends on Clipper.cs
         /// </summary>
         public static List<List<gbXYZ>> ClipPoly(List<gbXYZ> subjLoop, List<gbXYZ> clipLoop, ClipType operation)
         {
-            //double zbase = subjLoop[0].Z;
-
-            IntPoint PtToIntPt(gbXYZ pt)
-            {
-                //Util.LogPrint("PRECISION: " + Math.Round(pt.X * 10000000) + " / " + Math.Round(pt.Y * 10000000));
-                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
-            }
-            gbXYZ IntPtToPt(IntPoint pt)
-            {
-                //Util.LogPrint("PRECISION: " + (pt.X * 0.0000001).ToString() + " / " + (pt.Y * 0.0000001).ToString());
-                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
-            }
-
             List<IntPoint> subj = new List<IntPoint>();
             List<IntPoint> clip = new List<IntPoint>();
             foreach (gbXYZ pt in subjLoop)
-                subj.Add(PtToIntPt(pt));
+                subj.Add(PtToIntPt(pt, 7));
             foreach (gbXYZ pt in clipLoop)
-                clip.Add(PtToIntPt(pt));
+                clip.Add(PtToIntPt(pt, 7));
 
             List<List<IntPoint>> solutions = new List<List<IntPoint>>();
             Clipper c = new Clipper();
@@ -1937,37 +1967,24 @@ namespace Gingerbread.Core
             {
                 List<gbXYZ> sectLoop = new List<gbXYZ>();
                 foreach (IntPoint pt in solution)
-                    sectLoop.Add(IntPtToPt(pt));
+                    sectLoop.Add(IntPtToPt(pt, 7, 0));
                 sectLoops.Add(sectLoop);
             }
             return sectLoops;
         }
         public static List<List<gbXYZ>> ClipPoly(List<List<gbXYZ>> subjLoops, List<gbXYZ> clipLoop, ClipType operation)
         {
-            //double zbase = subjLoop[0].Z;
-
-            IntPoint PtToIntPt(gbXYZ pt)
-            {
-                //Util.LogPrint("PRECISION: " + Math.Round(pt.X * 10000000) + " / " + Math.Round(pt.Y * 10000000));
-                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
-            }
-            gbXYZ IntPtToPt(IntPoint pt)
-            {
-                //Util.LogPrint("PRECISION: " + (pt.X * 0.0000001).ToString() + " / " + (pt.Y * 0.0000001).ToString());
-                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
-            }
-
             List<List<IntPoint>> subj = new List<List<IntPoint>>();
             List<IntPoint> clip = new List<IntPoint>();
             foreach (List<gbXYZ> subjLoop in subjLoops)
             {
                 List<IntPoint> _subj = new List<IntPoint>();
                 foreach (gbXYZ pt in subjLoop)
-                    _subj.Add(PtToIntPt(pt));
+                    _subj.Add(PtToIntPt(pt, 7));
                 subj.Add(_subj);
             }
             foreach (gbXYZ pt in clipLoop)
-                clip.Add(PtToIntPt(pt));
+                clip.Add(PtToIntPt(pt, 7));
 
             List<List<IntPoint>> solutions = new List<List<IntPoint>>();
             Clipper c = new Clipper();
@@ -1980,7 +1997,7 @@ namespace Gingerbread.Core
             {
                 List<gbXYZ> sectLoop = new List<gbXYZ>();
                 foreach (IntPoint pt in solution)
-                    sectLoop.Add(IntPtToPt(pt));
+                    sectLoop.Add(IntPtToPt(pt, 7, 0));
                 sectLoops.Add(sectLoop);
             }
             return sectLoops;
@@ -1988,33 +2005,20 @@ namespace Gingerbread.Core
 
         public static List<List<gbXYZ>> ClipPoly(List<List<gbXYZ>> subjLoops, List<List<gbXYZ>> clipLoops, ClipType operation)
         {
-            //double zbase = subjLoop[0].Z;
-
-            IntPoint PtToIntPt(gbXYZ pt)
-            {
-                //Util.LogPrint("PRECISION: " + Math.Round(pt.X * 10000000) + " / " + Math.Round(pt.Y * 10000000));
-                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
-            }
-            gbXYZ IntPtToPt(IntPoint pt)
-            {
-                //Util.LogPrint("PRECISION: " + (pt.X * 0.0000001).ToString() + " / " + (pt.Y * 0.0000001).ToString());
-                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
-            }
-
             List<List<IntPoint>> subj = new List<List<IntPoint>>();
             List<List<IntPoint>> clip = new List<List<IntPoint>>();
             foreach (List<gbXYZ> subjLoop in subjLoops)
             {
                 List<IntPoint> _subj = new List<IntPoint>();
                 foreach (gbXYZ pt in subjLoop)
-                    _subj.Add(PtToIntPt(pt));
+                    _subj.Add(PtToIntPt(pt, 7));
                 subj.Add(_subj);
             }
             foreach (List<gbXYZ> clipLoop in clipLoops)
             {
                 List<IntPoint> _clip = new List<IntPoint>();
                 foreach (gbXYZ pt in clipLoop)
-                    _clip.Add(PtToIntPt(pt));
+                    _clip.Add(PtToIntPt(pt, 7));
                 clip.Add(_clip);
             }
 
@@ -2029,7 +2033,7 @@ namespace Gingerbread.Core
             {
                 List<gbXYZ> sectLoop = new List<gbXYZ>();
                 foreach (IntPoint pt in solution)
-                    sectLoop.Add(IntPtToPt(pt));
+                    sectLoop.Add(IntPtToPt(pt, 7, 0));
                 sectLoops.Add(sectLoop);
             }
             return sectLoops;
@@ -2040,30 +2044,21 @@ namespace Gingerbread.Core
         /// </summary>
         public static List<List<gbXYZ>> OffsetPoly(List<gbXYZ> poly, double offset)
         {
-            IntPoint PtToIntPt(gbXYZ pt)
-            {
-                return new IntPoint(Math.Round(pt.X * 10000000), Math.Round(pt.Y * 10000000));
-            }
-            gbXYZ IntPtToPt(IntPoint pt)
-            {
-                return new gbXYZ(pt.X * 0.0000001, pt.Y * 0.0000001, 0);
-            }
-
             List<IntPoint> path = new List<IntPoint>();
             foreach (gbXYZ pt in poly)
-                path.Add(PtToIntPt(pt));
+                path.Add(PtToIntPt(pt, 7));
 
             List<List<IntPoint>> solutions = new List<List<IntPoint>>();
             ClipperOffset co = new ClipperOffset();
             co.AddPath(path, ClipperLib.JoinType.jtMiter, EndType.etClosedPolygon);
-            co.Execute(ref solutions, Math.Round(offset * 10000000));
+            co.Execute(ref solutions, Math.Round(offset * Math.Pow(10, 7)));
 
             List<List<gbXYZ>> offsetLoops = new List<List<gbXYZ>>();
             foreach (List<IntPoint> solution in solutions)
             {
                 List<gbXYZ> offsetLoop = new List<gbXYZ>();
                 foreach (IntPoint pt in solution)
-                    offsetLoop.Add(IntPtToPt(pt));
+                    offsetLoop.Add(IntPtToPt(pt, 7, 0));
                 offsetLoops.Add(offsetLoop);
             }
             return offsetLoops;
